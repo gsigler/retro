@@ -4,11 +4,11 @@
   "rsc": false,
   "tsx": true,
   "aliases": {
-    "components": "@/components",
+    "components": "src/components",
     "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "ui": "src/components/ui",
+    "lib": "src/lib",
+    "hooks": "src/hooks"
   },
   "tailwind": {
     "config": "",

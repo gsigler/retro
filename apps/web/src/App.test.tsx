@@ -10,7 +10,11 @@ describe('App', () => {
         <App />
       </MemoryRouter>,
     )
-    expect(screen.getByText('AI-powered team retrospectives')).toBeDefined()
+    expect(
+      screen.getByRole('heading', {
+        name: /run better retros with ai-powered insights/i,
+      }),
+    ).toBeDefined()
   })
 
   it('renders login page at /login', () => {
