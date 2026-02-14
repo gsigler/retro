@@ -1,0 +1,32 @@
+{
+  "name": "retro",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Retro - a retrospective platform",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"nest start -w -c apps/api/nest-cli.json -p apps/api/tsconfig.json --preserveWatchOutput\" \"vite apps/web --clearScreen false\"",
+    "dev:api": "npm run start:dev -w @retro/api",
+    "dev:web": "npm run dev -w @retro/web",
+    "build:api": "npm run build -w @retro/api",
+    "build:web": "npm run build -w @retro/web",
+    "test:api": "npm test -w @retro/api",
+    "test:web": "npm test -w @retro/web",
+    "lint": "eslint apps/api && eslint apps/web",
+    "lint:fix": "eslint apps/api --fix && eslint apps/web --fix",
+    "format": "prettier --write \"apps/**/src/**/*.{ts,tsx}\" \"apps/**/test/**/*.ts\"",
+    "format:check": "prettier --check \"apps/**/src/**/*.{ts,tsx}\" \"apps/**/test/**/*.ts\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^16.5.0",
+    "prettier": "^3.4.2",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.48.0"
+  }
+}
