@@ -32,3 +32,30 @@ NestJS + React monorepo using npm workspaces.
 - Set `preserveWatchOutput: true` in `nest-cli.json` compilerOptions
 - Prefer invoking binaries directly (`npx` or `node_modules/.bin/`) rather than `npm run -w` inside concurrently commands
 - Use `-n` for named prefixes and `-c` for colored output
+
+## Common Workflows
+
+### Adding a new API endpoint
+
+1. Generate NestJS module: `npx -w @retro/api nest g module <name>`
+2. Generate controller: `npx -w @retro/api nest g controller <name>`
+3. Generate service: `npx -w @retro/api nest g service <name>`
+4. Add unit tests in `<name>.service.spec.ts` and `<name>.controller.spec.ts`
+5. Register the module in `app.module.ts`
+
+### Adding a Prisma model
+
+1. Edit `apps/api/prisma/schema.prisma`
+2. Run `npm run db:migrate:dev` to create a migration
+3. Run `npm run db:generate` to regenerate the Prisma client
+4. Create a corresponding NestJS service to wrap Prisma operations
+
+### Adding a React component
+
+1. Create component in `apps/web/src/`
+2. Create test file as `ComponentName.test.tsx` alongside it
+3. Use functional components with TypeScript interfaces for props
+
+### Full validation
+
+Run `bash scripts/validate.sh` to check formatting, lint, tests, and builds before submitting changes.

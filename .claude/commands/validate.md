@@ -1,0 +1,1 @@
+Run the full validation suite for the project. Execute `bash scripts/validate.sh` from the repo root and report the results. If any step fails, diagnose the issue and suggest a fix.
