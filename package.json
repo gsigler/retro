@@ -17,7 +17,14 @@
     "lint": "eslint apps/api && eslint apps/web",
     "lint:fix": "eslint apps/api --fix && eslint apps/web --fix",
     "format": "prettier --write \"apps/**/src/**/*.{ts,tsx}\" \"apps/**/test/**/*.ts\"",
-    "format:check": "prettier --check \"apps/**/src/**/*.{ts,tsx}\" \"apps/**/test/**/*.ts\""
+    "format:check": "prettier --check \"apps/**/src/**/*.{ts,tsx}\" \"apps/**/test/**/*.ts\"",
+    "db:generate": "npm run prisma:generate -w @retro/api",
+    "db:migrate:dev": "npm run prisma:migrate:dev -w @retro/api",
+    "db:migrate:deploy": "npm run prisma:migrate:deploy -w @retro/api",
+    "db:studio": "npm run prisma:studio -w @retro/api",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
