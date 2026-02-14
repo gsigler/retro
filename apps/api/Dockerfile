@@ -6,7 +6,7 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # ---- Stage 2: Generate Prisma client and build ----
 FROM deps AS build
@@ -30,7 +30,7 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma

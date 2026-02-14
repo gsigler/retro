@@ -6,7 +6,7 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/api/package.json ./apps/api/
 
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # ---- Stage 2: Build the Vite app ----
 FROM deps AS build
