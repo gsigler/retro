@@ -1,0 +1,11 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/api/Dockerfile"
+watchPatterns = ["apps/api/**", "package.json", "package-lock.json", "tsconfig.base.json"]
+
+[deploy]
+startCommand = "npx -w @retro/api prisma migrate deploy && node apps/api/dist/main.js"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "ALWAYS"
+restartPolicyMaxRetries = 5
