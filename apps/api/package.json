@@ -28,6 +28,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.8.0",
+    "prisma": "^6.8.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -45,7 +46,6 @@
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
-    "prisma": "^6.8.0",
     "tsconfig-paths": "^4.2.0"
   },
   "prisma": {
