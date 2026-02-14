@@ -1,37 +1,24 @@
 import { Route, Routes } from 'react-router'
 import LandingPage from '@/pages/LandingPage'
-
-function Login() {
-  return (
-    <div>
-      <h1>Login</h1>
-    </div>
-  )
-}
-
-function AuthVerify() {
-  return (
-    <div>
-      <h1>Verifying...</h1>
-    </div>
-  )
-}
-
-function Dashboard() {
-  return (
-    <div>
-      <h1>Dashboard</h1>
-    </div>
-  )
-}
+import LoginPage from '@/pages/LoginPage'
+import VerifyPage from '@/pages/VerifyPage'
+import DashboardPage from '@/pages/DashboardPage'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/auth/verify" element={<AuthVerify />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/verify" element={<VerifyPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   )
 }

@@ -1,15 +1,31 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App from './App'
+import { AuthProvider } from '@/contexts/AuthContext'
+
+vi.mock('@/lib/api', () => ({
+  api: vi.fn(),
+}))
+
+function renderApp(route: string) {
+  return render(
+    <MemoryRouter initialEntries={[route]}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </MemoryRouter>,
+  )
+}
 
 describe('App', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+  })
+
   it('renders landing page at /', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    )
+    renderApp('/')
     expect(
       screen.getByRole('heading', {
         name: /run better retros with ai-powered insights/i,
@@ -18,20 +34,12 @@ describe('App', () => {
   })
 
   it('renders login page at /login', () => {
-    render(
-      <MemoryRouter initialEntries={['/login']}>
-        <App />
-      </MemoryRouter>,
-    )
-    expect(screen.getByText('Login')).toBeDefined()
+    renderApp('/login')
+    expect(screen.getByText(/sign in to retro/i)).toBeDefined()
   })
 
-  it('renders dashboard page at /dashboard', () => {
-    render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <App />
-      </MemoryRouter>,
-    )
-    expect(screen.getByText('Dashboard')).toBeDefined()
+  it('redirects /dashboard to /login when not authenticated', () => {
+    renderApp('/dashboard')
+    expect(screen.getByText(/sign in to retro/i)).toBeDefined()
   })
 })
