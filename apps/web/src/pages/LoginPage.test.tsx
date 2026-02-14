@@ -1,16 +1,8 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import LoginPage from './LoginPage'
 import { AuthProvider } from '@/contexts/AuthContext'
-
-vi.mock('@/lib/api', () => ({
-  api: vi.fn(),
-}))
-
-import { api } from '@/lib/api'
-
-const mockedApi = vi.mocked(api)
 
 function renderLoginPage() {
   return render(
@@ -24,48 +16,21 @@ function renderLoginPage() {
 
 describe('LoginPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     localStorage.clear()
   })
 
-  it('renders sign-in form', () => {
+  it('renders sign-in page with Google button', () => {
     renderLoginPage()
     expect(screen.getByText(/sign in to retro/i)).toBeDefined()
-    expect(screen.getByPlaceholderText('you@example.com')).toBeDefined()
     expect(
-      screen.getByRole('button', { name: /send magic link/i }),
+      screen.getByRole('button', { name: /sign in with google/i }),
     ).toBeDefined()
   })
 
-  it('shows success message after submitting email', async () => {
-    mockedApi.mockResolvedValueOnce({ message: 'Sent' })
+  it('links to the Google OAuth endpoint', () => {
     renderLoginPage()
-
-    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
-      target: { value: 'test@example.com' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /send magic link/i }))
-
-    await waitFor(() => {
-      expect(screen.getByText('Check your email!')).toBeDefined()
-    })
-    expect(screen.getByText('test@example.com')).toBeDefined()
-  })
-
-  it('shows error message on API failure', async () => {
-    mockedApi.mockRejectedValueOnce(new Error('Network error'))
-    renderLoginPage()
-
-    fireEvent.change(screen.getByPlaceholderText('you@example.com'), {
-      target: { value: 'test@example.com' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /send magic link/i }))
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Something went wrong. Please try again.'),
-      ).toBeDefined()
-    })
+    const link = screen.getByRole('link', { name: /sign in with google/i })
+    expect(link.getAttribute('href')).toBe('http://localhost:3000/auth/google')
   })
 
   it('has a link back to home', () => {

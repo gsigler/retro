@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 
-type Status = 'verifying' | 'error'
+type Status = 'loading' | 'error'
 
-export default function VerifyPage() {
+export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { login } = useAuth()
-  const [status, setStatus] = useState<Status>('verifying')
+  const [status, setStatus] = useState<Status>('loading')
 
   useEffect(() => {
     const token = searchParams.get('token')
@@ -19,29 +18,21 @@ export default function VerifyPage() {
       return
     }
 
-    api<{ accessToken: string }>('/auth/verify', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-    })
-      .then(async (data) => {
-        await login(data.accessToken)
-        navigate('/dashboard', { replace: true })
-      })
-      .catch(() => {
-        setStatus('error')
-      })
+    login(token)
+      .then(() => navigate('/dashboard', { replace: true }))
+      .catch(() => setStatus('error'))
   }, [searchParams, login, navigate])
 
   if (status === 'error') {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="text-center">
-          <h1 className="mb-2 text-2xl font-bold">Invalid or expired link</h1>
+          <h1 className="mb-2 text-2xl font-bold">Authentication failed</h1>
           <p className="mb-4 text-muted-foreground">
-            This magic link is no longer valid.
+            Something went wrong during sign in.
           </p>
           <Link to="/login" className="text-primary hover:underline">
-            Request a new link
+            Try again
           </Link>
         </div>
       </div>
@@ -52,7 +43,7 @@ export default function VerifyPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-        <p className="text-muted-foreground">Verifying your magic link...</p>
+        <p className="text-muted-foreground">Signing you in...</p>
       </div>
     </div>
   )

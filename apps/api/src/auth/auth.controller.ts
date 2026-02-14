@@ -1,23 +1,45 @@
-import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
+import { Controller, Get, Request, Res, UseGuards } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import type { Response } from 'express'
 import { AuthService } from './auth.service'
-import { SendMagicLinkDto } from './dto/send-magic-link.dto'
-import { VerifyMagicLinkDto } from './dto/verify-magic-link.dto'
+import { GoogleAuthGuard } from './guards/google-auth.guard'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
-  @Post('magic-link')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  sendMagicLink(@Body() dto: SendMagicLinkDto) {
-    return this.authService.sendMagicLink(dto.email)
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  googleLogin() {
+    // Guard initiates the Google OAuth redirect
   }
 
-  @Post('verify')
-  verify(@Body() dto: VerifyMagicLinkDto) {
-    return this.authService.verifyMagicLink(dto.token)
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleCallback(
+    @Request()
+    req: {
+      user: {
+        googleId: string
+        email: string
+        name: string
+        avatarUrl?: string
+      }
+    },
+    @Res() res: Response,
+  ) {
+    const { accessToken } = await this.authService.findOrCreateGoogleUser(
+      req.user,
+    )
+    const appUrl = this.configService.get<string>(
+      'APP_URL',
+      'http://localhost:5173',
+    )
+    res.redirect(`${appUrl}/auth/callback?token=${accessToken}`)
   }
 
   @Get('profile')

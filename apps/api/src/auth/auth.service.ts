@@ -1,50 +1,37 @@
-import { randomUUID } from 'node:crypto'
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
-import { EmailService } from './email.service'
+
+interface GoogleProfile {
+  googleId: string
+  email: string
+  name: string
+  avatarUrl?: string
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly emailService: EmailService,
   ) {}
 
-  async sendMagicLink(email: string): Promise<{ message: string }> {
-    const token = randomUUID()
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
-
-    await this.prisma.magicLink.create({
-      data: { token, email, expiresAt },
-    })
-
-    await this.emailService.sendMagicLink(email, token)
-
-    return { message: 'If an account exists, a magic link has been sent.' }
-  }
-
-  async verifyMagicLink(token: string): Promise<{ accessToken: string }> {
-    const now = new Date()
-    const result = await this.prisma.magicLink.updateMany({
-      where: { token, usedAt: null, expiresAt: { gte: now } },
-      data: { usedAt: now },
-    })
-
-    if (result.count === 0) {
-      throw new UnauthorizedException('Invalid or expired token')
-    }
-
-    const magicLink = await this.prisma.magicLink.findUnique({
-      where: { token },
-      select: { email: true },
-    })
-
+  async findOrCreateGoogleUser(
+    profile: GoogleProfile,
+  ): Promise<{ accessToken: string }> {
     const user = await this.prisma.user.upsert({
-      where: { email: magicLink!.email },
-      update: {},
-      create: { email: magicLink!.email },
+      where: { email: profile.email },
+      update: {
+        googleId: profile.googleId,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
+      },
+      create: {
+        email: profile.email,
+        googleId: profile.googleId,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl,
+      },
     })
 
     const accessToken = this.jwtService.sign({
@@ -58,7 +45,13 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { id: true, email: true, name: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
     })
     return user
   }
