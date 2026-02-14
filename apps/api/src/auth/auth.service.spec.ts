@@ -11,7 +11,7 @@ describe('AuthService', () => {
     magicLink: {
       create: jest.Mock
       findUnique: jest.Mock
-      update: jest.Mock
+      updateMany: jest.Mock
     }
     user: { upsert: jest.Mock; findUniqueOrThrow: jest.Mock }
   }
@@ -23,7 +23,7 @@ describe('AuthService', () => {
       magicLink: {
         create: jest.fn(),
         findUnique: jest.fn(),
-        update: jest.fn(),
+        updateMany: jest.fn(),
       },
       user: { upsert: jest.fn(), findUniqueOrThrow: jest.fn() },
     }
@@ -67,15 +67,6 @@ describe('AuthService', () => {
   })
 
   describe('verifyMagicLink', () => {
-    const mockMagicLink = {
-      id: 'ml-1',
-      token: 'valid-token',
-      email: 'test@example.com',
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-      usedAt: null,
-      createdAt: new Date(),
-    }
-
     const mockUser = {
       id: 'user-1',
       email: 'test@example.com',
@@ -85,19 +76,26 @@ describe('AuthService', () => {
     }
 
     it('should verify token and return JWT', async () => {
-      prisma.magicLink.findUnique.mockResolvedValue(mockMagicLink)
-      prisma.magicLink.update.mockResolvedValue({})
+      prisma.magicLink.updateMany.mockResolvedValue({ count: 1 })
+      prisma.magicLink.findUnique.mockResolvedValue({
+        email: 'test@example.com',
+      })
       prisma.user.upsert.mockResolvedValue(mockUser)
       jwtService.sign.mockReturnValue('jwt-token')
 
       const result = await service.verifyMagicLink('valid-token')
 
+      expect(prisma.magicLink.updateMany).toHaveBeenCalledWith({
+        where: {
+          token: 'valid-token',
+          usedAt: null,
+          expiresAt: { gte: expect.any(Date) },
+        },
+        data: { usedAt: expect.any(Date) },
+      })
       expect(prisma.magicLink.findUnique).toHaveBeenCalledWith({
         where: { token: 'valid-token' },
-      })
-      expect(prisma.magicLink.update).toHaveBeenCalledWith({
-        where: { id: 'ml-1' },
-        data: { usedAt: expect.any(Date) },
+        select: { email: true },
       })
       expect(prisma.user.upsert).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
@@ -111,32 +109,10 @@ describe('AuthService', () => {
       expect(result).toEqual({ accessToken: 'jwt-token' })
     })
 
-    it('should reject missing tokens', async () => {
-      prisma.magicLink.findUnique.mockResolvedValue(null)
+    it('should reject invalid, used, or expired tokens', async () => {
+      prisma.magicLink.updateMany.mockResolvedValue({ count: 0 })
 
       await expect(service.verifyMagicLink('bad-token')).rejects.toThrow(
-        UnauthorizedException,
-      )
-    })
-
-    it('should reject used tokens', async () => {
-      prisma.magicLink.findUnique.mockResolvedValue({
-        ...mockMagicLink,
-        usedAt: new Date(),
-      })
-
-      await expect(service.verifyMagicLink('valid-token')).rejects.toThrow(
-        UnauthorizedException,
-      )
-    })
-
-    it('should reject expired tokens', async () => {
-      prisma.magicLink.findUnique.mockResolvedValue({
-        ...mockMagicLink,
-        expiresAt: new Date(Date.now() - 1000),
-      })
-
-      await expect(service.verifyMagicLink('valid-token')).rejects.toThrow(
         UnauthorizedException,
       )
     })

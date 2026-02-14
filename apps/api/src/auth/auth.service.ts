@@ -26,31 +26,25 @@ export class AuthService {
   }
 
   async verifyMagicLink(token: string): Promise<{ accessToken: string }> {
-    const magicLink = await this.prisma.magicLink.findUnique({
-      where: { token },
+    const now = new Date()
+    const result = await this.prisma.magicLink.updateMany({
+      where: { token, usedAt: null, expiresAt: { gte: now } },
+      data: { usedAt: now },
     })
 
-    if (!magicLink) {
+    if (result.count === 0) {
       throw new UnauthorizedException('Invalid or expired token')
     }
 
-    if (magicLink.usedAt) {
-      throw new UnauthorizedException('Token has already been used')
-    }
-
-    if (magicLink.expiresAt < new Date()) {
-      throw new UnauthorizedException('Token has expired')
-    }
-
-    await this.prisma.magicLink.update({
-      where: { id: magicLink.id },
-      data: { usedAt: new Date() },
+    const magicLink = await this.prisma.magicLink.findUnique({
+      where: { token },
+      select: { email: true },
     })
 
     const user = await this.prisma.user.upsert({
-      where: { email: magicLink.email },
+      where: { email: magicLink!.email },
       update: {},
-      create: { email: magicLink.email },
+      create: { email: magicLink!.email },
     })
 
     const accessToken = this.jwtService.sign({
