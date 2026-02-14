@@ -1,13 +1,5 @@
 import { Route, Routes } from 'react-router'
-
-function Landing() {
-  return (
-    <div>
-      <h1>Retro</h1>
-      <p>AI-powered team retrospectives</p>
-    </div>
-  )
-}
+import LandingPage from '@/pages/LandingPage'
 
 function Login() {
   return (
@@ -36,7 +28,7 @@ function Dashboard() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/auth/verify" element={<AuthVerify />} />
       <Route path="/dashboard" element={<Dashboard />} />
