@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "docker compose up -d --wait db && prisma generate --schema apps/api/prisma/schema.prisma && concurrently -n api,web -c blue,magenta \"nest start -w -c apps/api/nest-cli.json -p apps/api/tsconfig.json --preserveWatchOutput\" \"vite apps/web --clearScreen false\"",
+    "dev": "node scripts/dev.mjs",
     "dev:api": "npm run start:dev -w @retro/api",
     "dev:web": "npm run dev -w @retro/web",
     "build:api": "npm run build -w @retro/api",
@@ -39,6 +39,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "concurrently": "^9.2.1",
+    "detect-port": "^2.1.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.0.1",
     "globals": "^16.5.0",
