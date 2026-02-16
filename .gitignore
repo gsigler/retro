@@ -30,3 +30,7 @@ docker-compose.override.yml
 # AI agent local overrides
 CLAUDE.local.md
 AGENTS.override.md
+.etch/progress/
+.etch/backups/
+.etch/context/
+.etch/config.toml

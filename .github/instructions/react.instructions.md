@@ -1,5 +1,5 @@
 ---
-applyTo: "apps/web/**/*.{ts,tsx}"
+applyTo: 'apps/web/**/*.{ts,tsx}'
 ---
 
 This is a React 19 frontend using Vite 7 and TypeScript.

@@ -1,6 +1,7 @@
 Scaffold a new NestJS API endpoint. Ask for the resource name if not provided as $ARGUMENTS.
 
 Steps:
+
 1. Generate module: `npx -w @retro/api nest g module $ARGUMENTS`
 2. Generate controller: `npx -w @retro/api nest g controller $ARGUMENTS`
 3. Generate service: `npx -w @retro/api nest g service $ARGUMENTS`
