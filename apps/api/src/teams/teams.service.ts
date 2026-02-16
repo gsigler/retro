@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateTeamDto } from './dto/create-team.dto'
 import { UpdateTeamDto } from './dto/update-team.dto'
@@ -21,7 +23,15 @@ export class TeamsService {
           create: { userId, role: 'OWNER' },
         },
       },
-      include: { members: { include: { user: true } } },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, email: true, name: true, avatarUrl: true },
+            },
+          },
+        },
+      },
     })
   }
 
@@ -88,18 +98,28 @@ export class TeamsService {
       throw new NotFoundException('User not found')
     }
 
-    return this.prisma.teamMember.create({
-      data: {
-        teamId,
-        userId: userToAdd.id,
-        role: 'MEMBER',
-      },
-      include: {
-        user: {
-          select: { id: true, email: true, name: true, avatarUrl: true },
+    try {
+      return await this.prisma.teamMember.create({
+        data: {
+          teamId,
+          userId: userToAdd.id,
+          role: 'MEMBER',
         },
-      },
-    })
+        include: {
+          user: {
+            select: { id: true, email: true, name: true, avatarUrl: true },
+          },
+        },
+      })
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('User is already a member of this team')
+      }
+      throw error
+    }
   }
 
   async removeMember(userId: string, teamId: string, memberUserId: string) {

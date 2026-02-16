@@ -16,6 +16,12 @@ import { TeamsService } from './teams.service'
 import { CreateTeamDto } from './dto/create-team.dto'
 import { UpdateTeamDto } from './dto/update-team.dto'
 import { AddMemberDto } from './dto/add-member.dto'
+import {
+  TeamResponse,
+  TeamWithCountsResponse,
+  TeamDetailResponse,
+  TeamMemberResponse,
+} from './dto/team-response.dto'
 
 @Controller('teams')
 @UseGuards(JwtAuthGuard)
@@ -23,42 +29,58 @@ export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
   @Post()
-  create(@Request() req: { user: { id: string } }, @Body() dto: CreateTeamDto) {
-    return this.teamsService.create(req.user.id, dto)
+  async create(
+    @Request() req: { user: { id: string } },
+    @Body() dto: CreateTeamDto,
+  ): Promise<TeamResponse> {
+    const team = await this.teamsService.create(req.user.id, dto)
+    return TeamResponse.from(team)
   }
 
   @Get()
-  findAll(@Request() req: { user: { id: string } }) {
-    return this.teamsService.findAll(req.user.id)
+  async findAll(
+    @Request() req: { user: { id: string } },
+  ): Promise<TeamWithCountsResponse[]> {
+    const teams = await this.teamsService.findAll(req.user.id)
+    return teams.map(TeamWithCountsResponse.from)
   }
 
   @Get(':id')
-  findOne(@Request() req: { user: { id: string } }, @Param('id') id: string) {
-    return this.teamsService.findOne(req.user.id, id)
+  async findOne(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ): Promise<TeamDetailResponse> {
+    const team = await this.teamsService.findOne(req.user.id, id)
+    return TeamDetailResponse.from(team)
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
     @Body() dto: UpdateTeamDto,
-  ) {
-    return this.teamsService.update(req.user.id, id, dto)
+  ): Promise<TeamResponse> {
+    const team = await this.teamsService.update(req.user.id, id, dto)
+    return TeamResponse.from(team)
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Request() req: { user: { id: string } }, @Param('id') id: string) {
+  remove(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ): Promise<void> {
     return this.teamsService.remove(req.user.id, id)
   }
 
   @Post(':id/members')
-  addMember(
+  async addMember(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
     @Body() dto: AddMemberDto,
-  ) {
-    return this.teamsService.addMember(req.user.id, id, dto.email)
+  ): Promise<TeamMemberResponse> {
+    const member = await this.teamsService.addMember(req.user.id, id, dto.email)
+    return TeamMemberResponse.from(member)
   }
 
   @Delete(':id/members/:userId')
@@ -67,7 +89,7 @@ export class TeamsController {
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
     @Param('userId') userId: string,
-  ) {
+  ): Promise<void> {
     return this.teamsService.removeMember(req.user.id, id, userId)
   }
 }

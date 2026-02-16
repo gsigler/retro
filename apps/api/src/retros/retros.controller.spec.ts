@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { RetrosController } from './retros.controller'
 import { RetrosService } from './retros.service'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import {
+  RetroResponse,
+  RetroWithCountsResponse,
+} from './dto/retro-response.dto'
 
 describe('RetrosController', () => {
   let controller: RetrosController
@@ -14,6 +18,22 @@ describe('RetrosController', () => {
   }
 
   const req = { user: { id: 'user-1' } }
+
+  const mockPrismaRetro = {
+    id: 'retro-1',
+    name: 'Sprint 1 Retro',
+    status: 'SCHEDULED',
+    date: new Date('2026-02-16'),
+    teamId: 'team-1',
+    createdAt: new Date(),
+    createdById: 'user-1',
+    createdBy: { id: 'user-1', email: 'owner@test.com', name: 'Owner' },
+  }
+
+  const mockPrismaRetroWithCounts = {
+    ...mockPrismaRetro,
+    _count: { actionItems: 3 },
+  }
 
   beforeEach(async () => {
     retrosService = {
@@ -46,47 +66,55 @@ describe('RetrosController', () => {
   })
 
   describe('create', () => {
-    it('should call retrosService.create with user id, team id, and dto', async () => {
+    it('should return a RetroResponse', async () => {
       const dto = { name: 'Sprint 1 Retro', date: '2026-02-16' }
-      const expected = { id: 'retro-1', ...dto, teamId: 'team-1' }
-      retrosService.create.mockResolvedValue(expected)
+      retrosService.create.mockResolvedValue(mockPrismaRetro)
 
       const result = await controller.create(req, 'team-1', dto)
 
       expect(retrosService.create).toHaveBeenCalledWith('user-1', 'team-1', dto)
-      expect(result).toEqual(expected)
+      expect(result).toBeInstanceOf(RetroResponse)
+      expect(result.id).toBe('retro-1')
+      expect(result.createdBy.email).toBe('owner@test.com')
+      expect(result).not.toHaveProperty('createdById')
     })
   })
 
   describe('findAll', () => {
-    it('should call retrosService.findAll with user id and team id', async () => {
-      const retros = [{ id: 'retro-1', name: 'Sprint 1 Retro' }]
-      retrosService.findAll.mockResolvedValue(retros)
+    it('should return RetroWithCountsResponse array', async () => {
+      retrosService.findAll.mockResolvedValue([mockPrismaRetroWithCounts])
 
       const result = await controller.findAll(req, 'team-1')
 
       expect(retrosService.findAll).toHaveBeenCalledWith('user-1', 'team-1')
-      expect(result).toEqual(retros)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toBeInstanceOf(RetroWithCountsResponse)
+      expect(result[0].actionItemCount).toBe(3)
+      expect(result[0]).not.toHaveProperty('_count')
     })
   })
 
   describe('findOne', () => {
-    it('should call retrosService.findOne with user id and retro id', async () => {
-      const retro = { id: 'retro-1', name: 'Sprint 1 Retro' }
-      retrosService.findOne.mockResolvedValue(retro)
+    it('should return a RetroWithCountsResponse', async () => {
+      retrosService.findOne.mockResolvedValue(mockPrismaRetroWithCounts)
 
       const result = await controller.findOne(req, 'retro-1')
 
       expect(retrosService.findOne).toHaveBeenCalledWith('user-1', 'retro-1')
-      expect(result).toEqual(retro)
+      expect(result).toBeInstanceOf(RetroWithCountsResponse)
+      expect(result.actionItemCount).toBe(3)
+      expect(result).not.toHaveProperty('_count')
+      expect(result).not.toHaveProperty('createdById')
     })
   })
 
   describe('update', () => {
-    it('should call retrosService.update with user id, retro id, and dto', async () => {
+    it('should return a RetroWithCountsResponse', async () => {
       const dto = { name: 'Updated Retro' }
-      const expected = { id: 'retro-1', name: 'Updated Retro' }
-      retrosService.update.mockResolvedValue(expected)
+      retrosService.update.mockResolvedValue({
+        ...mockPrismaRetroWithCounts,
+        name: 'Updated Retro',
+      })
 
       const result = await controller.update(req, 'retro-1', dto)
 
@@ -95,7 +123,8 @@ describe('RetrosController', () => {
         'retro-1',
         dto,
       )
-      expect(result).toEqual(expected)
+      expect(result).toBeInstanceOf(RetroWithCountsResponse)
+      expect(result.name).toBe('Updated Retro')
     })
   })
 

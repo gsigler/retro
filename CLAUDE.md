@@ -33,6 +33,13 @@ NestJS + React monorepo using npm workspaces.
 - Prefer invoking binaries directly (`npx` or `node_modules/.bin/`) rather than `npm run -w` inside concurrently commands
 - Use `-n` for named prefixes and `-c` for colored output
 
+## API Response DTOs
+
+- Controllers must never return raw Prisma objects. Every controller method should have a typed return annotation and map results through a response DTO.
+- Response DTOs live alongside input DTOs in `<module>/dto/` (e.g. `team-response.dto.ts`).
+- Each DTO is a plain class with a static `from()` factory that maps Prisma results to a known shape. No decorators or interceptors needed.
+- Use `select` in Prisma queries for nested relations (e.g. user fields) to avoid leaking sensitive fields like `googleId`.
+
 ## Common Workflows
 
 ### Adding a new API endpoint

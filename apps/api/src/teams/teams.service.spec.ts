@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { NotFoundException, ForbiddenException } from '@nestjs/common'
+import {
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { TeamsService } from './teams.service'
 import { PrismaService } from '../prisma/prisma.service'
 
@@ -78,7 +83,20 @@ describe('TeamsService', () => {
             create: { userId, role: 'OWNER' },
           },
         },
-        include: { members: { include: { user: true } } },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  avatarUrl: true,
+                },
+              },
+            },
+          },
+        },
       })
       expect(result).toEqual(expected)
     })
@@ -278,6 +296,21 @@ describe('TeamsService', () => {
       await expect(
         service.addMember(otherUserId, teamId, 'x@test.com'),
       ).rejects.toThrow(ForbiddenException)
+    })
+
+    it('should throw ConflictException when user is already a member', async () => {
+      prisma.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.user.findUnique.mockResolvedValue(memberUser)
+      prisma.teamMember.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: '5.0.0',
+        }),
+      )
+
+      await expect(
+        service.addMember(userId, teamId, 'other@test.com'),
+      ).rejects.toThrow(ConflictException)
     })
 
     it('should throw NotFoundException when user to add does not exist', async () => {
