@@ -15,4 +15,91 @@ model User {
   avatarUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  ownedTeams          Team[]
+  teamMemberships     TeamMember[]
+  createdRetros       Retro[]
+  assignedActionItems ActionItem[] @relation("AssignedActionItems")
+  createdActionItems  ActionItem[] @relation("CreatedActionItems")
+}
+
+enum TeamRole {
+  OWNER
+  MEMBER
+}
+
+enum RetroStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ActionItemStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members TeamMember[]
+  retros  Retro[]
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  role     TeamRole
+  joinedAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+}
+
+model Retro {
+  id        String      @id @default(cuid())
+  name      String
+  status    RetroStatus @default(SCHEDULED)
+  date      DateTime
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  actionItems ActionItem[]
+}
+
+model ActionItem {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  status      ActionItemStatus @default(OPEN)
+  dueDate     DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  retroId String
+  retro   Retro  @relation(fields: [retroId], references: [id], onDelete: Cascade)
+
+  assigneeId String
+  assignee   User   @relation("AssignedActionItems", fields: [assigneeId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("CreatedActionItems", fields: [createdById], references: [id], onDelete: Cascade)
 }
