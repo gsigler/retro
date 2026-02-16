@@ -5,7 +5,6 @@ export class RetroUserSummary {
     public name: string | null,
   ) {}
 
-   
   static from(user: any): RetroUserSummary {
     return new RetroUserSummary(user.id, user.email, user.name)
   }
@@ -22,7 +21,6 @@ export class RetroResponse {
     public createdBy: RetroUserSummary,
   ) {}
 
-   
   static from(retro: any): RetroResponse {
     return new RetroResponse(
       retro.id,
@@ -48,7 +46,6 @@ export class RetroWithCountsResponse {
     public actionItemCount: number,
   ) {}
 
-   
   static from(retro: any): RetroWithCountsResponse {
     return new RetroWithCountsResponse(
       retro.id,

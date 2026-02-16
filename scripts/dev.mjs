@@ -14,8 +14,6 @@ execSync('prisma generate --schema apps/api/prisma/schema.prisma', {
 const api = `PORT=${apiPort} nest start -w -c apps/api/nest-cli.json -p apps/api/tsconfig.json --preserveWatchOutput`
 const web = `VITE_API_URL=http://localhost:${apiPort} vite apps/web --clearScreen false --port ${webPort}`
 
-spawn(
-  'concurrently',
-  ['-n', 'api,web', '-c', 'blue,magenta', api, web],
-  { stdio: 'inherit' },
-).on('exit', (code) => process.exit(code ?? 0))
+spawn('concurrently', ['-n', 'api,web', '-c', 'blue,magenta', api, web], {
+  stdio: 'inherit',
+}).on('exit', (code) => process.exit(code ?? 0))

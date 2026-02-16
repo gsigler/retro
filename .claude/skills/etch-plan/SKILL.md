@@ -24,9 +24,11 @@ Create the plan markdown file following this exact format:
 # Plan: <Title>
 
 ## Overview
+
 <1-3 paragraphs describing the overall goal>
 
 ### Task 1: <Title> [pending]
+
 **Complexity:** small | medium | large
 **Files:** src/auth.ts, src/auth.test.ts
 **Depends on:** (none for first task)
@@ -34,6 +36,7 @@ Create the plan markdown file following this exact format:
 <Description of what to implement and how>
 
 **Acceptance Criteria:**
+
 - [ ] Criterion 1
 - [ ] Criterion 2
 ```
@@ -44,6 +47,7 @@ Create the plan markdown file following this exact format:
 # Plan: <Title>
 
 ## Overview
+
 <1-3 paragraphs describing the overall goal>
 
 ---
@@ -51,6 +55,7 @@ Create the plan markdown file following this exact format:
 ## Feature 1: <Feature Title>
 
 ### Task 1.1: <Title> [pending]
+
 **Complexity:** small | medium | large
 **Files:** src/models/user.py, src/routes/auth.py
 **Depends on:** (none for first task)
@@ -58,6 +63,7 @@ Create the plan markdown file following this exact format:
 <Description>
 
 **Acceptance Criteria:**
+
 - [ ] Criterion 1
 
 ---
@@ -65,6 +71,7 @@ Create the plan markdown file following this exact format:
 ## Feature 2: <Feature Title>
 
 ### Task 2.1: <Title> [pending]
+
 **Complexity:** small | medium | large
 **Files:** tests/test_auth.py
 **Depends on:** Task 1.1
@@ -72,6 +79,7 @@ Create the plan markdown file following this exact format:
 <Description>
 
 **Acceptance Criteria:**
+
 - [ ] Criterion 1
 ```
 

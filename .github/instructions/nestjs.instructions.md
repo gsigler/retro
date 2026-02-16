@@ -1,5 +1,5 @@
 ---
-applyTo: "apps/api/**/*.ts"
+applyTo: 'apps/api/**/*.ts'
 ---
 
 This is a NestJS 11 backend using Prisma ORM with PostgreSQL.

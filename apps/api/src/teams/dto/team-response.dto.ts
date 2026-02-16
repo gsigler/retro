@@ -6,7 +6,6 @@ export class UserSummary {
     public avatarUrl: string | null,
   ) {}
 
-   
   static from(user: any): UserSummary {
     return new UserSummary(user.id, user.email, user.name, user.avatarUrl)
   }
@@ -20,7 +19,6 @@ export class TeamMemberResponse {
     public user: UserSummary,
   ) {}
 
-   
   static from(member: any): TeamMemberResponse {
     return new TeamMemberResponse(
       member.id,
@@ -41,7 +39,6 @@ export class TeamResponse {
     public updatedAt: Date,
   ) {}
 
-   
   static from(team: any): TeamResponse {
     return new TeamResponse(
       team.id,
@@ -65,7 +62,6 @@ export class TeamWithCountsResponse {
     public createdAt: Date,
   ) {}
 
-   
   static from(team: any): TeamWithCountsResponse {
     return new TeamWithCountsResponse(
       team.id,
@@ -91,7 +87,6 @@ export class TeamDetailResponse {
     public updatedAt: Date,
   ) {}
 
-   
   static from(team: any): TeamDetailResponse {
     return new TeamDetailResponse(
       team.id,
