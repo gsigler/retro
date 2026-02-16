@@ -123,10 +123,10 @@ Write unit tests for `TeamsService` and `TeamsController`. Mock `PrismaService`.
 ### Task 3.1: Scaffold Retros NestJS module with CRUD endpoints [completed]
 
 **Complexity:** medium
-**Files:** apps/api/src/retros/retros.module.ts, apps/api/src/retros/retros.controller.ts, apps/api/src/retros/retros.service.ts, apps/api/src/retros/dto/create-retro.dto.ts, apps/api/src/retros/dto/update-retro.dto.ts, apps/api/src/app.module.ts
+**Files:** apps/api/src/retros/retros.module.ts, apps/api/src/retros/retros.controller.ts, apps/api/src/retros/retros.service.ts, apps/api/src/retros/dto/create-retro.dto.ts, apps/api/src/retros/dto/update-retro.dto.ts, apps/api/src/retros/dto/retro-response.dto.ts, apps/api/src/app.module.ts
 **Depends on:** Task 1.2
 
-Create a `RetrosModule`. All routes require `JwtAuthGuard`. Retros are scoped to a team — user must be a member of the team to access its retros.
+Create a `RetrosModule`. All routes require `JwtAuthGuard`. Retros are scoped to a team — user must be a member of the team to access its retros. Controllers return response DTOs (`RetroResponse`, `RetroDetailResponse`) via static `from()` factories — never raw Prisma objects.
 
 **Endpoints:**
 | Method | Path | Description |
@@ -269,7 +269,7 @@ Create a `StatsModule` with a single endpoint that returns aggregated counts for
 **Files:** apps/web/src/lib/api.ts, apps/web/src/types/index.ts
 **Depends on:** Task 2.1, Task 3.1, Task 4.1, Task 5.1
 
-Extend the existing `api()` utility in `lib/api.ts` with typed wrapper functions for every backend endpoint. Create a shared `types/index.ts` with TypeScript interfaces matching the API response shapes (`Team`, `TeamMember`, `Retro`, `ActionItem`, `DashboardStats`).
+Extend the existing `api()` utility in `lib/api.ts` with typed wrapper functions for every backend endpoint. Create a shared `types/index.ts` with TypeScript interfaces matching the backend response DTO shapes (`TeamResponse`, `TeamWithCountsResponse`, `TeamDetailResponse`, `TeamMemberResponse`, `UserSummary`, `RetroResponse`, `RetroDetailResponse`, `ActionItemResponse`, `ActionItemWithContextResponse`, `DashboardStatsResponse`, `UpcomingRetroResponse`, `ActionItemCountsResponse`). These interfaces should mirror the backend DTOs exactly so the frontend types stay in sync with the API contract.
 
 Functions to add:
 
