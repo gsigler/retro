@@ -7,6 +7,7 @@ import { AppService } from './app.service'
 import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
 import { TeamsModule } from './teams/teams.module'
+import { RetrosModule } from './retros/retros.module'
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { TeamsModule } from './teams/teams.module'
     PrismaModule,
     AuthModule,
     TeamsModule,
+    RetrosModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
