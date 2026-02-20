@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Prisma generated client (v7)
+apps/api/generated/
+
 # Environment
 .env
 .env.local
