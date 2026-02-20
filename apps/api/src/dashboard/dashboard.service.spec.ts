@@ -124,7 +124,7 @@ describe('DashboardService', () => {
       })
     })
 
-    it('should query recent action items assigned to user sorted by createdAt desc with take 5', async () => {
+    it('should query all open action items across team sorted by createdAt desc', async () => {
       prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
       prisma.team.findUnique.mockResolvedValue(null)
       prisma.retro.count.mockResolvedValue(0)
@@ -135,7 +135,10 @@ describe('DashboardService', () => {
       await service.getSummary(userId)
 
       expect(prisma.actionItem.findMany).toHaveBeenCalledWith({
-        where: { assigneeId: userId },
+        where: {
+          retro: { teamId: { in: [teamId] } },
+          status: { not: 'DONE' },
+        },
         include: {
           assignee: {
             select: { id: true, name: true, avatarUrl: true },
@@ -145,7 +148,6 @@ describe('DashboardService', () => {
           },
         },
         orderBy: { createdAt: 'desc' },
-        take: 5,
       })
     })
   })

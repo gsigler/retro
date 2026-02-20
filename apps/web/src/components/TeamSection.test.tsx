@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TeamSection } from './TeamSection'
 
@@ -61,6 +62,15 @@ const api = await import('@/lib/api')
 const mockFetchTeams = api.fetchTeams as ReturnType<typeof vi.fn>
 const mockFetchTeam = api.fetchTeam as ReturnType<typeof vi.fn>
 
+function renderWithQuery(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  )
+}
+
 describe('TeamSection', () => {
   const onMutation = vi.fn()
 
@@ -71,7 +81,9 @@ describe('TeamSection', () => {
   it('shows onboarding card when user has no teams', async () => {
     mockFetchTeams.mockResolvedValue([])
 
-    render(<TeamSection token="tok" userId="user-1" onMutation={onMutation} />)
+    renderWithQuery(
+      <TeamSection token="tok" userId="user-1" onMutation={onMutation} />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Get Started')).toBeDefined()
@@ -84,7 +96,9 @@ describe('TeamSection', () => {
     mockFetchTeams.mockResolvedValue([mockTeamWithCounts])
     mockFetchTeam.mockResolvedValue(mockTeamDetail)
 
-    render(<TeamSection token="tok" userId="user-1" onMutation={onMutation} />)
+    renderWithQuery(
+      <TeamSection token="tok" userId="user-1" onMutation={onMutation} />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Test Team')).toBeDefined()
@@ -97,7 +111,9 @@ describe('TeamSection', () => {
     mockFetchTeams.mockResolvedValue([mockTeamWithCounts])
     mockFetchTeam.mockResolvedValue(mockTeamDetail)
 
-    render(<TeamSection token="tok" userId="user-1" onMutation={onMutation} />)
+    renderWithQuery(
+      <TeamSection token="tok" userId="user-1" onMutation={onMutation} />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText('abc1234567')).toBeDefined()
@@ -110,7 +126,9 @@ describe('TeamSection', () => {
     mockFetchTeams.mockResolvedValue([mockTeamWithCounts])
     mockFetchTeam.mockResolvedValue(mockTeamDetail)
 
-    render(<TeamSection token="tok" userId="user-1" onMutation={onMutation} />)
+    renderWithQuery(
+      <TeamSection token="tok" userId="user-1" onMutation={onMutation} />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Add Member')).toBeDefined()
@@ -128,7 +146,9 @@ describe('TeamSection', () => {
       ownerId: 'user-99',
     })
 
-    render(<TeamSection token="tok" userId="user-1" onMutation={onMutation} />)
+    renderWithQuery(
+      <TeamSection token="tok" userId="user-1" onMutation={onMutation} />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Test Team')).toBeDefined()
@@ -142,7 +162,9 @@ describe('TeamSection', () => {
     mockFetchTeams.mockResolvedValue([mockTeamWithCounts])
     mockFetchTeam.mockResolvedValue(mockTeamDetail)
 
-    render(<TeamSection token="tok" userId="user-1" onMutation={onMutation} />)
+    renderWithQuery(
+      <TeamSection token="tok" userId="user-1" onMutation={onMutation} />,
+    )
 
     await waitFor(() => {
       expect(screen.getByText('Owner')).toBeDefined()

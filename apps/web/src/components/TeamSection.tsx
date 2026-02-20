@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Pencil, Plus, UserPlus } from 'lucide-react'
 import {
   Card,
@@ -21,7 +22,6 @@ import {
   addTeamMember,
   removeTeamMember,
 } from '@/lib/api'
-import type { TeamWithCounts, TeamDetail } from '@/types/api'
 
 interface TeamSectionProps {
   token: string
@@ -30,9 +30,7 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
-  const [teams, setTeams] = useState<TeamWithCounts[] | null>(null)
-  const [teamDetail, setTeamDetail] = useState<TeamDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -43,34 +41,26 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
   const [isJoining, setIsJoining] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const loadTeams = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const data = await fetchTeams(token)
-      setTeams(data)
-      if (data.length > 0) {
-        const detail = await fetchTeam(token, data[0].id)
-        setTeamDetail(detail)
-      } else {
-        setTeamDetail(null)
-      }
-    } catch {
-      // silently fail — teams will show as empty
-    } finally {
-      setIsLoading(false)
-    }
-  }, [token])
+  const { data: teams, isLoading: isLoadingTeams } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => fetchTeams(token),
+  })
 
-  useEffect(() => {
-    loadTeams()
-  }, [loadTeams])
+  const primaryTeam = teams?.[0]
 
-  const refresh = useCallback(async () => {
-    await loadTeams()
-    onMutation()
-  }, [loadTeams, onMutation])
+  const { data: teamDetail } = useQuery({
+    queryKey: ['team-detail', primaryTeam?.id],
+    queryFn: () => fetchTeam(token, primaryTeam!.id),
+    enabled: !!primaryTeam,
+  })
 
   const isOwner = teamDetail?.ownerId === userId
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ['teams'] })
+    await queryClient.invalidateQueries({ queryKey: ['team-detail'] })
+    onMutation()
+  }
 
   async function handleCreateTeam(data: {
     name: string
@@ -121,7 +111,7 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  if (isLoading) {
+  if (isLoadingTeams) {
     return <div className="bg-muted/50 mt-6 h-48 animate-pulse rounded-xl" />
   }
 

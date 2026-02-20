@@ -23,8 +23,6 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 interface RetroCardProps {
   retro: RetroWithCounts
   canManage: boolean
-  isSelected: boolean
-  onSelect: () => void
   onEdit: () => void
   onDelete: () => void
   onStatusTransition: (status: string) => void
@@ -33,8 +31,6 @@ interface RetroCardProps {
 export function RetroCard({
   retro,
   canManage,
-  isSelected,
-  onSelect,
   onEdit,
   onDelete,
   onStatusTransition,
@@ -42,10 +38,7 @@ export function RetroCard({
   const badge = STATUS_BADGE[retro.status] ?? STATUS_BADGE.SCHEDULED
 
   return (
-    <Card
-      className={`cursor-pointer transition-shadow hover:shadow-md ${isSelected ? 'ring-primary ring-2' : ''}`}
-      onClick={onSelect}
-    >
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <CardTitle className="text-base">{retro.name}</CardTitle>
@@ -61,11 +54,7 @@ export function RetroCard({
           <span>{new Date(retro.date).toLocaleDateString()}</span>
           <span>{retro.actionItemCount} action items</span>
         </div>
-        <div
-          className="flex gap-1"
-          onClick={(e) => e.stopPropagation()}
-          role="group"
-        >
+        <div className="flex gap-1">
           {retro.status === 'SCHEDULED' && (
             <Button
               variant="ghost"

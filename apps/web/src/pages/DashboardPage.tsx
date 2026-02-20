@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Users, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -8,34 +8,27 @@ import { TeamSection } from '@/components/TeamSection'
 import { RetrosSection } from '@/components/RetrosSection'
 import { ActionItemsSection } from '@/components/ActionItemsSection'
 import { fetchDashboardSummary } from '@/lib/api'
-import type { DashboardSummary } from '@/types/api'
 
 export default function DashboardPage() {
   const { user, token, logout } = useAuth()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
-  const [summary, setSummary] = useState<DashboardSummary | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedRetroId, setSelectedRetroId] = useState<string | null>(null)
+  const {
+    data: summary,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['dashboard-summary'],
+    queryFn: () => fetchDashboardSummary(token!),
+    enabled: !!token,
+  })
 
-  const loadSummary = useCallback(async () => {
-    if (!token) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await fetchDashboardSummary(token)
-      setSummary(data)
-    } catch {
-      setError('Failed to load dashboard data')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [token])
-
-  useEffect(() => {
-    loadSummary()
-  }, [loadSummary])
+  function handleMutation() {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+    queryClient.invalidateQueries({ queryKey: ['teams'] })
+    queryClient.invalidateQueries({ queryKey: ['retros'] })
+  }
 
   function handleLogout() {
     logout()
@@ -72,7 +65,7 @@ export default function DashboardPage() {
             role="alert"
             className="bg-destructive/10 text-destructive rounded-lg p-4"
           >
-            {error}
+            Failed to load dashboard data
           </div>
         )}
 
@@ -105,7 +98,7 @@ export default function DashboardPage() {
           <TeamSection
             token={token}
             userId={user.id}
-            onMutation={loadSummary}
+            onMutation={handleMutation}
           />
         )}
 
@@ -113,18 +106,15 @@ export default function DashboardPage() {
           <RetrosSection
             token={token}
             userId={user.id}
-            selectedRetroId={selectedRetroId}
-            onSelectRetro={setSelectedRetroId}
-            onMutation={loadSummary}
+            onMutation={handleMutation}
           />
         )}
 
-        {token && user && selectedRetroId && (
+        {token && summary && (
           <ActionItemsSection
             token={token}
-            userId={user.id}
-            retroId={selectedRetroId}
-            onMutation={loadSummary}
+            items={summary.recentActionItems}
+            onMutation={handleMutation}
           />
         )}
       </main>

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,60 +17,40 @@ import type { RetroWithCounts } from '@/types/api'
 interface RetrosSectionProps {
   token: string
   userId: string
-  selectedRetroId: string | null
-  onSelectRetro: (retroId: string | null) => void
   onMutation: () => void
 }
 
 export function RetrosSection({
   token,
   userId,
-  selectedRetroId,
-  onSelectRetro,
   onMutation,
 }: RetrosSectionProps) {
-  const [retros, setRetros] = useState<RetroWithCounts[]>([])
-  const [teamId, setTeamId] = useState<string | null>(null)
-  const [teamOwnerId, setTeamOwnerId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingRetro, setEditingRetro] = useState<RetroWithCounts | null>(null)
 
-  const loadRetros = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const teams = await fetchTeams(token)
-      if (teams.length === 0) {
-        setRetros([])
-        setTeamId(null)
-        setIsLoading(false)
-        return
-      }
-      const team = teams.find((t) => t.ownerId === userId) ?? teams[0]
-      setTeamId(team.id)
-      setTeamOwnerId(team.ownerId)
-      const data = await fetchRetros(token, team.id)
-      setRetros(data)
-    } catch {
-      // silently fail
-    } finally {
-      setIsLoading(false)
-    }
-  }, [token, userId])
+  const { data: teams } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => fetchTeams(token),
+  })
 
-  useEffect(() => {
-    loadRetros()
-  }, [loadRetros])
+  const team = teams?.find((t) => t.ownerId === userId) ?? teams?.[0]
 
-  const refresh = useCallback(async () => {
-    await loadRetros()
+  const { data: retros, isLoading } = useQuery({
+    queryKey: ['retros', team?.id],
+    queryFn: () => fetchRetros(token, team!.id),
+    enabled: !!team,
+  })
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ['retros'] })
     onMutation()
-  }, [loadRetros, onMutation])
+  }
 
   async function handleCreateRetro(data: { name: string; date: string }) {
-    if (!teamId) return
-    await createRetro(token, teamId, data)
+    if (!team) return
+    await createRetro(token, team.id, data)
     await refresh()
   }
 
@@ -82,7 +63,6 @@ export function RetrosSection({
 
   async function handleDeleteRetro(retroId: string) {
     await deleteRetro(token, retroId)
-    if (selectedRetroId === retroId) onSelectRetro(null)
     await refresh()
   }
 
@@ -92,14 +72,14 @@ export function RetrosSection({
   }
 
   function canManageRetro(retro: RetroWithCounts) {
-    return retro.createdBy.id === userId || teamOwnerId === userId
+    return retro.createdBy.id === userId || team?.ownerId === userId
   }
 
   if (isLoading) {
     return <div className="bg-muted/50 mt-6 h-48 animate-pulse rounded-xl" />
   }
 
-  if (!teamId) return null
+  if (!team) return null
 
   return (
     <div className="mt-6">
@@ -114,7 +94,7 @@ export function RetrosSection({
           </div>
         </CardHeader>
         <CardContent>
-          {retros.length === 0 ? (
+          {!retros || retros.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               No retros yet. Create one to get started.
             </p>
@@ -125,12 +105,6 @@ export function RetrosSection({
                   key={retro.id}
                   retro={retro}
                   canManage={canManageRetro(retro)}
-                  isSelected={selectedRetroId === retro.id}
-                  onSelect={() =>
-                    onSelectRetro(
-                      selectedRetroId === retro.id ? null : retro.id,
-                    )
-                  }
                   onEdit={() => setEditingRetro(retro)}
                   onDelete={() => handleDeleteRetro(retro.id)}
                   onStatusTransition={(status) =>
