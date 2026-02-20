@@ -2,7 +2,6 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
-  OnGatewayConnection,
   OnGatewayDisconnect,
   ConnectedSocket,
   MessageBody,
@@ -26,7 +25,7 @@ interface AuthenticatedSocket extends Socket {
     origin: process.env.APP_URL ?? 'http://localhost:5173',
   },
 })
-export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class BoardGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server
 
@@ -35,39 +34,41 @@ export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly prisma: PrismaService,
   ) {}
 
-  async handleConnection(client: AuthenticatedSocket) {
-    try {
-      const token =
-        client.handshake.auth?.token ||
-        client.handshake.headers?.authorization?.replace('Bearer ', '')
+  afterInit(server: Server) {
+    const secret = this.configService.getOrThrow<string>('JWT_SECRET')
 
-      if (!token || typeof token !== 'string') {
-        client.disconnect()
-        return
+    server.use(async (socket: AuthenticatedSocket, next) => {
+      try {
+        const token =
+          socket.handshake.auth?.token ||
+          socket.handshake.headers?.authorization?.replace('Bearer ', '')
+
+        if (!token || typeof token !== 'string') {
+          return next(new Error('Authentication required'))
+        }
+
+        const payload = jwt.verify(token, secret) as {
+          sub: string
+          email: string
+        }
+
+        const user = await this.prisma.user.findUnique({
+          where: { id: payload.sub },
+          select: { id: true, email: true, name: true },
+        })
+
+        if (!user) {
+          return next(new Error('User not found'))
+        }
+
+        socket.data.userId = user.id
+        socket.data.email = user.email
+        socket.data.userName = user.name ?? undefined
+        next()
+      } catch {
+        next(new Error('Authentication failed'))
       }
-
-      const secret = this.configService.getOrThrow<string>('JWT_SECRET')
-      const payload = jwt.verify(token, secret) as {
-        sub: string
-        email: string
-      }
-
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        select: { id: true, email: true, name: true },
-      })
-
-      if (!user) {
-        client.disconnect()
-        return
-      }
-
-      client.data.userId = user.id
-      client.data.email = user.email
-      client.data.userName = user.name ?? undefined
-    } catch {
-      client.disconnect()
-    }
+    })
   }
 
   handleDisconnect(client: AuthenticatedSocket) {
