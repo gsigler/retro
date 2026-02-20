@@ -2,9 +2,9 @@
 
 ## Stack
 
-- NestJS 11 with Express
-- Prisma ORM with PostgreSQL
-- Jest for unit and e2e tests
+- NestJS 11 with Express (ESM — `"type": "module"` in package.json)
+- Prisma ORM v7 with PostgreSQL (generates ESM-only client to `generated/prisma/`)
+- Jest 30 with `@swc/jest` for unit and e2e tests
 
 ## Key Commands
 
@@ -22,3 +22,5 @@
 - E2e tests live in `test/` directory
 - Use `@nestjs/testing` `Test.createTestingModule` for unit tests
 - Use `supertest` for e2e HTTP assertions
+- All relative imports must use `.js` extensions (e.g. `from './foo.js'`) — required by ESM
+- `nest g` scaffolds files without `.js` extensions; add them manually after generating
