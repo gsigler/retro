@@ -1,4 +1,4 @@
-# Plan: Command Center Dashboard v1
+# Plan: Command Center Dashboard v1 [completed]
 
 ## Overview
 
@@ -12,7 +12,7 @@ Retro board experience (columns, cards, voting) is explicitly out of scope — t
 
 ## Feature 0: Enforce Single Team Ownership
 
-### Task 0.1: Add unique constraint on Team.ownerId and invite code support [pending]
+### Task 0.1: Add unique constraint on Team.ownerId and invite code support [completed]
 **Complexity:** medium
 **Files:** apps/api/prisma/schema.prisma, apps/api/src/teams/teams.service.ts, apps/api/src/teams/teams.service.spec.ts, apps/api/src/teams/teams.controller.ts, apps/api/src/teams/teams.controller.spec.ts, apps/api/src/teams/dto/join-team.dto.ts
 
@@ -36,22 +36,22 @@ Generate a migration for all changes.
 **Tests:** Cover duplicate-owner rejection, join happy path, invalid invite code, and already-a-member cases.
 
 **Acceptance Criteria:**
-- [ ] `Team.ownerId` has a `@unique` constraint in `schema.prisma`
-- [ ] `Team.inviteCode` is generated via `nanoid(10)` in the service, unique in the schema
-- [ ] `ActionItem.assigneeId` is optional (`String?`) in the schema
-- [ ] Migration is generated and applies cleanly
-- [ ] `TeamsService.create()` returns 409 if the user already owns a team
-- [ ] `POST /teams/join` with a valid invite code adds the user as a MEMBER
-- [ ] `POST /teams/join` returns 404 for invalid invite codes
-- [ ] `POST /teams/join` returns 409 if the user is already a member of that team
-- [ ] A user can still be a MEMBER of multiple teams (no constraint on `TeamMember.userId`)
-- [ ] Existing tests still pass; new tests cover all join and duplicate-owner cases
+- [x] `Team.ownerId` has a `@unique` constraint in `schema.prisma`
+- [x] `Team.inviteCode` is generated via `nanoid(10)` in the service, unique in the schema
+- [x] `ActionItem.assigneeId` is optional (`String?`) in the schema
+- [x] Migration is generated and applies cleanly
+- [x] `TeamsService.create()` returns 409 if the user already owns a team
+- [x] `POST /teams/join` with a valid invite code adds the user as a MEMBER
+- [x] `POST /teams/join` returns 404 for invalid invite codes
+- [x] `POST /teams/join` returns 409 if the user is already a member of that team
+- [x] A user can still be a MEMBER of multiple teams (no constraint on `TeamMember.userId`)
+- [x] Existing tests still pass; new tests cover all join and duplicate-owner cases
 
 ---
 
 ## Feature 1: Action Items API
 
-### Task 1.1: Scaffold Action Items module, service, and controller [pending]
+### Task 1.1: Scaffold Action Items module, service, and controller [completed]
 **Complexity:** large
 **Files:** apps/api/src/action-items/action-items.module.ts, apps/api/src/action-items/action-items.service.ts, apps/api/src/action-items/action-items.controller.ts, apps/api/src/action-items/dto/create-action-item.dto.ts, apps/api/src/action-items/dto/update-action-item.dto.ts, apps/api/src/action-items/dto/action-item-response.dto.ts, apps/api/src/app.module.ts
 
@@ -74,15 +74,15 @@ Follow existing patterns from the Retros and Teams modules. Action items are sco
 Register `ActionItemsModule` in `app.module.ts`.
 
 **Acceptance Criteria:**
-- [ ] `POST /retros/:retroId/action-items` creates an action item and returns `ActionItemResponse`
-- [ ] `GET /retros/:retroId/action-items` returns action items for the retro
-- [ ] `GET /action-items/:id` returns a single action item
-- [ ] `PATCH /action-items/:id` updates fields; status transitions are validated (forward-only)
-- [ ] `DELETE /action-items/:id` removes the item (creator or team owner only)
-- [ ] Non-team-members receive 403 for all endpoints
-- [ ] Module is registered in `app.module.ts`
+- [x] `POST /retros/:retroId/action-items` creates an action item and returns `ActionItemResponse`
+- [x] `GET /retros/:retroId/action-items` returns action items for the retro
+- [x] `GET /action-items/:id` returns a single action item
+- [x] `PATCH /action-items/:id` updates fields; status transitions are validated (forward-only)
+- [x] `DELETE /action-items/:id` removes the item (creator or team owner only)
+- [x] Non-team-members receive 403 for all endpoints
+- [x] Module is registered in `app.module.ts`
 
-### Task 1.2: Action Items unit tests [pending]
+### Task 1.2: Action Items unit tests [completed]
 **Complexity:** medium
 **Files:** apps/api/src/action-items/action-items.service.spec.ts, apps/api/src/action-items/action-items.controller.spec.ts
 **Depends on:** Task 1.1
@@ -96,15 +96,15 @@ Write unit tests for the action items service and controller following the patte
 - Deleting an action item (creator allowed, team owner allowed, random member rejected)
 
 **Acceptance Criteria:**
-- [ ] Service spec covers all CRUD operations and authorization checks
-- [ ] Controller spec covers route handlers and proper delegation to service
-- [ ] All tests pass via `npm run test:api`
+- [x] Service spec covers all CRUD operations and authorization checks
+- [x] Controller spec covers route handlers and proper delegation to service
+- [x] All tests pass via `npm run test:api`
 
 ---
 
 ## Feature 2: Dashboard Summary API
 
-### Task 2.1: Add a dashboard summary endpoint [pending]
+### Task 2.1: Add a dashboard summary endpoint [completed]
 **Complexity:** medium
 **Files:** apps/api/src/dashboard/dashboard.module.ts, apps/api/src/dashboard/dashboard.controller.ts, apps/api/src/dashboard/dashboard.service.ts, apps/api/src/dashboard/dto/dashboard-summary-response.dto.ts, apps/api/src/app.module.ts
 
@@ -125,18 +125,18 @@ Create a `GET /dashboard/summary` endpoint that returns aggregated stats for the
 Use Prisma aggregation queries. Scope retros and action items to all teams the user is a member of. `memberCount` is scoped to the user's owned team only (displayed in the stats row alongside the team section).
 
 **Acceptance Criteria:**
-- [ ] `GET /dashboard/summary` returns the summary DTO for the authenticated user
-- [ ] `memberCount` reflects the user's owned team's member count (0 if none)
-- [ ] `retroCount`, action item counts, and lists reflect all teams the user belongs to
-- [ ] `upcomingRetros` returns at most 5 scheduled retros sorted by date ascending
-- [ ] `recentActionItems` returns at most 5 action items assigned to the user, sorted by createdAt descending
-- [ ] Unit tests cover the service and controller
+- [x] `GET /dashboard/summary` returns the summary DTO for the authenticated user
+- [x] `memberCount` reflects the user's owned team's member count (0 if none)
+- [x] `retroCount`, action item counts, and lists reflect all teams the user belongs to
+- [x] `upcomingRetros` returns at most 5 scheduled retros sorted by date ascending
+- [x] `recentActionItems` returns at most 5 action items assigned to the user, sorted by createdAt descending
+- [x] Unit tests cover the service and controller
 
 ---
 
 ## Feature 3: Frontend API Client
 
-### Task 3.1: Build typed API client functions [pending]
+### Task 3.1: Build typed API client functions [completed]
 **Complexity:** medium
 **Files:** apps/web/src/lib/api.ts, apps/web/src/types/api.ts
 **Depends on:** Task 1.1, Task 2.1
@@ -155,16 +155,16 @@ Extend the existing `api()` fetch wrapper to add typed functions for all backend
 Each function should call `api()` with the appropriate method, path, body, and `Authorization` header, then return the typed response.
 
 **Acceptance Criteria:**
-- [ ] All API response types are defined in `types/api.ts`
-- [ ] All CRUD functions exist and are properly typed
-- [ ] Functions pass the auth token as a Bearer header
-- [ ] TypeScript compiles without errors
+- [x] All API response types are defined in `types/api.ts`
+- [x] All CRUD functions exist and are properly typed
+- [x] Functions pass the auth token as a Bearer header
+- [x] TypeScript compiles without errors
 
 ---
 
 ## Feature 4: Dashboard UI
 
-### Task 4.0: Add UI primitives (Dialog, Select, Label) [pending]
+### Task 4.0: Add UI primitives (Dialog, Select, Label) [completed]
 **Complexity:** small
 **Files:** apps/web/src/components/ui/dialog.tsx, apps/web/src/components/ui/select.tsx, apps/web/src/components/ui/label.tsx
 **Depends on:** (none)
@@ -176,13 +176,13 @@ Install required Radix packages: `@radix-ui/react-dialog`, `@radix-ui/react-sele
 Follow the existing component patterns in `components/ui/` (Tailwind styling, `cn()` utility, `forwardRef`).
 
 **Acceptance Criteria:**
-- [ ] `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose` components exist
-- [ ] `Select`, `SelectTrigger`, `SelectContent`, `SelectItem`, `SelectValue` components exist
-- [ ] `Label` component exists
-- [ ] All components follow existing shadcn patterns
-- [ ] TypeScript compiles without errors
+- [x] `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose` components exist
+- [x] `Select`, `SelectTrigger`, `SelectContent`, `SelectItem`, `SelectValue` components exist
+- [x] `Label` component exists
+- [x] All components follow existing shadcn patterns
+- [x] TypeScript compiles without errors
 
-### Task 4.1: Dashboard layout and stats cards [pending]
+### Task 4.1: Dashboard layout and stats cards [completed]
 **Complexity:** medium
 **Files:** apps/web/src/pages/DashboardPage.tsx, apps/web/src/components/StatsCard.tsx
 **Depends on:** Task 3.1, Task 4.0
@@ -198,13 +198,13 @@ Replace the stub DashboardPage with the command center layout. Use a responsive 
 `StatsCard` is a small reusable component: icon (lucide-react), label, and count value, built on the existing shadcn `Card` component.
 
 **Acceptance Criteria:**
-- [ ] Dashboard fetches summary data on mount
-- [ ] 4 stats cards display with correct counts
-- [ ] Loading and error states are handled
-- [ ] Layout is responsive (1 col on mobile, 2 on md, 4 on lg)
-- [ ] Component renders without errors
+- [x] Dashboard fetches summary data on mount
+- [x] 4 stats cards display with correct counts
+- [x] Loading and error states are handled
+- [x] Layout is responsive (1 col on mobile, 2 on md, 4 on lg)
+- [x] Component renders without errors
 
-### Task 4.2: Team section with member management [pending]
+### Task 4.2: Team section with member management [completed]
 **Complexity:** large
 **Files:** apps/web/src/components/TeamSection.tsx, apps/web/src/components/TeamFormDialog.tsx, apps/web/src/components/MemberList.tsx, apps/web/src/components/AddMemberDialog.tsx, apps/web/src/pages/DashboardPage.tsx
 **Depends on:** Task 4.1
@@ -228,19 +228,19 @@ Note: There are two ways to add members — the owner can add someone directly b
 After any mutation (create team, edit team, add/remove member), refetch the team details and summary stats.
 
 **Acceptance Criteria:**
-- [ ] If the user has no team, an onboarding card with "Create Team" and "Join a Team" options is shown
-- [ ] Creating a team transitions to the team management view
-- [ ] Joining a team via invite code transitions to the team management view
-- [ ] Invalid invite codes show an error message
-- [ ] Team name, description, member count, and retro count are shown
-- [ ] Team owner sees the invite code with a copy button
-- [ ] Edit button (owner only) opens dialog to update name/description
-- [ ] Member list displays all team members with name and avatar
-- [ ] "Add Member" button (owner only) opens invite-by-email dialog
-- [ ] Remove button (owner only) appears next to non-owner members
-- [ ] Team details and stats refresh after mutations
+- [x] If the user has no team, an onboarding card with "Create Team" and "Join a Team" options is shown
+- [x] Creating a team transitions to the team management view
+- [x] Joining a team via invite code transitions to the team management view
+- [x] Invalid invite codes show an error message
+- [x] Team name, description, member count, and retro count are shown
+- [x] Team owner sees the invite code with a copy button
+- [x] Edit button (owner only) opens dialog to update name/description
+- [x] Member list displays all team members with name and avatar
+- [x] "Add Member" button (owner only) opens invite-by-email dialog
+- [x] Remove button (owner only) appears next to non-owner members
+- [x] Team details and stats refresh after mutations
 
-### Task 4.3: Retros section with create/edit/delete [pending]
+### Task 4.3: Retros section with create/edit/delete [completed]
 **Complexity:** large
 **Files:** apps/web/src/components/RetroCard.tsx, apps/web/src/components/RetroFormDialog.tsx, apps/web/src/pages/DashboardPage.tsx
 **Depends on:** Task 4.2
@@ -252,14 +252,14 @@ Add a "Retros" section. Load the user's owned team's retros automatically on mou
 Only the retro creator or team owner can edit/delete.
 
 **Acceptance Criteria:**
-- [ ] Retros for the user's team load automatically on mount
-- [ ] Retros are shown in a card grid with status badges
-- [ ] "New Retro" button opens the create dialog
-- [ ] Status transition buttons appear on cards where valid
-- [ ] Edit/delete available for creators and team owners
-- [ ] Retros list and stats refresh after mutations
+- [x] Retros for the user's team load automatically on mount
+- [x] Retros are shown in a card grid with status badges
+- [x] "New Retro" button opens the create dialog
+- [x] Status transition buttons appear on cards where valid
+- [x] Edit/delete available for creators and team owners
+- [x] Retros list and stats refresh after mutations
 
-### Task 4.4: Action Items section with create/edit/delete [pending]
+### Task 4.4: Action Items section with create/edit/delete [completed]
 **Complexity:** large
 **Files:** apps/web/src/components/ActionItemCard.tsx, apps/web/src/components/ActionItemFormDialog.tsx, apps/web/src/pages/DashboardPage.tsx
 **Depends on:** Task 4.3
@@ -271,14 +271,14 @@ Add an "Action Items" section. When a user clicks on a retro card, the action it
 Status transitions are handled via inline controls on the card (similar to retros).
 
 **Acceptance Criteria:**
-- [ ] Clicking a retro card loads and displays its action items
-- [ ] Action items are shown in a card grid with status badges and assignee info
-- [ ] "New Action Item" button opens the create dialog (only when a retro is selected)
-- [ ] Status transition buttons appear on cards where valid
-- [ ] Edit/delete available for creators and team owners
-- [ ] Action items list and stats refresh after mutations
+- [x] Clicking a retro card loads and displays its action items
+- [x] Action items are shown in a card grid with status badges and assignee info
+- [x] "New Action Item" button opens the create dialog (only when a retro is selected)
+- [x] Status transition buttons appear on cards where valid
+- [x] Edit/delete available for creators and team owners
+- [x] Action items list and stats refresh after mutations
 
-### Task 4.5: Dashboard UI tests [pending]
+### Task 4.5: Dashboard UI tests [completed]
 **Complexity:** medium
 **Files:** apps/web/src/pages/DashboardPage.test.tsx, apps/web/src/components/StatsCard.test.tsx, apps/web/src/components/TeamSection.test.tsx
 **Depends on:** Task 4.4
@@ -294,7 +294,7 @@ Write component tests for the dashboard using Vitest and React Testing Library. 
 - TeamSection shows edit/add member/remove member controls for owner only
 
 **Acceptance Criteria:**
-- [ ] Tests cover DashboardPage happy path, loading, and error states
-- [ ] Tests cover StatsCard rendering
-- [ ] Tests cover TeamSection onboarding (no team), owner view, and member view
-- [ ] All tests pass via `npm run test:web`
+- [x] Tests cover DashboardPage happy path, loading, and error states
+- [x] Tests cover StatsCard rendering
+- [x] Tests cover TeamSection onboarding (no team), owner view, and member view
+- [x] All tests pass via `npm run test:web`
