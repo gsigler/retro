@@ -77,6 +77,50 @@ export interface ActionItem {
   updatedAt: string
 }
 
+// Board
+
+export interface RetroTemplate {
+  id: string
+  name: string
+  columns: {
+    name: string
+    description: string
+    color: string
+    position: number
+  }[]
+}
+
+export interface CardAuthor {
+  id: string
+  name: string | null
+}
+
+export interface Card {
+  id: string
+  columnId: string
+  retroId: string
+  content: string
+  position: number
+  createdAt: string
+  updatedAt: string
+  author: CardAuthor
+}
+
+export interface Column {
+  id: string
+  retroId: string
+  name: string
+  description: string | null
+  color: string
+  position: number
+  cards: Card[]
+}
+
+export interface Board {
+  retroId: string
+  columns: Column[]
+}
+
 export interface DashboardSummary {
   memberCount: number
   retroCount: number

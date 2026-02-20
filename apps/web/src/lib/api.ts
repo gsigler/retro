@@ -6,6 +6,9 @@ import type {
   RetroWithCounts,
   ActionItem,
   DashboardSummary,
+  Board,
+  Card,
+  RetroTemplate,
 } from '../types/api'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -187,6 +190,60 @@ export function updateActionItem(
 
 export function deleteActionItem(token: string, id: string) {
   return api<void>(`/action-items/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+}
+
+// Board
+
+export function fetchTemplates(token: string, retroId: string) {
+  return api<RetroTemplate[]>(`/retros/${retroId}/board/templates`, {
+    headers: authHeaders(token),
+  })
+}
+
+export function fetchBoard(token: string, retroId: string) {
+  return api<Board>(`/retros/${retroId}/board`, {
+    headers: authHeaders(token),
+  })
+}
+
+export function initBoard(token: string, retroId: string, templateId: string) {
+  return api<Board>(`/retros/${retroId}/board/init`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ templateId }),
+  })
+}
+
+export function createCard(
+  token: string,
+  retroId: string,
+  data: { columnId: string; content: string },
+) {
+  return api<Card>(`/retros/${retroId}/board/cards`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  })
+}
+
+export function moveCard(
+  token: string,
+  retroId: string,
+  cardId: string,
+  data: { columnId: string; position: number },
+) {
+  return api<Card>(`/retros/${retroId}/board/cards/${cardId}/move`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteCard(token: string, retroId: string, cardId: string) {
+  return api<void>(`/retros/${retroId}/board/cards/${cardId}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   })
