@@ -57,6 +57,16 @@ NestJS + React monorepo using npm workspaces.
 3. Run `npm run db:generate` to regenerate the Prisma client
 4. Create a corresponding NestJS service to wrap Prisma operations
 
+### Prisma in non-interactive environments (Claude Code)
+
+- The `.env` file lives at the monorepo root. `apps/api/.env` is a symlink to it so Prisma auto-loads it.
+- Prisma blocks `migrate dev` in non-TTY shells. Use `--force` and `--name` to skip interactive prompts:
+  ```
+  npx -w @retro/api prisma migrate dev --name <migration_name> --force
+  ```
+- `PRISMA_MIGRATE_SKIP_GENERATE` — env var to skip `prisma generate` after migrating
+- `PRISMA_MIGRATE_SKIP_SEED` — env var to skip seeding after migrating
+
 ### Adding a React component
 
 1. Create component in `apps/web/src/`
