@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { BoardService } from './board.service'
+import { BoardGateway } from './board.gateway'
 import { InitBoardDto } from './dto/init-board.dto'
 import { CreateCardDto } from './dto/create-card.dto'
 import { MoveCardDto } from './dto/move-card.dto'
@@ -24,7 +25,10 @@ import { RetroTemplate } from './templates'
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class BoardController {
-  constructor(private readonly boardService: BoardService) {}
+  constructor(
+    private readonly boardService: BoardService,
+    private readonly boardGateway: BoardGateway,
+  ) {}
 
   @Get('retros/:retroId/board/templates')
   getTemplates(): RetroTemplate[] {
@@ -51,7 +55,9 @@ export class BoardController {
       retroId,
       dto.templateId,
     )
-    return BoardResponse.from(retroId, columns)
+    const response = BoardResponse.from(retroId, columns)
+    this.boardGateway.emitBoardInitialized(retroId, response.columns)
+    return response
   }
 
   @Post('retros/:retroId/board/cards')
@@ -61,7 +67,9 @@ export class BoardController {
     @Body() dto: CreateCardDto,
   ): Promise<CardResponse> {
     const card = await this.boardService.createCard(req.user.id, retroId, dto)
-    return CardResponse.from(card)
+    const response = CardResponse.from(card)
+    this.boardGateway.emitCardCreated(retroId, response)
+    return response
   }
 
   @Patch('retros/:retroId/board/cards/:cardId/move')
@@ -77,16 +85,19 @@ export class BoardController {
       cardId,
       dto,
     )
-    return CardResponse.from(card)
+    const response = CardResponse.from(card)
+    this.boardGateway.emitCardMoved(retroId, response)
+    return response
   }
 
   @Delete('retros/:retroId/board/cards/:cardId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteCard(
+  async deleteCard(
     @Request() req: { user: { id: string } },
     @Param('retroId') retroId: string,
     @Param('cardId') cardId: string,
   ): Promise<void> {
-    return this.boardService.deleteCard(req.user.id, retroId, cardId)
+    await this.boardService.deleteCard(req.user.id, retroId, cardId)
+    this.boardGateway.emitCardDeleted(retroId, cardId)
   }
 }
