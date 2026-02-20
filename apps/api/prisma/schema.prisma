@@ -21,6 +21,7 @@ model User {
   createdRetros       Retro[]
   assignedActionItems ActionItem[] @relation("AssignedActionItems")
   createdActionItems  ActionItem[] @relation("CreatedActionItems")
+  cards               Card[]
 }
 
 enum TeamRole {
@@ -84,6 +85,8 @@ model Retro {
   createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   actionItems ActionItem[]
+  columns     Column[]
+  cards       Card[]
 }
 
 model ActionItem {
@@ -103,4 +106,37 @@ model ActionItem {
 
   createdById String
   createdBy   User   @relation("CreatedActionItems", fields: [createdById], references: [id], onDelete: Cascade)
+}
+
+model Column {
+  id          String   @id @default(cuid())
+  retroId     String
+  name        String
+  description String?
+  color       String
+  position    Int
+  createdAt   DateTime @default(now())
+
+  retro Retro  @relation(fields: [retroId], references: [id], onDelete: Cascade)
+  cards Card[]
+
+  @@index([retroId, position])
+}
+
+model Card {
+  id        String   @id @default(cuid())
+  columnId  String
+  retroId   String
+  authorId  String
+  content   String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  column Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  retro  Retro  @relation(fields: [retroId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([columnId, position])
+  @@index([retroId])
 }
