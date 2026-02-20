@@ -14,7 +14,7 @@ WORKDIR /app
 
 COPY apps/api/prisma ./apps/api/prisma
 COPY apps/api/prisma.config.ts ./apps/api/
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx -w @retro/api prisma generate
+RUN npx -w @retro/api prisma generate
 
 COPY apps/api/src ./apps/api/src
 COPY apps/api/tsconfig.json apps/api/tsconfig.build.json apps/api/nest-cli.json ./apps/api/
