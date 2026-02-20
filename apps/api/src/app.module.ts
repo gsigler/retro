@@ -10,6 +10,7 @@ import { TeamsModule } from './teams/teams.module'
 import { RetrosModule } from './retros/retros.module'
 import { ActionItemsModule } from './action-items/action-items.module'
 import { DashboardModule } from './dashboard/dashboard.module'
+import { BoardModule } from './board/board.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DashboardModule } from './dashboard/dashboard.module'
     RetrosModule,
     ActionItemsModule,
     DashboardModule,
+    BoardModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
