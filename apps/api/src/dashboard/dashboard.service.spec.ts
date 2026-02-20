@@ -124,7 +124,7 @@ describe('DashboardService', () => {
       })
     })
 
-    it('should query all open action items across team sorted by createdAt desc', async () => {
+    it('should query open action items across team with take 50', async () => {
       prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
       prisma.team.findUnique.mockResolvedValue(null)
       prisma.retro.count.mockResolvedValue(0)
@@ -148,6 +148,25 @@ describe('DashboardService', () => {
           },
         },
         orderBy: { createdAt: 'desc' },
+        take: 50,
+      })
+    })
+
+    it('should count open action items as not DONE', async () => {
+      prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
+      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.retro.count.mockResolvedValue(0)
+      prisma.actionItem.count.mockResolvedValueOnce(5).mockResolvedValueOnce(2)
+      prisma.retro.findMany.mockResolvedValue([])
+      prisma.actionItem.findMany.mockResolvedValue([])
+
+      await service.getSummary(userId)
+
+      expect(prisma.actionItem.count).toHaveBeenCalledWith({
+        where: {
+          retro: { teamId: { in: [teamId] } },
+          status: { not: 'DONE' },
+        },
       })
     })
   })

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,14 @@ export function TeamFormDialog({
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setName(initialValues?.name ?? '')
+      setDescription(initialValues?.description ?? '')
+      setError(null)
+    }
+  }, [open, initialValues?.name, initialValues?.description])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

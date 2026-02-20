@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,22 @@ export function ActionItemFormDialog({
   const [dueDate, setDueDate] = useState(initialValues?.dueDate ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setTitle(initialValues?.title ?? '')
+      setDescription(initialValues?.description ?? '')
+      setAssigneeId(initialValues?.assigneeId ?? '')
+      setDueDate(initialValues?.dueDate ?? '')
+      setError(null)
+    }
+  }, [
+    open,
+    initialValues?.title,
+    initialValues?.description,
+    initialValues?.assigneeId,
+    initialValues?.dueDate,
+  ])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

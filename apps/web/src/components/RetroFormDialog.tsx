@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,14 @@ export function RetroFormDialog({
   const [date, setDate] = useState(initialValues?.date ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setName(initialValues?.name ?? '')
+      setDate(initialValues?.date ?? '')
+      setError(null)
+    }
+  }, [open, initialValues?.name, initialValues?.date])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

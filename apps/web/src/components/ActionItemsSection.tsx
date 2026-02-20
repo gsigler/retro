@@ -15,8 +15,12 @@ export function ActionItemsSection({
   onMutation,
 }: ActionItemsSectionProps) {
   async function handleMarkDone(itemId: string) {
-    await updateActionItem(token, itemId, { status: 'DONE' })
-    onMutation()
+    try {
+      await updateActionItem(token, itemId, { status: 'DONE' })
+      onMutation()
+    } catch {
+      // silently fail — item will remain unchecked
+    }
   }
 
   return (

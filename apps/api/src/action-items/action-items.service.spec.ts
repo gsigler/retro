@@ -243,36 +243,12 @@ describe('ActionItemsService', () => {
       expect(result.title).toBe('Updated title')
     })
 
-    it('should allow forward status transition OPEN → IN_PROGRESS', async () => {
+    it('should allow status transition OPEN → DONE', async () => {
       prisma.actionItem.findUnique.mockResolvedValue(mockActionItem)
       prisma.retro.findUnique.mockResolvedValue(mockRetro)
       prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
       prisma.actionItem.update.mockResolvedValue({
         ...mockActionItem,
-        status: 'IN_PROGRESS',
-      })
-
-      await service.update(userId, actionItemId, {
-        status: 'IN_PROGRESS' as const,
-      })
-
-      expect(prisma.actionItem.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: { status: 'IN_PROGRESS' },
-        }),
-      )
-    })
-
-    it('should allow forward status transition IN_PROGRESS → DONE', async () => {
-      const inProgressItem = {
-        ...mockActionItem,
-        status: 'IN_PROGRESS' as const,
-      }
-      prisma.actionItem.findUnique.mockResolvedValue(inProgressItem)
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.actionItem.update.mockResolvedValue({
-        ...inProgressItem,
         status: 'DONE',
       })
 
@@ -280,10 +256,14 @@ describe('ActionItemsService', () => {
         status: 'DONE' as const,
       })
 
-      expect(prisma.actionItem.update).toHaveBeenCalled()
+      expect(prisma.actionItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: 'DONE' },
+        }),
+      )
     })
 
-    it('should throw BadRequestException for backward status transition DONE → IN_PROGRESS', async () => {
+    it('should throw BadRequestException for transition DONE → OPEN', async () => {
       const doneItem = { ...mockActionItem, status: 'DONE' as const }
       prisma.actionItem.findUnique.mockResolvedValue(doneItem)
       prisma.retro.findUnique.mockResolvedValue(mockRetro)
@@ -291,7 +271,7 @@ describe('ActionItemsService', () => {
 
       await expect(
         service.update(userId, actionItemId, {
-          status: 'IN_PROGRESS' as const,
+          status: 'OPEN' as const,
         }),
       ).rejects.toThrow(BadRequestException)
     })

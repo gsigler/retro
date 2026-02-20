@@ -23,7 +23,7 @@ export class DashboardService {
       this.prisma.actionItem.count({
         where: {
           retro: { teamId: { in: teamIds } },
-          status: 'OPEN',
+          status: { not: 'DONE' },
         },
       }),
       this.prisma.actionItem.count({
@@ -47,6 +47,7 @@ export class DashboardService {
           createdBy: { select: userSelect },
         },
         orderBy: { createdAt: 'desc' },
+        take: 50,
       }),
     ])
 

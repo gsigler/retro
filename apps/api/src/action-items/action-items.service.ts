@@ -11,10 +11,10 @@ import { UpdateActionItemDto } from './dto/update-action-item.dto'
 
 const userSelect = { id: true, name: true, avatarUrl: true }
 
-const STATUS_ORDER: Record<ActionItemStatus, number> = {
-  OPEN: 0,
-  IN_PROGRESS: 1,
-  DONE: 2,
+const VALID_TRANSITIONS: Record<ActionItemStatus, ActionItemStatus[]> = {
+  OPEN: [ActionItemStatus.DONE],
+  IN_PROGRESS: [ActionItemStatus.DONE],
+  DONE: [],
 }
 
 @Injectable()
@@ -155,7 +155,7 @@ export class ActionItemsService {
     current: ActionItemStatus,
     next: ActionItemStatus,
   ) {
-    if (STATUS_ORDER[next] <= STATUS_ORDER[current]) {
+    if (!VALID_TRANSITIONS[current].includes(next)) {
       throw new BadRequestException(
         `Cannot transition from ${current} to ${next}`,
       )
