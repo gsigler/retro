@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { DashboardController } from './dashboard.controller'
-import { DashboardService } from './dashboard.service'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { DashboardSummaryResponse } from './dto/dashboard-summary-response.dto'
+import { DashboardController } from './dashboard.controller.js'
+import { DashboardService } from './dashboard.service.js'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
+import { DashboardSummaryResponse } from './dto/dashboard-summary-response.dto.js'
 
 describe('DashboardController', () => {
   let controller: DashboardController

@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { ActionItemsController } from './action-items.controller'
-import { ActionItemsService } from './action-items.service'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { ActionItemResponse } from './dto/action-item-response.dto'
+import { ActionItemsController } from './action-items.controller.js'
+import { ActionItemsService } from './action-items.service.js'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
+import { ActionItemResponse } from './dto/action-item-response.dto.js'
 
 describe('ActionItemsController', () => {
   let controller: ActionItemsController

@@ -4,26 +4,28 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common'
-import { BoardService } from './board.service'
-import { PrismaService } from '../prisma/prisma.service'
-import { RETRO_TEMPLATES } from './templates'
+import { BoardService } from './board.service.js'
+import { PrismaService } from '../prisma/prisma.service.js'
+import { RETRO_TEMPLATES } from './templates.js'
 
 describe('BoardService', () => {
   let service: BoardService
   let prisma: {
-    retro: { findUnique: jest.Mock }
-    teamMember: { findUnique: jest.Mock }
-    column: {
-      findMany: jest.Mock
-      findFirst: jest.Mock
-      createMany: jest.Mock
-    }
-    card: {
-      findFirst: jest.Mock
-      create: jest.Mock
-      update: jest.Mock
-      delete: jest.Mock
-      aggregate: jest.Mock
+    client: {
+      retro: { findUnique: jest.Mock }
+      teamMember: { findUnique: jest.Mock }
+      column: {
+        findMany: jest.Mock
+        findFirst: jest.Mock
+        createMany: jest.Mock
+      }
+      card: {
+        findFirst: jest.Mock
+        create: jest.Mock
+        update: jest.Mock
+        delete: jest.Mock
+        aggregate: jest.Mock
+      }
     }
   }
 
@@ -62,19 +64,21 @@ describe('BoardService', () => {
 
   beforeEach(async () => {
     prisma = {
-      retro: { findUnique: jest.fn() },
-      teamMember: { findUnique: jest.fn() },
-      column: {
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        createMany: jest.fn(),
-      },
-      card: {
-        findFirst: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        aggregate: jest.fn(),
+      client: {
+        retro: { findUnique: jest.fn() },
+        teamMember: { findUnique: jest.fn() },
+        column: {
+          findMany: jest.fn(),
+          findFirst: jest.fn(),
+          createMany: jest.fn(),
+        },
+        card: {
+          findFirst: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+          aggregate: jest.fn(),
+        },
       },
     }
 
@@ -97,13 +101,13 @@ describe('BoardService', () => {
 
   describe('getBoard', () => {
     it('should return columns with cards for a retro', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.column.findMany.mockResolvedValue([mockColumn])
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findMany.mockResolvedValue([mockColumn])
 
       const result = await service.getBoard(userId, retroId)
 
-      expect(prisma.column.findMany).toHaveBeenCalledWith({
+      expect(prisma.client.column.findMany).toHaveBeenCalledWith({
         where: { retroId },
         orderBy: { position: 'asc' },
         include: {
@@ -117,7 +121,7 @@ describe('BoardService', () => {
     })
 
     it('should throw NotFoundException when retro does not exist', async () => {
-      prisma.retro.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(null)
 
       await expect(service.getBoard(userId, 'nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -125,8 +129,8 @@ describe('BoardService', () => {
     })
 
     it('should throw ForbiddenException when user is not a team member', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(null)
 
       await expect(service.getBoard(otherUserId, retroId)).rejects.toThrow(
         ForbiddenException,
@@ -136,11 +140,11 @@ describe('BoardService', () => {
 
   describe('initBoard', () => {
     it('should create columns from a template', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.column.findFirst.mockResolvedValue(null)
-      prisma.column.createMany.mockResolvedValue({ count: 3 })
-      prisma.column.findMany.mockResolvedValue([mockColumn])
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findFirst.mockResolvedValue(null)
+      prisma.client.column.createMany.mockResolvedValue({ count: 3 })
+      prisma.client.column.findMany.mockResolvedValue([mockColumn])
 
       const result = await service.initBoard(
         userId,
@@ -148,7 +152,7 @@ describe('BoardService', () => {
         'start-stop-continue',
       )
 
-      expect(prisma.column.createMany).toHaveBeenCalledWith({
+      expect(prisma.client.column.createMany).toHaveBeenCalledWith({
         data: expect.arrayContaining([
           expect.objectContaining({ retroId, name: 'Start', position: 0 }),
         ]),
@@ -157,8 +161,8 @@ describe('BoardService', () => {
     })
 
     it('should throw BadRequestException for unknown template', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
 
       await expect(
         service.initBoard(userId, retroId, 'nonexistent'),
@@ -166,9 +170,9 @@ describe('BoardService', () => {
     })
 
     it('should throw BadRequestException if board is already initialized', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.column.findFirst.mockResolvedValue(mockColumn)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findFirst.mockResolvedValue(mockColumn)
 
       await expect(
         service.initBoard(userId, retroId, 'start-stop-continue'),
@@ -178,18 +182,18 @@ describe('BoardService', () => {
 
   describe('createCard', () => {
     it('should create a card in the specified column', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.column.findFirst.mockResolvedValue(mockColumn)
-      prisma.card.aggregate.mockResolvedValue({ _max: { position: 2 } })
-      prisma.card.create.mockResolvedValue(mockCard)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findFirst.mockResolvedValue(mockColumn)
+      prisma.client.card.aggregate.mockResolvedValue({ _max: { position: 2 } })
+      prisma.client.card.create.mockResolvedValue(mockCard)
 
       const result = await service.createCard(userId, retroId, {
         columnId,
         content: 'Test card content',
       })
 
-      expect(prisma.card.create).toHaveBeenCalledWith({
+      expect(prisma.client.card.create).toHaveBeenCalledWith({
         data: {
           columnId,
           retroId,
@@ -203,18 +207,20 @@ describe('BoardService', () => {
     })
 
     it('should set position to 0 when column has no cards', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.column.findFirst.mockResolvedValue(mockColumn)
-      prisma.card.aggregate.mockResolvedValue({ _max: { position: null } })
-      prisma.card.create.mockResolvedValue(mockCard)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findFirst.mockResolvedValue(mockColumn)
+      prisma.client.card.aggregate.mockResolvedValue({
+        _max: { position: null },
+      })
+      prisma.client.card.create.mockResolvedValue(mockCard)
 
       await service.createCard(userId, retroId, {
         columnId,
         content: 'First card',
       })
 
-      expect(prisma.card.create).toHaveBeenCalledWith(
+      expect(prisma.client.card.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ position: 0 }),
         }),
@@ -222,9 +228,9 @@ describe('BoardService', () => {
     })
 
     it('should throw NotFoundException when column is not in the retro', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.column.findFirst.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findFirst.mockResolvedValue(null)
 
       await expect(
         service.createCard(userId, retroId, {
@@ -237,11 +243,11 @@ describe('BoardService', () => {
 
   describe('moveCard', () => {
     it('should move a card to a new column and position', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.card.findFirst.mockResolvedValue(mockCard)
-      prisma.column.findFirst.mockResolvedValue(mockColumn)
-      prisma.card.update.mockResolvedValue({
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(mockCard)
+      prisma.client.column.findFirst.mockResolvedValue(mockColumn)
+      prisma.client.card.update.mockResolvedValue({
         ...mockCard,
         columnId: 'column-2',
         position: 1,
@@ -252,7 +258,7 @@ describe('BoardService', () => {
         position: 1,
       })
 
-      expect(prisma.card.update).toHaveBeenCalledWith({
+      expect(prisma.client.card.update).toHaveBeenCalledWith({
         where: { id: cardId },
         data: { columnId: 'column-2', position: 1 },
         include: { author: { select: { id: true, name: true } } },
@@ -261,9 +267,9 @@ describe('BoardService', () => {
     })
 
     it('should throw NotFoundException when card does not exist', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.card.findFirst.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(null)
 
       await expect(
         service.moveCard(userId, retroId, 'nonexistent', {
@@ -274,10 +280,10 @@ describe('BoardService', () => {
     })
 
     it('should throw NotFoundException when target column is not in the retro', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.card.findFirst.mockResolvedValue(mockCard)
-      prisma.column.findFirst.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(mockCard)
+      prisma.client.column.findFirst.mockResolvedValue(null)
 
       await expect(
         service.moveCard(userId, retroId, cardId, {
@@ -290,22 +296,22 @@ describe('BoardService', () => {
 
   describe('deleteCard', () => {
     it('should delete a card', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.card.findFirst.mockResolvedValue(mockCard)
-      prisma.card.delete.mockResolvedValue(mockCard)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(mockCard)
+      prisma.client.card.delete.mockResolvedValue(mockCard)
 
       await service.deleteCard(userId, retroId, cardId)
 
-      expect(prisma.card.delete).toHaveBeenCalledWith({
+      expect(prisma.client.card.delete).toHaveBeenCalledWith({
         where: { id: cardId },
       })
     })
 
     it('should throw NotFoundException when card does not exist', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.card.findFirst.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(null)
 
       await expect(
         service.deleteCard(userId, retroId, 'nonexistent'),

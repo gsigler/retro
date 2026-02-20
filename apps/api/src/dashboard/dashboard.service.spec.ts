@@ -1,14 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { DashboardService } from './dashboard.service'
-import { PrismaService } from '../prisma/prisma.service'
+import { DashboardService } from './dashboard.service.js'
+import { PrismaService } from '../prisma/prisma.service.js'
 
 describe('DashboardService', () => {
   let service: DashboardService
   let prisma: {
-    team: { findUnique: jest.Mock }
-    teamMember: { findMany: jest.Mock }
-    retro: { count: jest.Mock; findMany: jest.Mock }
-    actionItem: { count: jest.Mock; findMany: jest.Mock }
+    client: {
+      team: { findUnique: jest.Mock }
+      teamMember: { findMany: jest.Mock }
+      retro: { count: jest.Mock; findMany: jest.Mock }
+      actionItem: { count: jest.Mock; findMany: jest.Mock }
+    }
   }
 
   const userId = 'user-1'
@@ -16,10 +18,12 @@ describe('DashboardService', () => {
 
   beforeEach(async () => {
     prisma = {
-      team: { findUnique: jest.fn() },
-      teamMember: { findMany: jest.fn() },
-      retro: { count: jest.fn(), findMany: jest.fn() },
-      actionItem: { count: jest.fn(), findMany: jest.fn() },
+      client: {
+        team: { findUnique: jest.fn() },
+        teamMember: { findMany: jest.fn() },
+        retro: { count: jest.fn(), findMany: jest.fn() },
+        actionItem: { count: jest.fn(), findMany: jest.fn() },
+      },
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -34,17 +38,17 @@ describe('DashboardService', () => {
 
   describe('getSummary', () => {
     it('should return full summary when user owns a team', async () => {
-      prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
-      prisma.team.findUnique.mockResolvedValue({
+      prisma.client.teamMember.findMany.mockResolvedValue([{ teamId }])
+      prisma.client.team.findUnique.mockResolvedValue({
         id: teamId,
         ownerId: userId,
         _count: { members: 5 },
       })
-      prisma.retro.count.mockResolvedValue(10)
-      prisma.actionItem.count
+      prisma.client.retro.count.mockResolvedValue(10)
+      prisma.client.actionItem.count
         .mockResolvedValueOnce(3) // open
         .mockResolvedValueOnce(7) // completed
-      prisma.retro.findMany.mockResolvedValue([
+      prisma.client.retro.findMany.mockResolvedValue([
         {
           id: 'retro-1',
           name: 'Sprint 5',
@@ -54,7 +58,7 @@ describe('DashboardService', () => {
           createdAt: new Date(),
         },
       ])
-      prisma.actionItem.findMany.mockResolvedValue([
+      prisma.client.actionItem.findMany.mockResolvedValue([
         {
           id: 'item-1',
           title: 'Fix bug',
@@ -80,12 +84,12 @@ describe('DashboardService', () => {
     })
 
     it('should return memberCount 0 when user does not own a team', async () => {
-      prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
-      prisma.team.findUnique.mockResolvedValue(null)
-      prisma.retro.count.mockResolvedValue(0)
-      prisma.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
-      prisma.retro.findMany.mockResolvedValue([])
-      prisma.actionItem.findMany.mockResolvedValue([])
+      prisma.client.teamMember.findMany.mockResolvedValue([{ teamId }])
+      prisma.client.team.findUnique.mockResolvedValue(null)
+      prisma.client.retro.count.mockResolvedValue(0)
+      prisma.client.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
+      prisma.client.retro.findMany.mockResolvedValue([])
+      prisma.client.actionItem.findMany.mockResolvedValue([])
 
       const result = await service.getSummary(userId)
 
@@ -93,12 +97,12 @@ describe('DashboardService', () => {
     })
 
     it('should return empty lists when user has no teams', async () => {
-      prisma.teamMember.findMany.mockResolvedValue([])
-      prisma.team.findUnique.mockResolvedValue(null)
-      prisma.retro.count.mockResolvedValue(0)
-      prisma.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
-      prisma.retro.findMany.mockResolvedValue([])
-      prisma.actionItem.findMany.mockResolvedValue([])
+      prisma.client.teamMember.findMany.mockResolvedValue([])
+      prisma.client.team.findUnique.mockResolvedValue(null)
+      prisma.client.retro.count.mockResolvedValue(0)
+      prisma.client.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
+      prisma.client.retro.findMany.mockResolvedValue([])
+      prisma.client.actionItem.findMany.mockResolvedValue([])
 
       const result = await service.getSummary(userId)
 
@@ -108,16 +112,16 @@ describe('DashboardService', () => {
     })
 
     it('should query upcoming retros sorted by date ascending with take 5', async () => {
-      prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
-      prisma.team.findUnique.mockResolvedValue(null)
-      prisma.retro.count.mockResolvedValue(0)
-      prisma.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
-      prisma.retro.findMany.mockResolvedValue([])
-      prisma.actionItem.findMany.mockResolvedValue([])
+      prisma.client.teamMember.findMany.mockResolvedValue([{ teamId }])
+      prisma.client.team.findUnique.mockResolvedValue(null)
+      prisma.client.retro.count.mockResolvedValue(0)
+      prisma.client.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
+      prisma.client.retro.findMany.mockResolvedValue([])
+      prisma.client.actionItem.findMany.mockResolvedValue([])
 
       await service.getSummary(userId)
 
-      expect(prisma.retro.findMany).toHaveBeenCalledWith({
+      expect(prisma.client.retro.findMany).toHaveBeenCalledWith({
         where: { teamId: { in: [teamId] }, status: 'SCHEDULED' },
         orderBy: { date: 'asc' },
         take: 5,
@@ -125,16 +129,16 @@ describe('DashboardService', () => {
     })
 
     it('should query open action items across team with take 50', async () => {
-      prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
-      prisma.team.findUnique.mockResolvedValue(null)
-      prisma.retro.count.mockResolvedValue(0)
-      prisma.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
-      prisma.retro.findMany.mockResolvedValue([])
-      prisma.actionItem.findMany.mockResolvedValue([])
+      prisma.client.teamMember.findMany.mockResolvedValue([{ teamId }])
+      prisma.client.team.findUnique.mockResolvedValue(null)
+      prisma.client.retro.count.mockResolvedValue(0)
+      prisma.client.actionItem.count.mockResolvedValue(0).mockResolvedValue(0)
+      prisma.client.retro.findMany.mockResolvedValue([])
+      prisma.client.actionItem.findMany.mockResolvedValue([])
 
       await service.getSummary(userId)
 
-      expect(prisma.actionItem.findMany).toHaveBeenCalledWith({
+      expect(prisma.client.actionItem.findMany).toHaveBeenCalledWith({
         where: {
           retro: { teamId: { in: [teamId] } },
           status: { not: 'DONE' },
@@ -153,16 +157,18 @@ describe('DashboardService', () => {
     })
 
     it('should count open action items as not DONE', async () => {
-      prisma.teamMember.findMany.mockResolvedValue([{ teamId }])
-      prisma.team.findUnique.mockResolvedValue(null)
-      prisma.retro.count.mockResolvedValue(0)
-      prisma.actionItem.count.mockResolvedValueOnce(5).mockResolvedValueOnce(2)
-      prisma.retro.findMany.mockResolvedValue([])
-      prisma.actionItem.findMany.mockResolvedValue([])
+      prisma.client.teamMember.findMany.mockResolvedValue([{ teamId }])
+      prisma.client.team.findUnique.mockResolvedValue(null)
+      prisma.client.retro.count.mockResolvedValue(0)
+      prisma.client.actionItem.count
+        .mockResolvedValueOnce(5)
+        .mockResolvedValueOnce(2)
+      prisma.client.retro.findMany.mockResolvedValue([])
+      prisma.client.actionItem.findMany.mockResolvedValue([])
 
       await service.getSummary(userId)
 
-      expect(prisma.actionItem.count).toHaveBeenCalledWith({
+      expect(prisma.client.actionItem.count).toHaveBeenCalledWith({
         where: {
           retro: { teamId: { in: [teamId] } },
           status: { not: 'DONE' },

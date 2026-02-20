@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { TeamsController } from './teams.controller'
-import { TeamsService } from './teams.service'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { TeamsController } from './teams.controller.js'
+import { TeamsService } from './teams.service.js'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import {
   TeamResponse,
   TeamWithCountsResponse,
   TeamDetailResponse,
   TeamMemberResponse,
-} from './dto/team-response.dto'
+} from './dto/team-response.dto.js'
 
 describe('TeamsController', () => {
   let controller: TeamsController

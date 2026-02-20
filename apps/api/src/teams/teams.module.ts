@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common'
-import { TeamsController } from './teams.controller'
-import { TeamsService, NANOID } from './teams.service'
-import { PrismaModule } from '../prisma/prisma.module'
+import { nanoid } from 'nanoid'
+import { TeamsController } from './teams.controller.js'
+import { TeamsService, NANOID } from './teams.service.js'
+import { PrismaModule } from '../prisma/prisma.module.js'
 
 @Module({
   imports: [PrismaModule],
@@ -10,10 +11,7 @@ import { PrismaModule } from '../prisma/prisma.module'
     TeamsService,
     {
       provide: NANOID,
-      useFactory: async () => {
-        const { nanoid } = await import('nanoid')
-        return nanoid
-      },
+      useValue: nanoid,
     },
   ],
   exports: [TeamsService],

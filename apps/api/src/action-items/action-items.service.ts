@@ -4,10 +4,18 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common'
-import { ActionItemStatus } from '@prisma/client'
-import { PrismaService } from '../prisma/prisma.service'
-import { CreateActionItemDto } from './dto/create-action-item.dto'
-import { UpdateActionItemDto } from './dto/update-action-item.dto'
+import { PrismaService } from '../prisma/prisma.service.js'
+import { CreateActionItemDto } from './dto/create-action-item.dto.js'
+import { UpdateActionItemDto } from './dto/update-action-item.dto.js'
+
+export const ActionItemStatus = {
+  OPEN: 'OPEN',
+  IN_PROGRESS: 'IN_PROGRESS',
+  DONE: 'DONE',
+} as const
+
+export type ActionItemStatus =
+  (typeof ActionItemStatus)[keyof typeof ActionItemStatus]
 
 const userSelect = { id: true, name: true, avatarUrl: true }
 
@@ -25,7 +33,7 @@ export class ActionItemsService {
     const retro = await this.findRetroOrThrow(retroId)
     await this.assertTeamMember(userId, retro.teamId)
 
-    return this.prisma.actionItem.create({
+    return this.prisma.client.actionItem.create({
       data: {
         title: dto.title,
         description: dto.description,
@@ -45,7 +53,7 @@ export class ActionItemsService {
     const retro = await this.findRetroOrThrow(retroId)
     await this.assertTeamMember(userId, retro.teamId)
 
-    return this.prisma.actionItem.findMany({
+    return this.prisma.client.actionItem.findMany({
       where: { retroId },
       include: {
         assignee: { select: userSelect },
@@ -72,7 +80,7 @@ export class ActionItemsService {
       this.assertValidStatusTransition(item.status, dto.status)
     }
 
-    return this.prisma.actionItem.update({
+    return this.prisma.client.actionItem.update({
       where: { id: actionItemId },
       data: {
         ...(dto.title !== undefined && { title: dto.title }),
@@ -103,11 +111,11 @@ export class ActionItemsService {
       )
     }
 
-    await this.prisma.actionItem.delete({ where: { id: actionItemId } })
+    await this.prisma.client.actionItem.delete({ where: { id: actionItemId } })
   }
 
   private async findActionItemOrThrow(actionItemId: string) {
-    const item = await this.prisma.actionItem.findUnique({
+    const item = await this.prisma.client.actionItem.findUnique({
       where: { id: actionItemId },
       include: {
         assignee: { select: userSelect },
@@ -123,7 +131,7 @@ export class ActionItemsService {
   }
 
   private async findRetroOrThrow(retroId: string) {
-    const retro = await this.prisma.retro.findUnique({
+    const retro = await this.prisma.client.retro.findUnique({
       where: { id: retroId },
     })
 
@@ -135,7 +143,7 @@ export class ActionItemsService {
   }
 
   private async assertTeamMember(userId: string, teamId: string) {
-    const membership = await this.prisma.teamMember.findUnique({
+    const membership = await this.prisma.client.teamMember.findUnique({
       where: { teamId_userId: { teamId, userId } },
     })
 
@@ -145,7 +153,7 @@ export class ActionItemsService {
   }
 
   private async isTeamOwner(userId: string, teamId: string): Promise<boolean> {
-    const team = await this.prisma.team.findUnique({
+    const team = await this.prisma.client.team.findUnique({
       where: { id: teamId },
     })
     return team?.ownerId === userId

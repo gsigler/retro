@@ -5,10 +5,9 @@ import {
   ConflictException,
   Inject,
 } from '@nestjs/common'
-import { Prisma } from '@prisma/client'
-import { PrismaService } from '../prisma/prisma.service'
-import { CreateTeamDto } from './dto/create-team.dto'
-import { UpdateTeamDto } from './dto/update-team.dto'
+import { PrismaService } from '../prisma/prisma.service.js'
+import { CreateTeamDto } from './dto/create-team.dto.js'
+import { UpdateTeamDto } from './dto/update-team.dto.js'
 
 export const NANOID = 'NANOID'
 export type NanoidFn = (size?: number) => string
@@ -22,7 +21,7 @@ export class TeamsService {
 
   async create(userId: string, dto: CreateTeamDto) {
     try {
-      return await this.prisma.team.create({
+      return await this.prisma.client.team.create({
         data: {
           name: dto.name,
           description: dto.description,
@@ -44,8 +43,9 @@ export class TeamsService {
       })
     } catch (error) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
+        error instanceof Error &&
+        'code' in error &&
+        (error as any).code === 'P2002'
       ) {
         throw new ConflictException('You already own a team')
       }
@@ -54,7 +54,7 @@ export class TeamsService {
   }
 
   async joinByInviteCode(userId: string, inviteCode: string) {
-    const team = await this.prisma.team.findUnique({
+    const team = await this.prisma.client.team.findUnique({
       where: { inviteCode },
     })
 
@@ -63,7 +63,7 @@ export class TeamsService {
     }
 
     try {
-      return await this.prisma.teamMember.create({
+      return await this.prisma.client.teamMember.create({
         data: {
           teamId: team.id,
           userId,
@@ -77,8 +77,9 @@ export class TeamsService {
       })
     } catch (error) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
+        error instanceof Error &&
+        'code' in error &&
+        (error as any).code === 'P2002'
       ) {
         throw new ConflictException('You are already a member of this team')
       }
@@ -87,7 +88,7 @@ export class TeamsService {
   }
 
   async findAll(userId: string) {
-    return this.prisma.team.findMany({
+    return this.prisma.client.team.findMany({
       where: { members: { some: { userId } } },
       include: {
         _count: { select: { members: true, retros: true } },
@@ -97,7 +98,7 @@ export class TeamsService {
   }
 
   async findOne(userId: string, teamId: string) {
-    const team = await this.prisma.team.findUnique({
+    const team = await this.prisma.client.team.findUnique({
       where: { id: teamId },
       include: {
         members: {
@@ -124,7 +125,7 @@ export class TeamsService {
     const team = await this.findTeamOrThrow(teamId)
     this.assertOwner(userId, team.ownerId)
 
-    return this.prisma.team.update({
+    return this.prisma.client.team.update({
       where: { id: teamId },
       data: dto,
     })
@@ -134,14 +135,14 @@ export class TeamsService {
     const team = await this.findTeamOrThrow(teamId)
     this.assertOwner(userId, team.ownerId)
 
-    await this.prisma.team.delete({ where: { id: teamId } })
+    await this.prisma.client.team.delete({ where: { id: teamId } })
   }
 
   async addMember(userId: string, teamId: string, email: string) {
     const team = await this.findTeamOrThrow(teamId)
     this.assertOwner(userId, team.ownerId)
 
-    const userToAdd = await this.prisma.user.findUnique({
+    const userToAdd = await this.prisma.client.user.findUnique({
       where: { email },
     })
 
@@ -150,7 +151,7 @@ export class TeamsService {
     }
 
     try {
-      return await this.prisma.teamMember.create({
+      return await this.prisma.client.teamMember.create({
         data: {
           teamId,
           userId: userToAdd.id,
@@ -164,8 +165,9 @@ export class TeamsService {
       })
     } catch (error) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
+        error instanceof Error &&
+        'code' in error &&
+        (error as any).code === 'P2002'
       ) {
         throw new ConflictException('User is already a member of this team')
       }
@@ -177,7 +179,7 @@ export class TeamsService {
     const team = await this.findTeamOrThrow(teamId)
     this.assertOwner(userId, team.ownerId)
 
-    const membership = await this.prisma.teamMember.findUnique({
+    const membership = await this.prisma.client.teamMember.findUnique({
       where: { teamId_userId: { teamId, userId: memberUserId } },
     })
 
@@ -189,13 +191,13 @@ export class TeamsService {
       throw new ForbiddenException('Cannot remove the team owner')
     }
 
-    await this.prisma.teamMember.delete({
+    await this.prisma.client.teamMember.delete({
       where: { id: membership.id },
     })
   }
 
   private async findTeamOrThrow(teamId: string) {
-    const team = await this.prisma.team.findUnique({
+    const team = await this.prisma.client.team.findUnique({
       where: { id: teamId },
     })
 

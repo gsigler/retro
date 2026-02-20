@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { PrismaService } from '../prisma/prisma.service'
+import { PrismaService } from '../prisma/prisma.service.js'
 
 interface GoogleProfile {
   googleId: string
@@ -19,7 +19,7 @@ export class AuthService {
   async findOrCreateGoogleUser(
     profile: GoogleProfile,
   ): Promise<{ accessToken: string }> {
-    const user = await this.prisma.user.upsert({
+    const user = await this.prisma.client.user.upsert({
       where: { email: profile.email },
       update: {
         googleId: profile.googleId,
@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUniqueOrThrow({
+    const user = await this.prisma.client.user.findUniqueOrThrow({
       where: { id: userId },
       select: {
         id: true,

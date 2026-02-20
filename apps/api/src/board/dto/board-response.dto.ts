@@ -1,4 +1,4 @@
-import { ColumnResponse } from './column-response.dto'
+import { ColumnResponse } from './column-response.dto.js'
 
 export class BoardResponse {
   constructor(

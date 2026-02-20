@@ -4,10 +4,17 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common'
-import { RetroStatus } from '@prisma/client'
-import { PrismaService } from '../prisma/prisma.service'
-import { CreateRetroDto } from './dto/create-retro.dto'
-import { UpdateRetroDto } from './dto/update-retro.dto'
+import { PrismaService } from '../prisma/prisma.service.js'
+import { CreateRetroDto } from './dto/create-retro.dto.js'
+import { UpdateRetroDto } from './dto/update-retro.dto.js'
+
+export const RetroStatus = {
+  SCHEDULED: 'SCHEDULED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+} as const
+
+export type RetroStatus = (typeof RetroStatus)[keyof typeof RetroStatus]
 
 const STATUS_ORDER: Record<RetroStatus, number> = {
   SCHEDULED: 0,
@@ -22,7 +29,7 @@ export class RetrosService {
   async create(userId: string, teamId: string, dto: CreateRetroDto) {
     await this.assertTeamMember(userId, teamId)
 
-    return this.prisma.retro.create({
+    return this.prisma.client.retro.create({
       data: {
         name: dto.name,
         date: new Date(dto.date),
@@ -37,7 +44,7 @@ export class RetrosService {
   async findAll(userId: string, teamId: string) {
     await this.assertTeamMember(userId, teamId)
 
-    return this.prisma.retro.findMany({
+    return this.prisma.client.retro.findMany({
       where: { teamId },
       include: {
         createdBy: { select: { id: true, email: true, name: true } },
@@ -62,7 +69,7 @@ export class RetrosService {
       this.assertValidStatusTransition(retro.status, dto.status)
     }
 
-    return this.prisma.retro.update({
+    return this.prisma.client.retro.update({
       where: { id: retroId },
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
@@ -80,11 +87,11 @@ export class RetrosService {
     const retro = await this.findRetroOrThrow(retroId)
     await this.assertTeamOwner(userId, retro.teamId)
 
-    await this.prisma.retro.delete({ where: { id: retroId } })
+    await this.prisma.client.retro.delete({ where: { id: retroId } })
   }
 
   private async findRetroOrThrow(retroId: string) {
-    const retro = await this.prisma.retro.findUnique({
+    const retro = await this.prisma.client.retro.findUnique({
       where: { id: retroId },
       include: {
         createdBy: { select: { id: true, email: true, name: true } },
@@ -100,7 +107,7 @@ export class RetrosService {
   }
 
   private async assertTeamMember(userId: string, teamId: string) {
-    const membership = await this.prisma.teamMember.findUnique({
+    const membership = await this.prisma.client.teamMember.findUnique({
       where: { teamId_userId: { teamId, userId } },
     })
 
@@ -110,7 +117,7 @@ export class RetrosService {
   }
 
   private async assertTeamOwner(userId: string, teamId: string) {
-    const team = await this.prisma.team.findUnique({
+    const team = await this.prisma.client.team.findUnique({
       where: { id: teamId },
     })
 

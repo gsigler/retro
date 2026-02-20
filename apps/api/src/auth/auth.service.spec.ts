@@ -1,18 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { JwtService } from '@nestjs/jwt'
-import { AuthService } from './auth.service'
-import { PrismaService } from '../prisma/prisma.service'
+import { AuthService } from './auth.service.js'
+import { PrismaService } from '../prisma/prisma.service.js'
 
 describe('AuthService', () => {
   let service: AuthService
   let prisma: {
-    user: { upsert: jest.Mock; findUniqueOrThrow: jest.Mock }
+    client: { user: { upsert: jest.Mock; findUniqueOrThrow: jest.Mock } }
   }
   let jwtService: { sign: jest.Mock }
 
   beforeEach(async () => {
     prisma = {
-      user: { upsert: jest.fn(), findUniqueOrThrow: jest.fn() },
+      client: {
+        user: { upsert: jest.fn(), findUniqueOrThrow: jest.fn() },
+      },
     }
     jwtService = { sign: jest.fn() }
 
@@ -46,12 +48,12 @@ describe('AuthService', () => {
     }
 
     it('should upsert user by email and return JWT', async () => {
-      prisma.user.upsert.mockResolvedValue(mockUser)
+      prisma.client.user.upsert.mockResolvedValue(mockUser)
       jwtService.sign.mockReturnValue('jwt-token')
 
       const result = await service.findOrCreateGoogleUser(googleProfile)
 
-      expect(prisma.user.upsert).toHaveBeenCalledWith({
+      expect(prisma.client.user.upsert).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
         update: {
           googleId: 'google-123',
@@ -82,11 +84,11 @@ describe('AuthService', () => {
         avatarUrl: null,
         createdAt: new Date(),
       }
-      prisma.user.findUniqueOrThrow.mockResolvedValue(mockUser)
+      prisma.client.user.findUniqueOrThrow.mockResolvedValue(mockUser)
 
       const result = await service.getProfile('user-1')
 
-      expect(prisma.user.findUniqueOrThrow).toHaveBeenCalledWith({
+      expect(prisma.client.user.findUniqueOrThrow).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         select: {
           id: true,
