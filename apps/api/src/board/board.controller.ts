@@ -19,7 +19,6 @@ import { CreateCardDto } from './dto/create-card.dto'
 import { MoveCardDto } from './dto/move-card.dto'
 import { BoardResponse } from './dto/board-response.dto'
 import { CardResponse } from './dto/card-response.dto'
-import { ColumnResponse } from './dto/column-response.dto'
 import { RetroTemplate } from './templates'
 
 @Controller()
