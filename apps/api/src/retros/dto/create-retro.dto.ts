@@ -5,7 +5,7 @@ import {
   IsDateString,
   MaxLength,
 } from 'class-validator'
-import { RetroStatus } from '@prisma/client'
+import { RetroStatus } from '../retros.service.js'
 
 export class CreateRetroDto {
   @IsString()

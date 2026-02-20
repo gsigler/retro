@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { BoardController } from './board.controller'
-import { BoardService } from './board.service'
-import { BoardGateway } from './board.gateway'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { BoardResponse } from './dto/board-response.dto'
-import { CardResponse } from './dto/card-response.dto'
-import { RETRO_TEMPLATES } from './templates'
+import { BoardController } from './board.controller.js'
+import { BoardService } from './board.service.js'
+import { BoardGateway } from './board.gateway.js'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
+import { BoardResponse } from './dto/board-response.dto.js'
+import { CardResponse } from './dto/card-response.dto.js'
+import { RETRO_TEMPLATES } from './templates.js'
 
 describe('BoardController', () => {
   let controller: BoardController

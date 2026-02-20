@@ -4,10 +4,10 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common'
-import { PrismaService } from '../prisma/prisma.service'
-import { RETRO_TEMPLATES } from './templates'
-import { CreateCardDto } from './dto/create-card.dto'
-import { MoveCardDto } from './dto/move-card.dto'
+import { PrismaService } from '../prisma/prisma.service.js'
+import { RETRO_TEMPLATES } from './templates.js'
+import { CreateCardDto } from './dto/create-card.dto.js'
+import { MoveCardDto } from './dto/move-card.dto.js'
 
 const AUTHOR_SELECT = { id: true, name: true }
 
@@ -22,7 +22,7 @@ export class BoardService {
   async getBoard(userId: string, retroId: string) {
     await this.assertRetroAccess(userId, retroId)
 
-    return this.prisma.column.findMany({
+    return this.prisma.client.column.findMany({
       where: { retroId },
       orderBy: { position: 'asc' },
       include: {
@@ -42,14 +42,14 @@ export class BoardService {
       throw new BadRequestException(`Unknown template: ${templateId}`)
     }
 
-    const existing = await this.prisma.column.findFirst({
+    const existing = await this.prisma.client.column.findFirst({
       where: { retroId },
     })
     if (existing) {
       throw new BadRequestException('Board is already initialized')
     }
 
-    await this.prisma.column.createMany({
+    await this.prisma.client.column.createMany({
       data: template.columns.map((col) => ({
         retroId,
         name: col.name,
@@ -59,7 +59,7 @@ export class BoardService {
       })),
     })
 
-    return this.prisma.column.findMany({
+    return this.prisma.client.column.findMany({
       where: { retroId },
       orderBy: { position: 'asc' },
       include: {
@@ -74,19 +74,19 @@ export class BoardService {
   async createCard(userId: string, retroId: string, dto: CreateCardDto) {
     await this.assertRetroAccess(userId, retroId)
 
-    const column = await this.prisma.column.findFirst({
+    const column = await this.prisma.client.column.findFirst({
       where: { id: dto.columnId, retroId },
     })
     if (!column) {
       throw new NotFoundException('Column not found in this retro')
     }
 
-    const maxPosition = await this.prisma.card.aggregate({
+    const maxPosition = await this.prisma.client.card.aggregate({
       where: { columnId: dto.columnId },
       _max: { position: true },
     })
 
-    const card = await this.prisma.card.create({
+    const card = await this.prisma.client.card.create({
       data: {
         columnId: dto.columnId,
         retroId,
@@ -108,21 +108,21 @@ export class BoardService {
   ) {
     await this.assertRetroAccess(userId, retroId)
 
-    const card = await this.prisma.card.findFirst({
+    const card = await this.prisma.client.card.findFirst({
       where: { id: cardId, retroId },
     })
     if (!card) {
       throw new NotFoundException('Card not found')
     }
 
-    const column = await this.prisma.column.findFirst({
+    const column = await this.prisma.client.column.findFirst({
       where: { id: dto.columnId, retroId },
     })
     if (!column) {
       throw new NotFoundException('Target column not found in this retro')
     }
 
-    const updatedCard = await this.prisma.card.update({
+    const updatedCard = await this.prisma.client.card.update({
       where: { id: cardId },
       data: {
         columnId: dto.columnId,
@@ -137,18 +137,18 @@ export class BoardService {
   async deleteCard(userId: string, retroId: string, cardId: string) {
     await this.assertRetroAccess(userId, retroId)
 
-    const card = await this.prisma.card.findFirst({
+    const card = await this.prisma.client.card.findFirst({
       where: { id: cardId, retroId },
     })
     if (!card) {
       throw new NotFoundException('Card not found')
     }
 
-    await this.prisma.card.delete({ where: { id: cardId } })
+    await this.prisma.client.card.delete({ where: { id: cardId } })
   }
 
   private async assertRetroAccess(userId: string, retroId: string) {
-    const retro = await this.prisma.retro.findUnique({
+    const retro = await this.prisma.client.retro.findUnique({
       where: { id: retroId },
     })
 
@@ -156,7 +156,7 @@ export class BoardService {
       throw new NotFoundException('Retro not found')
     }
 
-    const membership = await this.prisma.teamMember.findUnique({
+    const membership = await this.prisma.client.teamMember.findUnique({
       where: { teamId_userId: { teamId: retro.teamId, userId } },
     })
 

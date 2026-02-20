@@ -9,7 +9,7 @@ import {
 import { Server, Socket } from 'socket.io'
 import { ConfigService } from '@nestjs/config'
 import * as jwt from 'jsonwebtoken'
-import { PrismaService } from '../prisma/prisma.service'
+import { PrismaService } from '../prisma/prisma.service.js'
 
 interface AuthenticatedSocket extends Socket {
   data: {
@@ -52,7 +52,7 @@ export class BoardGateway implements OnGatewayDisconnect {
           email: string
         }
 
-        const user = await this.prisma.user.findUnique({
+        const user = await this.prisma.client.user.findUnique({
           where: { id: payload.sub },
           select: { id: true, email: true, name: true },
         })
@@ -148,14 +148,14 @@ export class BoardGateway implements OnGatewayDisconnect {
     userId: string,
     retroId: string,
   ): Promise<boolean> {
-    const retro = await this.prisma.retro.findUnique({
+    const retro = await this.prisma.client.retro.findUnique({
       where: { id: retroId },
       select: { teamId: true },
     })
 
     if (!retro) return false
 
-    const membership = await this.prisma.teamMember.findUnique({
+    const membership = await this.prisma.client.teamMember.findUnique({
       where: { teamId_userId: { teamId: retro.teamId, userId } },
     })
 

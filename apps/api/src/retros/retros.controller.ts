@@ -11,14 +11,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { RetrosService } from './retros.service'
-import { CreateRetroDto } from './dto/create-retro.dto'
-import { UpdateRetroDto } from './dto/update-retro.dto'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
+import { RetrosService } from './retros.service.js'
+import { CreateRetroDto } from './dto/create-retro.dto.js'
+import { UpdateRetroDto } from './dto/update-retro.dto.js'
 import {
   RetroResponse,
   RetroWithCountsResponse,
-} from './dto/retro-response.dto'
+} from './dto/retro-response.dto.js'
 
 @Controller()
 @UseGuards(JwtAuthGuard)

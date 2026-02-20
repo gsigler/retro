@@ -1,4 +1,4 @@
-import { ActionItemResponse } from '../../action-items/dto/action-item-response.dto'
+import { ActionItemResponse } from '../../action-items/dto/action-item-response.dto.js'
 
 export class UpcomingRetroResponse {
   constructor(

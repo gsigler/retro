@@ -11,15 +11,15 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { BoardService } from './board.service'
-import { BoardGateway } from './board.gateway'
-import { InitBoardDto } from './dto/init-board.dto'
-import { CreateCardDto } from './dto/create-card.dto'
-import { MoveCardDto } from './dto/move-card.dto'
-import { BoardResponse } from './dto/board-response.dto'
-import { CardResponse } from './dto/card-response.dto'
-import { RetroTemplate } from './templates'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
+import { BoardService } from './board.service.js'
+import { BoardGateway } from './board.gateway.js'
+import { InitBoardDto } from './dto/init-board.dto.js'
+import { CreateCardDto } from './dto/create-card.dto.js'
+import { MoveCardDto } from './dto/move-card.dto.js'
+import { BoardResponse } from './dto/board-response.dto.js'
+import { CardResponse } from './dto/card-response.dto.js'
+import { RetroTemplate } from './templates.js'
 
 @Controller()
 @UseGuards(JwtAuthGuard)

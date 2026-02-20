@@ -5,7 +5,7 @@ import {
   IsDateString,
   MaxLength,
 } from 'class-validator'
-import { ActionItemStatus } from '@prisma/client'
+import { ActionItemStatus } from '../action-items.service.js'
 
 export class UpdateActionItemDto {
   @IsString()

@@ -4,25 +4,37 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common'
-import { Prisma } from '@prisma/client'
-import { TeamsService, NANOID } from './teams.service'
-import { PrismaService } from '../prisma/prisma.service'
+import { TeamsService, NANOID } from './teams.service.js'
+import { PrismaService } from '../prisma/prisma.service.js'
+
+class PrismaClientKnownRequestError extends Error {
+  code: string
+  clientVersion: string
+  constructor(message: string, opts: { code: string; clientVersion: string }) {
+    super(message)
+    this.code = opts.code
+    this.clientVersion = opts.clientVersion
+    this.name = 'PrismaClientKnownRequestError'
+  }
+}
 
 describe('TeamsService', () => {
   let service: TeamsService
   let prisma: {
-    team: {
-      create: jest.Mock
-      findMany: jest.Mock
-      findUnique: jest.Mock
-      update: jest.Mock
-      delete: jest.Mock
-    }
-    user: { findUnique: jest.Mock }
-    teamMember: {
-      create: jest.Mock
-      findUnique: jest.Mock
-      delete: jest.Mock
+    client: {
+      team: {
+        create: jest.Mock
+        findMany: jest.Mock
+        findUnique: jest.Mock
+        update: jest.Mock
+        delete: jest.Mock
+      }
+      user: { findUnique: jest.Mock }
+      teamMember: {
+        create: jest.Mock
+        findUnique: jest.Mock
+        delete: jest.Mock
+      }
     }
   }
 
@@ -41,18 +53,20 @@ describe('TeamsService', () => {
 
   beforeEach(async () => {
     prisma = {
-      team: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-      user: { findUnique: jest.fn() },
-      teamMember: {
-        create: jest.fn(),
-        findUnique: jest.fn(),
-        delete: jest.fn(),
+      client: {
+        team: {
+          create: jest.fn(),
+          findMany: jest.fn(),
+          findUnique: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+        },
+        user: { findUnique: jest.fn() },
+        teamMember: {
+          create: jest.fn(),
+          findUnique: jest.fn(),
+          delete: jest.fn(),
+        },
       },
     }
 
@@ -75,11 +89,11 @@ describe('TeamsService', () => {
         inviteCode: 'abc1234567',
         members: [{ userId, role: 'OWNER', user: { id: userId } }],
       }
-      prisma.team.create.mockResolvedValue(expected)
+      prisma.client.team.create.mockResolvedValue(expected)
 
       const result = await service.create(userId, dto)
 
-      expect(prisma.team.create).toHaveBeenCalledWith({
+      expect(prisma.client.team.create).toHaveBeenCalledWith({
         data: {
           name: 'My Team',
           description: 'A test team',
@@ -109,14 +123,14 @@ describe('TeamsService', () => {
 
     it('should create a team without description', async () => {
       const dto = { name: 'Minimal Team' }
-      prisma.team.create.mockResolvedValue({
+      prisma.client.team.create.mockResolvedValue({
         ...mockTeam,
         description: undefined,
       })
 
       await service.create(userId, dto)
 
-      expect(prisma.team.create).toHaveBeenCalledWith(
+      expect(prisma.client.team.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             name: 'Minimal Team',
@@ -128,8 +142,8 @@ describe('TeamsService', () => {
 
     it('should throw ConflictException when user already owns a team', async () => {
       const dto = { name: 'Second Team' }
-      prisma.team.create.mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+      prisma.client.team.create.mockRejectedValue(
+        new PrismaClientKnownRequestError('Unique constraint failed', {
           code: 'P2002',
           clientVersion: '5.0.0',
         }),
@@ -146,7 +160,7 @@ describe('TeamsService', () => {
     const teamWithCode = { ...mockTeam, inviteCode }
 
     it('should add the user as a MEMBER when invite code is valid', async () => {
-      prisma.team.findUnique.mockResolvedValue(teamWithCode)
+      prisma.client.team.findUnique.mockResolvedValue(teamWithCode)
       const created = {
         teamId,
         userId: otherUserId,
@@ -158,14 +172,14 @@ describe('TeamsService', () => {
           avatarUrl: null,
         },
       }
-      prisma.teamMember.create.mockResolvedValue(created)
+      prisma.client.teamMember.create.mockResolvedValue(created)
 
       const result = await service.joinByInviteCode(otherUserId, inviteCode)
 
-      expect(prisma.team.findUnique).toHaveBeenCalledWith({
+      expect(prisma.client.team.findUnique).toHaveBeenCalledWith({
         where: { inviteCode },
       })
-      expect(prisma.teamMember.create).toHaveBeenCalledWith({
+      expect(prisma.client.teamMember.create).toHaveBeenCalledWith({
         data: { teamId, userId: otherUserId, role: 'MEMBER' },
         include: {
           user: {
@@ -177,7 +191,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw NotFoundException for invalid invite code', async () => {
-      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(null)
 
       await expect(
         service.joinByInviteCode(otherUserId, 'bad-code'),
@@ -185,9 +199,9 @@ describe('TeamsService', () => {
     })
 
     it('should throw ConflictException if user is already a member', async () => {
-      prisma.team.findUnique.mockResolvedValue(teamWithCode)
-      prisma.teamMember.create.mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+      prisma.client.team.findUnique.mockResolvedValue(teamWithCode)
+      prisma.client.teamMember.create.mockRejectedValue(
+        new PrismaClientKnownRequestError('Unique constraint failed', {
           code: 'P2002',
           clientVersion: '5.0.0',
         }),
@@ -202,11 +216,11 @@ describe('TeamsService', () => {
   describe('findAll', () => {
     it('should return teams where user is a member', async () => {
       const teams = [{ ...mockTeam, _count: { members: 2, retros: 3 } }]
-      prisma.team.findMany.mockResolvedValue(teams)
+      prisma.client.team.findMany.mockResolvedValue(teams)
 
       const result = await service.findAll(userId)
 
-      expect(prisma.team.findMany).toHaveBeenCalledWith({
+      expect(prisma.client.team.findMany).toHaveBeenCalledWith({
         where: { members: { some: { userId } } },
         include: {
           _count: { select: { members: true, retros: true } },
@@ -217,7 +231,7 @@ describe('TeamsService', () => {
     })
 
     it('should return empty array when user has no teams', async () => {
-      prisma.team.findMany.mockResolvedValue([])
+      prisma.client.team.findMany.mockResolvedValue([])
 
       const result = await service.findAll(userId)
 
@@ -243,7 +257,7 @@ describe('TeamsService', () => {
     }
 
     it('should return a team when user is a member', async () => {
-      prisma.team.findUnique.mockResolvedValue(teamWithMembers)
+      prisma.client.team.findUnique.mockResolvedValue(teamWithMembers)
 
       const result = await service.findOne(userId, teamId)
 
@@ -251,7 +265,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw NotFoundException when team does not exist', async () => {
-      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(null)
 
       await expect(service.findOne(userId, 'nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -259,7 +273,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw ForbiddenException when user is not a member', async () => {
-      prisma.team.findUnique.mockResolvedValue(teamWithMembers)
+      prisma.client.team.findUnique.mockResolvedValue(teamWithMembers)
 
       await expect(service.findOne('stranger', teamId)).rejects.toThrow(
         ForbiddenException,
@@ -270,12 +284,12 @@ describe('TeamsService', () => {
   describe('update', () => {
     it('should update a team when user is owner', async () => {
       const dto = { name: 'Updated Name' }
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.team.update.mockResolvedValue({ ...mockTeam, ...dto })
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.team.update.mockResolvedValue({ ...mockTeam, ...dto })
 
       const result = await service.update(userId, teamId, dto)
 
-      expect(prisma.team.update).toHaveBeenCalledWith({
+      expect(prisma.client.team.update).toHaveBeenCalledWith({
         where: { id: teamId },
         data: dto,
       })
@@ -283,7 +297,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw NotFoundException when team does not exist', async () => {
-      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(null)
 
       await expect(
         service.update(userId, 'nonexistent', { name: 'X' }),
@@ -291,7 +305,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw ForbiddenException when user is not owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
 
       await expect(
         service.update(otherUserId, teamId, { name: 'X' }),
@@ -301,18 +315,18 @@ describe('TeamsService', () => {
 
   describe('remove', () => {
     it('should delete a team when user is owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.team.delete.mockResolvedValue(mockTeam)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.team.delete.mockResolvedValue(mockTeam)
 
       await service.remove(userId, teamId)
 
-      expect(prisma.team.delete).toHaveBeenCalledWith({
+      expect(prisma.client.team.delete).toHaveBeenCalledWith({
         where: { id: teamId },
       })
     })
 
     it('should throw NotFoundException when team does not exist', async () => {
-      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(null)
 
       await expect(service.remove(userId, 'nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -320,7 +334,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw ForbiddenException when user is not owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
 
       await expect(service.remove(otherUserId, teamId)).rejects.toThrow(
         ForbiddenException,
@@ -332,8 +346,8 @@ describe('TeamsService', () => {
     const memberUser = { id: otherUserId, email: 'other@test.com' }
 
     it('should add a member when user is owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.user.findUnique.mockResolvedValue(memberUser)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.user.findUnique.mockResolvedValue(memberUser)
       const created = {
         teamId,
         userId: otherUserId,
@@ -345,11 +359,11 @@ describe('TeamsService', () => {
           avatarUrl: null,
         },
       }
-      prisma.teamMember.create.mockResolvedValue(created)
+      prisma.client.teamMember.create.mockResolvedValue(created)
 
       const result = await service.addMember(userId, teamId, 'other@test.com')
 
-      expect(prisma.teamMember.create).toHaveBeenCalledWith({
+      expect(prisma.client.teamMember.create).toHaveBeenCalledWith({
         data: { teamId, userId: otherUserId, role: 'MEMBER' },
         include: {
           user: {
@@ -361,7 +375,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw NotFoundException when team does not exist', async () => {
-      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(null)
 
       await expect(
         service.addMember(userId, 'nonexistent', 'x@test.com'),
@@ -369,7 +383,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw ForbiddenException when user is not owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
 
       await expect(
         service.addMember(otherUserId, teamId, 'x@test.com'),
@@ -377,10 +391,10 @@ describe('TeamsService', () => {
     })
 
     it('should throw ConflictException when user is already a member', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.user.findUnique.mockResolvedValue(memberUser)
-      prisma.teamMember.create.mockRejectedValue(
-        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.user.findUnique.mockResolvedValue(memberUser)
+      prisma.client.teamMember.create.mockRejectedValue(
+        new PrismaClientKnownRequestError('Unique constraint failed', {
           code: 'P2002',
           clientVersion: '5.0.0',
         }),
@@ -392,8 +406,8 @@ describe('TeamsService', () => {
     })
 
     it('should throw NotFoundException when user to add does not exist', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.user.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.user.findUnique.mockResolvedValue(null)
 
       await expect(
         service.addMember(userId, teamId, 'nobody@test.com'),
@@ -410,19 +424,19 @@ describe('TeamsService', () => {
     }
 
     it('should remove a member when user is owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.teamMember.findUnique.mockResolvedValue(membership)
-      prisma.teamMember.delete.mockResolvedValue(membership)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.teamMember.findUnique.mockResolvedValue(membership)
+      prisma.client.teamMember.delete.mockResolvedValue(membership)
 
       await service.removeMember(userId, teamId, otherUserId)
 
-      expect(prisma.teamMember.delete).toHaveBeenCalledWith({
+      expect(prisma.client.teamMember.delete).toHaveBeenCalledWith({
         where: { id: 'membership-1' },
       })
     })
 
     it('should throw NotFoundException when team does not exist', async () => {
-      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(null)
 
       await expect(
         service.removeMember(userId, 'nonexistent', otherUserId),
@@ -430,7 +444,7 @@ describe('TeamsService', () => {
     })
 
     it('should throw ForbiddenException when user is not owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
 
       await expect(
         service.removeMember(otherUserId, teamId, 'someone'),
@@ -438,8 +452,8 @@ describe('TeamsService', () => {
     })
 
     it('should throw NotFoundException when membership does not exist', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.teamMember.findUnique.mockResolvedValue(null)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.teamMember.findUnique.mockResolvedValue(null)
 
       await expect(
         service.removeMember(userId, teamId, 'unknown-user'),
@@ -447,8 +461,8 @@ describe('TeamsService', () => {
     })
 
     it('should throw ForbiddenException when trying to remove the owner', async () => {
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.teamMember.findUnique.mockResolvedValue({
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.teamMember.findUnique.mockResolvedValue({
         ...membership,
         userId,
         role: 'OWNER',

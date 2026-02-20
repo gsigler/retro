@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../prisma/prisma.service'
+import { PrismaService } from '../prisma/prisma.service.js'
 
 const userSelect = { id: true, name: true, avatarUrl: true }
 
@@ -19,25 +19,25 @@ export class DashboardService {
       recentActionItems,
     ] = await Promise.all([
       this.getMemberCount(userId),
-      this.prisma.retro.count({ where: { teamId: { in: teamIds } } }),
-      this.prisma.actionItem.count({
+      this.prisma.client.retro.count({ where: { teamId: { in: teamIds } } }),
+      this.prisma.client.actionItem.count({
         where: {
           retro: { teamId: { in: teamIds } },
           status: { not: 'DONE' },
         },
       }),
-      this.prisma.actionItem.count({
+      this.prisma.client.actionItem.count({
         where: {
           retro: { teamId: { in: teamIds } },
           status: 'DONE',
         },
       }),
-      this.prisma.retro.findMany({
+      this.prisma.client.retro.findMany({
         where: { teamId: { in: teamIds }, status: 'SCHEDULED' },
         orderBy: { date: 'asc' },
         take: 5,
       }),
-      this.prisma.actionItem.findMany({
+      this.prisma.client.actionItem.findMany({
         where: {
           retro: { teamId: { in: teamIds } },
           status: { not: 'DONE' },
@@ -62,7 +62,7 @@ export class DashboardService {
   }
 
   private async getUserTeamIds(userId: string): Promise<string[]> {
-    const memberships = await this.prisma.teamMember.findMany({
+    const memberships = await this.prisma.client.teamMember.findMany({
       where: { userId },
       select: { teamId: true },
     })
@@ -70,7 +70,7 @@ export class DashboardService {
   }
 
   private async getMemberCount(userId: string): Promise<number> {
-    const ownedTeam = await this.prisma.team.findUnique({
+    const ownedTeam = await this.prisma.client.team.findUnique({
       where: { ownerId: userId },
       include: { _count: { select: { members: true } } },
     })

@@ -11,11 +11,11 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { ActionItemsService } from './action-items.service'
-import { CreateActionItemDto } from './dto/create-action-item.dto'
-import { UpdateActionItemDto } from './dto/update-action-item.dto'
-import { ActionItemResponse } from './dto/action-item-response.dto'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
+import { ActionItemsService } from './action-items.service.js'
+import { CreateActionItemDto } from './dto/create-action-item.dto.js'
+import { UpdateActionItemDto } from './dto/update-action-item.dto.js'
+import { ActionItemResponse } from './dto/action-item-response.dto.js'
 
 @Controller()
 @UseGuards(JwtAuthGuard)

@@ -1,4 +1,4 @@
-import { CardResponse } from './card-response.dto'
+import { CardResponse } from './card-response.dto.js'
 
 export class ColumnResponse {
   constructor(

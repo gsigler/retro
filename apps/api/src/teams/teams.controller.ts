@@ -11,18 +11,18 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { TeamsService } from './teams.service'
-import { CreateTeamDto } from './dto/create-team.dto'
-import { UpdateTeamDto } from './dto/update-team.dto'
-import { AddMemberDto } from './dto/add-member.dto'
-import { JoinTeamDto } from './dto/join-team.dto'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
+import { TeamsService } from './teams.service.js'
+import { CreateTeamDto } from './dto/create-team.dto.js'
+import { UpdateTeamDto } from './dto/update-team.dto.js'
+import { AddMemberDto } from './dto/add-member.dto.js'
+import { JoinTeamDto } from './dto/join-team.dto.js'
 import {
   TeamResponse,
   TeamWithCountsResponse,
   TeamDetailResponse,
   TeamMemberResponse,
-} from './dto/team-response.dto'
+} from './dto/team-response.dto.js'
 
 @Controller('teams')
 @UseGuards(JwtAuthGuard)

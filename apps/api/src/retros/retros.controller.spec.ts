@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { RetrosController } from './retros.controller'
-import { RetrosService } from './retros.service'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { RetrosController } from './retros.controller.js'
+import { RetrosService } from './retros.service.js'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import {
   RetroResponse,
   RetroWithCountsResponse,
-} from './dto/retro-response.dto'
+} from './dto/retro-response.dto.js'
 
 describe('RetrosController', () => {
   let controller: RetrosController

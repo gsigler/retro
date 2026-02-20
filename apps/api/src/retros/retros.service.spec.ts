@@ -4,21 +4,23 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common'
-import { RetrosService } from './retros.service'
-import { PrismaService } from '../prisma/prisma.service'
+import { RetrosService } from './retros.service.js'
+import { PrismaService } from '../prisma/prisma.service.js'
 
 describe('RetrosService', () => {
   let service: RetrosService
   let prisma: {
-    retro: {
-      create: jest.Mock
-      findMany: jest.Mock
-      findUnique: jest.Mock
-      update: jest.Mock
-      delete: jest.Mock
+    client: {
+      retro: {
+        create: jest.Mock
+        findMany: jest.Mock
+        findUnique: jest.Mock
+        update: jest.Mock
+        delete: jest.Mock
+      }
+      team: { findUnique: jest.Mock }
+      teamMember: { findUnique: jest.Mock }
     }
-    team: { findUnique: jest.Mock }
-    teamMember: { findUnique: jest.Mock }
   }
 
   const userId = 'user-1'
@@ -44,15 +46,17 @@ describe('RetrosService', () => {
 
   beforeEach(async () => {
     prisma = {
-      retro: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
+      client: {
+        retro: {
+          create: jest.fn(),
+          findMany: jest.fn(),
+          findUnique: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+        },
+        team: { findUnique: jest.fn() },
+        teamMember: { findUnique: jest.fn() },
       },
-      team: { findUnique: jest.fn() },
-      teamMember: { findUnique: jest.fn() },
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -66,15 +70,15 @@ describe('RetrosService', () => {
     const dto = { name: 'Sprint 1 Retro', date: '2026-02-16' }
 
     it('should create a retro when user is a team member', async () => {
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.create.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.create.mockResolvedValue(mockRetro)
 
       const result = await service.create(userId, teamId, dto)
 
-      expect(prisma.teamMember.findUnique).toHaveBeenCalledWith({
+      expect(prisma.client.teamMember.findUnique).toHaveBeenCalledWith({
         where: { teamId_userId: { teamId, userId } },
       })
-      expect(prisma.retro.create).toHaveBeenCalledWith({
+      expect(prisma.client.retro.create).toHaveBeenCalledWith({
         data: {
           name: 'Sprint 1 Retro',
           date: new Date('2026-02-16'),
@@ -90,8 +94,8 @@ describe('RetrosService', () => {
     })
 
     it('should create a retro with an explicit status', async () => {
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.create.mockResolvedValue({
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.create.mockResolvedValue({
         ...mockRetro,
         status: 'IN_PROGRESS',
       })
@@ -101,7 +105,7 @@ describe('RetrosService', () => {
         status: 'IN_PROGRESS' as const,
       })
 
-      expect(prisma.retro.create).toHaveBeenCalledWith(
+      expect(prisma.client.retro.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ status: 'IN_PROGRESS' }),
         }),
@@ -109,7 +113,7 @@ describe('RetrosService', () => {
     })
 
     it('should throw ForbiddenException when user is not a team member', async () => {
-      prisma.teamMember.findUnique.mockResolvedValue(null)
+      prisma.client.teamMember.findUnique.mockResolvedValue(null)
 
       await expect(service.create(otherUserId, teamId, dto)).rejects.toThrow(
         ForbiddenException,
@@ -119,12 +123,12 @@ describe('RetrosService', () => {
 
   describe('findAll', () => {
     it('should return retros for a team when user is a member', async () => {
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.findMany.mockResolvedValue([mockRetro])
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.findMany.mockResolvedValue([mockRetro])
 
       const result = await service.findAll(userId, teamId)
 
-      expect(prisma.retro.findMany).toHaveBeenCalledWith({
+      expect(prisma.client.retro.findMany).toHaveBeenCalledWith({
         where: { teamId },
         include: {
           createdBy: { select: { id: true, email: true, name: true } },
@@ -136,8 +140,8 @@ describe('RetrosService', () => {
     })
 
     it('should return empty array when team has no retros', async () => {
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.findMany.mockResolvedValue([])
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.findMany.mockResolvedValue([])
 
       const result = await service.findAll(userId, teamId)
 
@@ -145,7 +149,7 @@ describe('RetrosService', () => {
     })
 
     it('should throw ForbiddenException when user is not a team member', async () => {
-      prisma.teamMember.findUnique.mockResolvedValue(null)
+      prisma.client.teamMember.findUnique.mockResolvedValue(null)
 
       await expect(service.findAll(otherUserId, teamId)).rejects.toThrow(
         ForbiddenException,
@@ -155,8 +159,8 @@ describe('RetrosService', () => {
 
   describe('findOne', () => {
     it('should return a retro when user is a team member', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
 
       const result = await service.findOne(userId, retroId)
 
@@ -164,7 +168,7 @@ describe('RetrosService', () => {
     })
 
     it('should throw NotFoundException when retro does not exist', async () => {
-      prisma.retro.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(null)
 
       await expect(service.findOne(userId, 'nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -172,8 +176,8 @@ describe('RetrosService', () => {
     })
 
     it('should throw ForbiddenException when user is not a team member', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(null)
 
       await expect(service.findOne(otherUserId, retroId)).rejects.toThrow(
         ForbiddenException,
@@ -184,13 +188,13 @@ describe('RetrosService', () => {
   describe('update', () => {
     it('should update a retro when user is a team member', async () => {
       const dto = { name: 'Updated Retro' }
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.update.mockResolvedValue({ ...mockRetro, ...dto })
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.update.mockResolvedValue({ ...mockRetro, ...dto })
 
       const result = await service.update(userId, retroId, dto)
 
-      expect(prisma.retro.update).toHaveBeenCalledWith({
+      expect(prisma.client.retro.update).toHaveBeenCalledWith({
         where: { id: retroId },
         data: { name: 'Updated Retro' },
         include: {
@@ -202,9 +206,9 @@ describe('RetrosService', () => {
     })
 
     it('should allow forward status transition SCHEDULED → IN_PROGRESS', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.update.mockResolvedValue({
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.update.mockResolvedValue({
         ...mockRetro,
         status: 'IN_PROGRESS',
       })
@@ -213,7 +217,7 @@ describe('RetrosService', () => {
         status: 'IN_PROGRESS' as const,
       })
 
-      expect(prisma.retro.update).toHaveBeenCalledWith(
+      expect(prisma.client.retro.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: { status: 'IN_PROGRESS' },
         }),
@@ -222,9 +226,9 @@ describe('RetrosService', () => {
 
     it('should allow forward status transition IN_PROGRESS → COMPLETED', async () => {
       const inProgressRetro = { ...mockRetro, status: 'IN_PROGRESS' as const }
-      prisma.retro.findUnique.mockResolvedValue(inProgressRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.update.mockResolvedValue({
+      prisma.client.retro.findUnique.mockResolvedValue(inProgressRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.update.mockResolvedValue({
         ...inProgressRetro,
         status: 'COMPLETED',
       })
@@ -233,13 +237,13 @@ describe('RetrosService', () => {
         status: 'COMPLETED' as const,
       })
 
-      expect(prisma.retro.update).toHaveBeenCalled()
+      expect(prisma.client.retro.update).toHaveBeenCalled()
     })
 
     it('should allow forward status transition SCHEDULED → COMPLETED', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.retro.update.mockResolvedValue({
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.update.mockResolvedValue({
         ...mockRetro,
         status: 'COMPLETED',
       })
@@ -248,13 +252,13 @@ describe('RetrosService', () => {
         status: 'COMPLETED' as const,
       })
 
-      expect(prisma.retro.update).toHaveBeenCalled()
+      expect(prisma.client.retro.update).toHaveBeenCalled()
     })
 
     it('should throw BadRequestException for backward status transition COMPLETED → IN_PROGRESS', async () => {
       const completedRetro = { ...mockRetro, status: 'COMPLETED' as const }
-      prisma.retro.findUnique.mockResolvedValue(completedRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.findUnique.mockResolvedValue(completedRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
 
       await expect(
         service.update(userId, retroId, {
@@ -265,8 +269,8 @@ describe('RetrosService', () => {
 
     it('should throw BadRequestException for backward status transition IN_PROGRESS → SCHEDULED', async () => {
       const inProgressRetro = { ...mockRetro, status: 'IN_PROGRESS' as const }
-      prisma.retro.findUnique.mockResolvedValue(inProgressRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.findUnique.mockResolvedValue(inProgressRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
 
       await expect(
         service.update(userId, retroId, {
@@ -276,8 +280,8 @@ describe('RetrosService', () => {
     })
 
     it('should throw BadRequestException for same-status transition', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
 
       await expect(
         service.update(userId, retroId, {
@@ -287,7 +291,7 @@ describe('RetrosService', () => {
     })
 
     it('should throw NotFoundException when retro does not exist', async () => {
-      prisma.retro.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(null)
 
       await expect(
         service.update(userId, 'nonexistent', { name: 'X' }),
@@ -295,8 +299,8 @@ describe('RetrosService', () => {
     })
 
     it('should throw ForbiddenException when user is not a team member', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.teamMember.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(null)
 
       await expect(
         service.update(otherUserId, retroId, { name: 'X' }),
@@ -306,19 +310,19 @@ describe('RetrosService', () => {
 
   describe('remove', () => {
     it('should delete a retro when user is team owner', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
-      prisma.retro.delete.mockResolvedValue(mockRetro)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.retro.delete.mockResolvedValue(mockRetro)
 
       await service.remove(userId, retroId)
 
-      expect(prisma.retro.delete).toHaveBeenCalledWith({
+      expect(prisma.client.retro.delete).toHaveBeenCalledWith({
         where: { id: retroId },
       })
     })
 
     it('should throw NotFoundException when retro does not exist', async () => {
-      prisma.retro.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(null)
 
       await expect(service.remove(userId, 'nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -326,8 +330,8 @@ describe('RetrosService', () => {
     })
 
     it('should throw NotFoundException when team does not exist', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.team.findUnique.mockResolvedValue(null)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.team.findUnique.mockResolvedValue(null)
 
       await expect(service.remove(userId, retroId)).rejects.toThrow(
         NotFoundException,
@@ -335,8 +339,8 @@ describe('RetrosService', () => {
     })
 
     it('should throw ForbiddenException when user is not team owner', async () => {
-      prisma.retro.findUnique.mockResolvedValue(mockRetro)
-      prisma.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
 
       await expect(service.remove(otherUserId, retroId)).rejects.toThrow(
         ForbiddenException,
