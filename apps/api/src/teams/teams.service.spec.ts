@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
-import { TeamsService } from './teams.service'
+import { TeamsService, NANOID } from './teams.service'
 import { PrismaService } from '../prisma/prisma.service'
 
 describe('TeamsService', () => {
@@ -57,17 +57,22 @@ describe('TeamsService', () => {
     }
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TeamsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        TeamsService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: NANOID, useValue: () => 'abc1234567' },
+      ],
     }).compile()
 
     service = module.get<TeamsService>(TeamsService)
   })
 
   describe('create', () => {
-    it('should create a team with the user as owner and member', async () => {
+    it('should create a team with the user as owner and member and invite code', async () => {
       const dto = { name: 'My Team', description: 'A test team' }
       const expected = {
         ...mockTeam,
+        inviteCode: 'abc1234567',
         members: [{ userId, role: 'OWNER', user: { id: userId } }],
       }
       prisma.team.create.mockResolvedValue(expected)
@@ -79,6 +84,7 @@ describe('TeamsService', () => {
           name: 'My Team',
           description: 'A test team',
           ownerId: userId,
+          inviteCode: expect.any(String),
           members: {
             create: { userId, role: 'OWNER' },
           },
@@ -118,6 +124,78 @@ describe('TeamsService', () => {
           }),
         }),
       )
+    })
+
+    it('should throw ConflictException when user already owns a team', async () => {
+      const dto = { name: 'Second Team' }
+      prisma.team.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: '5.0.0',
+        }),
+      )
+
+      await expect(service.create(userId, dto)).rejects.toThrow(
+        ConflictException,
+      )
+    })
+  })
+
+  describe('joinByInviteCode', () => {
+    const inviteCode = 'abc1234567'
+    const teamWithCode = { ...mockTeam, inviteCode }
+
+    it('should add the user as a MEMBER when invite code is valid', async () => {
+      prisma.team.findUnique.mockResolvedValue(teamWithCode)
+      const created = {
+        teamId,
+        userId: otherUserId,
+        role: 'MEMBER',
+        user: {
+          id: otherUserId,
+          email: 'other@test.com',
+          name: 'Other',
+          avatarUrl: null,
+        },
+      }
+      prisma.teamMember.create.mockResolvedValue(created)
+
+      const result = await service.joinByInviteCode(otherUserId, inviteCode)
+
+      expect(prisma.team.findUnique).toHaveBeenCalledWith({
+        where: { inviteCode },
+      })
+      expect(prisma.teamMember.create).toHaveBeenCalledWith({
+        data: { teamId, userId: otherUserId, role: 'MEMBER' },
+        include: {
+          user: {
+            select: { id: true, email: true, name: true, avatarUrl: true },
+          },
+        },
+      })
+      expect(result).toEqual(created)
+    })
+
+    it('should throw NotFoundException for invalid invite code', async () => {
+      prisma.team.findUnique.mockResolvedValue(null)
+
+      await expect(
+        service.joinByInviteCode(otherUserId, 'bad-code'),
+      ).rejects.toThrow(NotFoundException)
+    })
+
+    it('should throw ConflictException if user is already a member', async () => {
+      prisma.team.findUnique.mockResolvedValue(teamWithCode)
+      prisma.teamMember.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: '5.0.0',
+        }),
+      )
+
+      await expect(
+        service.joinByInviteCode(otherUserId, inviteCode),
+      ).rejects.toThrow(ConflictException)
     })
   })
 

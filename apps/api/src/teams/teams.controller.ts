@@ -16,6 +16,7 @@ import { TeamsService } from './teams.service'
 import { CreateTeamDto } from './dto/create-team.dto'
 import { UpdateTeamDto } from './dto/update-team.dto'
 import { AddMemberDto } from './dto/add-member.dto'
+import { JoinTeamDto } from './dto/join-team.dto'
 import {
   TeamResponse,
   TeamWithCountsResponse,
@@ -35,6 +36,18 @@ export class TeamsController {
   ): Promise<TeamResponse> {
     const team = await this.teamsService.create(req.user.id, dto)
     return TeamResponse.from(team)
+  }
+
+  @Post('join')
+  async join(
+    @Request() req: { user: { id: string } },
+    @Body() dto: JoinTeamDto,
+  ): Promise<TeamMemberResponse> {
+    const member = await this.teamsService.joinByInviteCode(
+      req.user.id,
+      dto.inviteCode,
+    )
+    return TeamMemberResponse.from(member)
   }
 
   @Get()

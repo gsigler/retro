@@ -35,6 +35,7 @@ export class TeamResponse {
     public name: string,
     public description: string | null,
     public ownerId: string,
+    public inviteCode: string,
     public createdAt: Date,
     public updatedAt: Date,
   ) {}
@@ -45,6 +46,7 @@ export class TeamResponse {
       team.name,
       team.description,
       team.ownerId,
+      team.inviteCode,
       team.createdAt,
       team.updatedAt,
     )
@@ -81,6 +83,7 @@ export class TeamDetailResponse {
     public name: string,
     public description: string | null,
     public ownerId: string,
+    public inviteCode: string,
     public members: TeamMemberResponse[],
     public retroCount: number,
     public createdAt: Date,
@@ -93,6 +96,7 @@ export class TeamDetailResponse {
       team.name,
       team.description,
       team.ownerId,
+      team.inviteCode,
       team.members.map(TeamMemberResponse.from),
       team._count.retros,
       team.createdAt,

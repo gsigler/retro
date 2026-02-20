@@ -3,36 +3,87 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  Inject,
 } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateTeamDto } from './dto/create-team.dto'
 import { UpdateTeamDto } from './dto/update-team.dto'
 
+export const NANOID = 'NANOID'
+export type NanoidFn = (size?: number) => string
+
 @Injectable()
 export class TeamsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(NANOID) private readonly nanoid: NanoidFn,
+  ) {}
 
   async create(userId: string, dto: CreateTeamDto) {
-    return this.prisma.team.create({
-      data: {
-        name: dto.name,
-        description: dto.description,
-        ownerId: userId,
-        members: {
-          create: { userId, role: 'OWNER' },
+    try {
+      return await this.prisma.team.create({
+        data: {
+          name: dto.name,
+          description: dto.description,
+          ownerId: userId,
+          inviteCode: this.nanoid(10),
+          members: {
+            create: { userId, role: 'OWNER' },
+          },
         },
-      },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: { id: true, email: true, name: true, avatarUrl: true },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: { id: true, email: true, name: true, avatarUrl: true },
+              },
             },
           },
         },
-      },
+      })
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('You already own a team')
+      }
+      throw error
+    }
+  }
+
+  async joinByInviteCode(userId: string, inviteCode: string) {
+    const team = await this.prisma.team.findUnique({
+      where: { inviteCode },
     })
+
+    if (!team) {
+      throw new NotFoundException('Invalid invite code')
+    }
+
+    try {
+      return await this.prisma.teamMember.create({
+        data: {
+          teamId: team.id,
+          userId,
+          role: 'MEMBER',
+        },
+        include: {
+          user: {
+            select: { id: true, email: true, name: true, avatarUrl: true },
+          },
+        },
+      })
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('You are already a member of this team')
+      }
+      throw error
+    }
   }
 
   async findAll(userId: string) {
