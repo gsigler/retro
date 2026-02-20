@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { BoardController } from './board.controller'
 import { BoardService } from './board.service'
+import { BoardGateway } from './board.gateway'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { BoardResponse } from './dto/board-response.dto'
 import { CardResponse } from './dto/card-response.dto'
@@ -8,6 +9,12 @@ import { RETRO_TEMPLATES } from './templates'
 
 describe('BoardController', () => {
   let controller: BoardController
+  let boardGateway: {
+    emitBoardInitialized: jest.Mock
+    emitCardCreated: jest.Mock
+    emitCardMoved: jest.Mock
+    emitCardDeleted: jest.Mock
+  }
   let boardService: {
     getTemplates: jest.Mock
     getBoard: jest.Mock
@@ -42,6 +49,13 @@ describe('BoardController', () => {
   }
 
   beforeEach(async () => {
+    boardGateway = {
+      emitBoardInitialized: jest.fn(),
+      emitCardCreated: jest.fn(),
+      emitCardMoved: jest.fn(),
+      emitCardDeleted: jest.fn(),
+    }
+
     boardService = {
       getTemplates: jest.fn(),
       getBoard: jest.fn(),
@@ -53,7 +67,10 @@ describe('BoardController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BoardController],
-      providers: [{ provide: BoardService, useValue: boardService }],
+      providers: [
+        { provide: BoardService, useValue: boardService },
+        { provide: BoardGateway, useValue: boardGateway },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -96,7 +113,7 @@ describe('BoardController', () => {
   })
 
   describe('initBoard', () => {
-    it('should return a BoardResponse after initialization', async () => {
+    it('should return a BoardResponse after initialization and emit event', async () => {
       boardService.initBoard.mockResolvedValue([mockColumn])
 
       const result = await controller.initBoard(req, retroId, {
@@ -109,11 +126,15 @@ describe('BoardController', () => {
         'start-stop-continue',
       )
       expect(result).toBeInstanceOf(BoardResponse)
+      expect(boardGateway.emitBoardInitialized).toHaveBeenCalledWith(
+        retroId,
+        result.columns,
+      )
     })
   })
 
   describe('createCard', () => {
-    it('should return a CardResponse', async () => {
+    it('should return a CardResponse and emit event', async () => {
       boardService.createCard.mockResolvedValue(mockCard)
 
       const result = await controller.createCard(req, retroId, {
@@ -127,11 +148,12 @@ describe('BoardController', () => {
       })
       expect(result).toBeInstanceOf(CardResponse)
       expect(result.id).toBe('card-1')
+      expect(boardGateway.emitCardCreated).toHaveBeenCalledWith(retroId, result)
     })
   })
 
   describe('moveCard', () => {
-    it('should return a CardResponse', async () => {
+    it('should return a CardResponse and emit event', async () => {
       boardService.moveCard.mockResolvedValue({
         ...mockCard,
         columnId: 'column-2',
@@ -150,21 +172,25 @@ describe('BoardController', () => {
         { columnId: 'column-2', position: 1 },
       )
       expect(result).toBeInstanceOf(CardResponse)
+      expect(boardGateway.emitCardMoved).toHaveBeenCalledWith(retroId, result)
     })
   })
 
   describe('deleteCard', () => {
-    it('should call boardService.deleteCard', async () => {
+    it('should call boardService.deleteCard and emit event', async () => {
       boardService.deleteCard.mockResolvedValue(undefined)
 
-      const result = await controller.deleteCard(req, retroId, 'card-1')
+      await controller.deleteCard(req, retroId, 'card-1')
 
       expect(boardService.deleteCard).toHaveBeenCalledWith(
         'user-1',
         retroId,
         'card-1',
       )
-      expect(result).toBeUndefined()
+      expect(boardGateway.emitCardDeleted).toHaveBeenCalledWith(
+        retroId,
+        'card-1',
+      )
     })
   })
 })
