@@ -19,6 +19,7 @@ describe('TeamsController', () => {
     remove: jest.Mock
     addMember: jest.Mock
     removeMember: jest.Mock
+    joinByInviteCode: jest.Mock
   }
 
   const req = { user: { id: 'user-1' } }
@@ -32,6 +33,7 @@ describe('TeamsController', () => {
       remove: jest.fn(),
       addMember: jest.fn(),
       removeMember: jest.fn(),
+      joinByInviteCode: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -63,6 +65,7 @@ describe('TeamsController', () => {
         name: 'New Team',
         description: 'desc',
         ownerId: 'user-1',
+        inviteCode: 'abc1234567',
         createdAt: new Date(),
         updatedAt: new Date(),
         members: [],
@@ -110,6 +113,7 @@ describe('TeamsController', () => {
         name: 'Team',
         description: null,
         ownerId: 'user-1',
+        inviteCode: 'abc1234567',
         createdAt: new Date(),
         updatedAt: new Date(),
         members: [
@@ -148,6 +152,7 @@ describe('TeamsController', () => {
         name: 'Updated',
         description: null,
         ownerId: 'user-1',
+        inviteCode: 'abc1234567',
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -200,6 +205,35 @@ describe('TeamsController', () => {
       expect(result).toBeInstanceOf(TeamMemberResponse)
       expect(result.role).toBe('MEMBER')
       expect(result).not.toHaveProperty('teamId')
+    })
+  })
+
+  describe('join', () => {
+    it('should return a TeamMemberResponse when joining by invite code', async () => {
+      const dto = { inviteCode: 'abc1234567' }
+      const prismaResult = {
+        id: 'member-1',
+        teamId: 'team-1',
+        userId: 'user-1',
+        role: 'MEMBER',
+        joinedAt: new Date(),
+        user: {
+          id: 'user-1',
+          email: 'user@test.com',
+          name: 'User',
+          avatarUrl: null,
+        },
+      }
+      teamsService.joinByInviteCode.mockResolvedValue(prismaResult)
+
+      const result = await controller.join(req, dto)
+
+      expect(teamsService.joinByInviteCode).toHaveBeenCalledWith(
+        'user-1',
+        'abc1234567',
+      )
+      expect(result).toBeInstanceOf(TeamMemberResponse)
+      expect(result.role).toBe('MEMBER')
     })
   })
 
