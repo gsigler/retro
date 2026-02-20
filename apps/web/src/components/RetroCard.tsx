@@ -1,4 +1,11 @@
-import { Pencil, Trash2, Play, CheckCircle2 } from 'lucide-react'
+import { Link } from 'react-router'
+import {
+  Pencil,
+  Trash2,
+  Play,
+  CheckCircle2,
+  LayoutDashboard,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import type { RetroWithCounts } from '@/types/api'
@@ -55,6 +62,12 @@ export function RetroCard({
           <span>{retro.actionItemCount} action items</span>
         </div>
         <div className="flex gap-1">
+          <Link to={`/retros/${retro.id}/board`}>
+            <Button variant="ghost" size="xs">
+              <LayoutDashboard className="size-3" />
+              Open Board
+            </Button>
+          </Link>
           {retro.status === 'SCHEDULED' && (
             <Button
               variant="ghost"
