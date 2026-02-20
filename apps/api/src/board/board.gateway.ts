@@ -23,41 +23,17 @@ interface AuthenticatedSocket extends Socket {
 @WebSocketGateway({
   namespace: '/board',
   cors: {
-    origin: (
-      origin: string | undefined,
-      callback: (err: Error | null, allow?: boolean) => void,
-    ) => {
-      // Delegate to the APP_URL env var at runtime; handled in constructor below
-      callback(null, true)
-    },
+    origin: process.env.APP_URL ?? 'http://localhost:5173',
   },
 })
 export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server
 
-  private allowedOrigin: string
-
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-  ) {
-    this.allowedOrigin = this.configService.get<string>(
-      'APP_URL',
-      'http://localhost:5173',
-    )
-  }
-
-  afterInit() {
-    const origin = this.allowedOrigin
-    this.server.engine.on('headers', () => {
-      // CORS is enforced per-connection below
-    })
-    // Override the CORS origin check with the configured APP_URL
-    ;(this.server as any).opts.cors = {
-      origin,
-    }
-  }
+  ) {}
 
   async handleConnection(client: AuthenticatedSocket) {
     try {
