@@ -8,6 +8,8 @@ import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
 import { TeamsModule } from './teams/teams.module'
 import { RetrosModule } from './retros/retros.module'
+import { ActionItemsModule } from './action-items/action-items.module'
+import { DashboardModule } from './dashboard/dashboard.module'
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { RetrosModule } from './retros/retros.module'
     AuthModule,
     TeamsModule,
     RetrosModule,
+    ActionItemsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
