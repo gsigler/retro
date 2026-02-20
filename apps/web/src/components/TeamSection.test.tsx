@@ -57,7 +57,6 @@ vi.mock('@/lib/api', () => ({
   removeTeamMember: vi.fn(),
 }))
 
- 
 const api = await import('@/lib/api')
 const mockFetchTeams = api.fetchTeams as ReturnType<typeof vi.fn>
 const mockFetchTeam = api.fetchTeam as ReturnType<typeof vi.fn>
