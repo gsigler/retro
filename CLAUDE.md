@@ -62,6 +62,8 @@ NestJS + React monorepo using npm workspaces.
 1. Create component in `apps/web/src/`
 2. Create test file as `ComponentName.test.tsx` alongside it
 3. Use functional components with TypeScript interfaces for props
+4. Use TanStack React Query (`useQuery`) for data fetching — not raw `useEffect` + `useState`
+5. After mutations, call `queryClient.invalidateQueries()` to keep related data fresh
 
 ### Full validation
 
