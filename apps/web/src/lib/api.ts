@@ -11,12 +11,13 @@ import type {
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
+  const { headers, ...rest } = options ?? {}
   const res = await fetch(`${API_URL}${path}`, {
+    ...rest,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...headers,
     },
-    ...options,
   })
 
   if (!res.ok) {
