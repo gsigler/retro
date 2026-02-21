@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service.js'
 
@@ -43,7 +43,7 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.client.user.findUniqueOrThrow({
+    const user = await this.prisma.client.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -53,6 +53,11 @@ export class AuthService {
         createdAt: true,
       },
     })
+
+    if (!user) {
+      throw new UnauthorizedException('User no longer exists')
+    }
+
     return user
   }
 }
