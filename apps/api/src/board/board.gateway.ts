@@ -144,6 +144,26 @@ export class BoardGateway implements OnGatewayDisconnect {
       .emit('card:deleted', { id: cardId, retroId })
   }
 
+  emitActionItemCreated(retroId: string, item: any) {
+    this.server.to(`retro:${retroId}`).emit('action-item:created', item)
+  }
+
+  emitActionItemUpdated(retroId: string, item: any) {
+    this.server.to(`retro:${retroId}`).emit('action-item:updated', item)
+  }
+
+  emitActionItemDeleted(retroId: string, itemId: string) {
+    this.server
+      .to(`retro:${retroId}`)
+      .emit('action-item:deleted', { id: itemId, retroId })
+  }
+
+  emitActionItemsReordered(retroId: string, items: any[]) {
+    this.server
+      .to(`retro:${retroId}`)
+      .emit('action-item:reordered', { retroId, items })
+  }
+
   private async verifyRetroAccess(
     userId: string,
     retroId: string,

@@ -17,10 +17,12 @@ describe('ActionItemsService', () => {
         findUnique: jest.Mock
         update: jest.Mock
         delete: jest.Mock
+        count: jest.Mock
       }
       retro: { findUnique: jest.Mock }
       team: { findUnique: jest.Mock }
-      teamMember: { findUnique: jest.Mock }
+      teamMember: { findUnique: jest.Mock; findMany: jest.Mock }
+      $transaction: jest.Mock
     }
   }
 
@@ -59,10 +61,12 @@ describe('ActionItemsService', () => {
           findUnique: jest.fn(),
           update: jest.fn(),
           delete: jest.fn(),
+          count: jest.fn(),
         },
         retro: { findUnique: jest.fn() },
         team: { findUnique: jest.fn() },
-        teamMember: { findUnique: jest.fn() },
+        teamMember: { findUnique: jest.fn(), findMany: jest.fn() },
+        $transaction: jest.fn(),
       },
     }
 
@@ -87,6 +91,7 @@ describe('ActionItemsService', () => {
     it('should create an action item when user is a team member', async () => {
       prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
       prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.actionItem.count.mockResolvedValue(3)
       prisma.client.actionItem.create.mockResolvedValue(mockActionItem)
 
       const result = await service.create(userId, retroId, dto)
@@ -105,6 +110,7 @@ describe('ActionItemsService', () => {
           dueDate: new Date('2026-03-01'),
           retroId,
           createdById: userId,
+          position: 3,
         },
         include: {
           assignee: { select: { id: true, name: true, avatarUrl: true } },
@@ -117,6 +123,7 @@ describe('ActionItemsService', () => {
     it('should create an action item without optional fields', async () => {
       prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
       prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.actionItem.count.mockResolvedValue(0)
       prisma.client.actionItem.create.mockResolvedValue({
         ...mockActionItem,
         assignee: null,
@@ -131,6 +138,7 @@ describe('ActionItemsService', () => {
             title: 'Minimal item',
             assigneeId: undefined,
             dueDate: undefined,
+            position: 0,
           }),
         }),
       )
@@ -168,7 +176,7 @@ describe('ActionItemsService', () => {
           assignee: { select: { id: true, name: true, avatarUrl: true } },
           createdBy: { select: { id: true, name: true, avatarUrl: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { position: 'asc' },
       })
       expect(result).toEqual([mockActionItem])
     })

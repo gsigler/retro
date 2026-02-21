@@ -11,6 +11,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 vi.mock('@/lib/socket', () => ({
   createBoardSocket: () => ({
     on: vi.fn(),
+    off: vi.fn(),
     emit: vi.fn(),
     connect: vi.fn(),
     disconnect: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock('@/lib/api', () => ({
   fetchBoard: vi.fn(),
   fetchTemplates: vi.fn(),
   fetchActionItems: vi.fn(),
+  fetchRetroMembers: vi.fn(),
 }))
 
 const api = await import('@/lib/api')

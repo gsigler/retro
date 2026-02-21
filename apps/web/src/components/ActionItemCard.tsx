@@ -1,18 +1,25 @@
-import { Circle, CheckCircle2 } from 'lucide-react'
+import { Circle, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import type { ActionItem } from '@/types/api'
 
 interface ActionItemCardProps {
   item: ActionItem
   onMarkDone: () => void
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
-export function ActionItemCard({ item, onMarkDone }: ActionItemCardProps) {
+export function ActionItemCard({
+  item,
+  onMarkDone,
+  onEdit,
+  onDelete,
+}: ActionItemCardProps) {
   const isDone = item.status === 'DONE'
   const isOverdue =
     item.dueDate && !isDone && new Date(item.dueDate) < new Date()
 
   return (
-    <div className="flex items-start gap-3 rounded-lg border p-3">
+    <div className="group flex items-start gap-3 rounded-lg border p-3">
       <button
         onClick={onMarkDone}
         disabled={isDone}
@@ -58,6 +65,26 @@ export function ActionItemCard({ item, onMarkDone }: ActionItemCardProps) {
             </span>
           )}
         </div>
+      </div>
+      <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="text-muted-foreground hover:text-primary"
+            aria-label="Edit action item"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="text-muted-foreground hover:text-destructive"
+            aria-label="Delete action item"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        )}
       </div>
     </div>
   )

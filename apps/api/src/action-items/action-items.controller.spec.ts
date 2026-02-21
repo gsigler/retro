@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ActionItemsController } from './action-items.controller.js'
 import { ActionItemsService } from './action-items.service.js'
+import { BoardGateway } from '../board/board.gateway.js'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import { ActionItemResponse } from './dto/action-item-response.dto.js'
 
@@ -12,6 +13,14 @@ describe('ActionItemsController', () => {
     findOne: jest.Mock
     update: jest.Mock
     remove: jest.Mock
+    reorder: jest.Mock
+    findMembersForRetro: jest.Mock
+  }
+  let boardGateway: {
+    emitActionItemCreated: jest.Mock
+    emitActionItemUpdated: jest.Mock
+    emitActionItemDeleted: jest.Mock
+    emitActionItemsReordered: jest.Mock
   }
 
   const req = { user: { id: 'user-1' } }
@@ -23,12 +32,22 @@ describe('ActionItemsController', () => {
       findOne: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
+      reorder: jest.fn(),
+      findMembersForRetro: jest.fn(),
+    }
+
+    boardGateway = {
+      emitActionItemCreated: jest.fn(),
+      emitActionItemUpdated: jest.fn(),
+      emitActionItemDeleted: jest.fn(),
+      emitActionItemsReordered: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ActionItemsController],
       providers: [
         { provide: ActionItemsService, useValue: actionItemsService },
+        { provide: BoardGateway, useValue: boardGateway },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -165,13 +184,24 @@ describe('ActionItemsController', () => {
   })
 
   describe('remove', () => {
-    it('should call actionItemsService.remove', async () => {
+    it('should call actionItemsService.remove and emit deletion', async () => {
+      actionItemsService.findOne.mockResolvedValue({
+        id: 'item-1',
+        retroId: 'retro-1',
+      })
       actionItemsService.remove.mockResolvedValue(undefined)
 
-      const result = await controller.remove(req, 'item-1')
+      await controller.remove(req, 'item-1')
 
+      expect(actionItemsService.findOne).toHaveBeenCalledWith(
+        'user-1',
+        'item-1',
+      )
       expect(actionItemsService.remove).toHaveBeenCalledWith('user-1', 'item-1')
-      expect(result).toBeUndefined()
+      expect(boardGateway.emitActionItemDeleted).toHaveBeenCalledWith(
+        'retro-1',
+        'item-1',
+      )
     })
   })
 })

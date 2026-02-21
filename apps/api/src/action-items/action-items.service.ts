@@ -33,6 +33,10 @@ export class ActionItemsService {
     const retro = await this.findRetroOrThrow(retroId)
     await this.assertTeamMember(userId, retro.teamId)
 
+    const count = await this.prisma.client.actionItem.count({
+      where: { retroId },
+    })
+
     return this.prisma.client.actionItem.create({
       data: {
         title: dto.title,
@@ -41,6 +45,7 @@ export class ActionItemsService {
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         retroId,
         createdById: userId,
+        position: count,
       },
       include: {
         assignee: { select: userSelect },
@@ -59,7 +64,7 @@ export class ActionItemsService {
         assignee: { select: userSelect },
         createdBy: { select: userSelect },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { position: 'asc' },
     })
   }
 
@@ -96,6 +101,36 @@ export class ActionItemsService {
         createdBy: { select: userSelect },
       },
     })
+  }
+
+  async reorder(userId: string, retroId: string, orderedIds: string[]) {
+    const retro = await this.findRetroOrThrow(retroId)
+    await this.assertTeamMember(userId, retro.teamId)
+
+    await this.prisma.client.$transaction(
+      orderedIds.map((id, index) =>
+        this.prisma.client.actionItem.update({
+          where: { id },
+          data: { position: index },
+        }),
+      ),
+    )
+
+    return this.findAllForRetro(userId, retroId)
+  }
+
+  async findMembersForRetro(userId: string, retroId: string) {
+    const retro = await this.findRetroOrThrow(retroId)
+    await this.assertTeamMember(userId, retro.teamId)
+
+    const members = await this.prisma.client.teamMember.findMany({
+      where: { teamId: retro.teamId },
+      include: {
+        user: { select: userSelect },
+      },
+    })
+
+    return members.map((m) => m.user)
   }
 
   async remove(userId: string, actionItemId: string) {

@@ -13,14 +13,20 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import { ActionItemsService } from './action-items.service.js'
+import { BoardGateway } from '../board/board.gateway.js'
 import { CreateActionItemDto } from './dto/create-action-item.dto.js'
 import { UpdateActionItemDto } from './dto/update-action-item.dto.js'
+import { ReorderActionItemsDto } from './dto/reorder-action-items.dto.js'
 import { ActionItemResponse } from './dto/action-item-response.dto.js'
+import { ActionItemUserSummary } from './dto/action-item-response.dto.js'
 
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class ActionItemsController {
-  constructor(private readonly actionItemsService: ActionItemsService) {}
+  constructor(
+    private readonly actionItemsService: ActionItemsService,
+    private readonly boardGateway: BoardGateway,
+  ) {}
 
   @Post('retros/:retroId/action-items')
   async create(
@@ -29,7 +35,9 @@ export class ActionItemsController {
     @Body() dto: CreateActionItemDto,
   ): Promise<ActionItemResponse> {
     const item = await this.actionItemsService.create(req.user.id, retroId, dto)
-    return ActionItemResponse.from(item)
+    const response = ActionItemResponse.from(item)
+    this.boardGateway.emitActionItemCreated(retroId, response)
+    return response
   }
 
   @Get('retros/:retroId/action-items')
@@ -44,6 +52,18 @@ export class ActionItemsController {
     return items.map(ActionItemResponse.from)
   }
 
+  @Get('retros/:retroId/members')
+  async findMembers(
+    @Request() req: { user: { id: string } },
+    @Param('retroId') retroId: string,
+  ): Promise<ActionItemUserSummary[]> {
+    const members = await this.actionItemsService.findMembersForRetro(
+      req.user.id,
+      retroId,
+    )
+    return members.map(ActionItemUserSummary.from)
+  }
+
   @Get('action-items/:id')
   async findOne(
     @Request() req: { user: { id: string } },
@@ -53,6 +73,22 @@ export class ActionItemsController {
     return ActionItemResponse.from(item)
   }
 
+  @Patch('retros/:retroId/action-items/reorder')
+  async reorder(
+    @Request() req: { user: { id: string } },
+    @Param('retroId') retroId: string,
+    @Body() dto: ReorderActionItemsDto,
+  ): Promise<ActionItemResponse[]> {
+    const items = await this.actionItemsService.reorder(
+      req.user.id,
+      retroId,
+      dto.orderedIds,
+    )
+    const response = items.map(ActionItemResponse.from)
+    this.boardGateway.emitActionItemsReordered(retroId, response)
+    return response
+  }
+
   @Patch('action-items/:id')
   async update(
     @Request() req: { user: { id: string } },
@@ -60,15 +96,19 @@ export class ActionItemsController {
     @Body() dto: UpdateActionItemDto,
   ): Promise<ActionItemResponse> {
     const item = await this.actionItemsService.update(req.user.id, id, dto)
-    return ActionItemResponse.from(item)
+    const response = ActionItemResponse.from(item)
+    this.boardGateway.emitActionItemUpdated(item.retroId, response)
+    return response
   }
 
   @Delete('action-items/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
+  async remove(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
   ): Promise<void> {
-    return this.actionItemsService.remove(req.user.id, id)
+    const item = await this.actionItemsService.findOne(req.user.id, id)
+    await this.actionItemsService.remove(req.user.id, id)
+    this.boardGateway.emitActionItemDeleted(item.retroId, id)
   }
 }
