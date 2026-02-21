@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTheme } from '@/contexts/ThemeContext'
 import { TerminalButton } from '@/components/terminal/TerminalButton'
@@ -27,6 +28,7 @@ export function RetrosSection({
   onMutation,
 }: RetrosSectionProps) {
   const { theme } = useTheme()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -52,8 +54,8 @@ export function RetrosSection({
 
   async function handleCreateRetro(data: { name: string; date: string }) {
     if (!team) return
-    await createRetro(token, team.id, data)
-    await refresh()
+    const retro = await createRetro(token, team.id, data)
+    navigate(`/retros/${retro.id}/board`)
   }
 
   async function handleEditRetro(data: { name: string; date: string }) {
