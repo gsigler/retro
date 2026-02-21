@@ -33,6 +33,7 @@ COPY apps/web/package.json ./apps/web/
 RUN npm ci --omit=dev --ignore-scripts
 
 COPY apps/api/prisma ./apps/api/prisma
+COPY apps/api/prisma.config.ts ./apps/api/
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 
 EXPOSE 3000
