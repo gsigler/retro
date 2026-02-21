@@ -1,18 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Copy, Pencil, Plus, UserPlus } from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
+import { TerminalInput } from '@/components/terminal/TerminalInput'
 import { MemberList } from '@/components/MemberList'
 import { TeamFormDialog } from '@/components/TeamFormDialog'
 import { AddMemberDialog } from '@/components/AddMemberDialog'
+import { BlinkingCursor } from '@/components/board/TypingEffect'
 import {
   fetchTeams,
   fetchTeam,
@@ -30,6 +24,7 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
+  const { theme } = useTheme()
   const queryClient = useQueryClient()
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -112,50 +107,74 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
   }
 
   if (isLoadingTeams) {
-    return <div className="bg-muted/50 mt-6 h-48 animate-pulse rounded-xl" />
+    return (
+      <div>
+        <p style={{ color: theme.green, fontSize: 12 }}>
+          Loading...
+          <BlinkingCursor />
+        </p>
+      </div>
+    )
   }
 
-  // No team — onboarding
   if (!teams || teams.length === 0) {
     return (
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Get Started</CardTitle>
-          <CardDescription>
-            Create a new team or join an existing one
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-3">
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="size-4" />
-              Create Team
-            </Button>
-          </div>
-          <div className="border-t pt-4">
-            <p className="text-muted-foreground mb-2 text-sm">
-              Have an invite code? Join a team:
+      <div>
+        <p
+          style={{
+            color: theme.textTertiary,
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          No teams found. Create a new team or join with an invite code.
+        </p>
+
+        <TerminalButton onClick={() => setShowCreateDialog(true)}>
+          + create team
+        </TerminalButton>
+
+        <div
+          style={{
+            borderTop: `1px solid ${theme.border}40`,
+            marginTop: 12,
+            paddingTop: 12,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 11,
+              color: theme.textTertiary,
+              marginBottom: 8,
+            }}
+          >
+            <span style={{ color: theme.yellow }}>?</span> Have an invite code?
+          </p>
+          <form
+            onSubmit={handleJoinTeam}
+            style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+          >
+            <TerminalInput
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              placeholder="paste invite code"
+              style={{ maxWidth: 280, flex: 1 }}
+            />
+            <TerminalButton
+              type="submit"
+              variant="submit"
+              size="sm"
+              disabled={isJoining || !inviteCode.trim()}
+            >
+              {isJoining ? 'joining...' : 'join'}
+            </TerminalButton>
+          </form>
+          {joinError && (
+            <p style={{ color: theme.red, fontSize: 11, marginTop: 4 }}>
+              ERR! {joinError}
             </p>
-            <form onSubmit={handleJoinTeam} className="flex gap-2">
-              <Input
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                placeholder="Paste invite code"
-                className="max-w-xs"
-              />
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={isJoining || !inviteCode.trim()}
-              >
-                {isJoining ? 'Joining...' : 'Join'}
-              </Button>
-            </form>
-            {joinError && (
-              <p className="text-destructive mt-1 text-sm">{joinError}</p>
-            )}
-          </div>
-        </CardContent>
+          )}
+        </div>
 
         <TeamFormDialog
           open={showCreateDialog}
@@ -163,94 +182,135 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
           onSubmit={handleCreateTeam}
           mode="create"
         />
-      </Card>
+      </div>
     )
   }
 
-  // Has a team
   const team = teams[0]
 
   return (
-    <div className="mt-6 space-y-4">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle>{teamDetail?.name ?? team.name}</CardTitle>
-              <CardDescription>
-                {teamDetail?.description ??
-                  team.description ??
-                  'No description'}
-              </CardDescription>
-            </div>
+    <>
+      {/* Team info row */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: 12,
+          color: theme.textTertiary,
+          flexWrap: 'wrap',
+        }}
+      >
+        <span style={{ fontWeight: 700, color: theme.textPrimary }}>
+          {teamDetail?.name ?? team.name}
+        </span>
+        <span style={{ color: theme.border }}>│</span>
+        <span>
+          {teamDetail?.description ?? team.description ?? 'No description'}
+        </span>
+        <span style={{ color: theme.border }}>│</span>
+        <span>
+          <span style={{ color: theme.purple }}>{team.memberCount}</span>{' '}
+          members
+        </span>
+        <span>
+          <span style={{ color: theme.purple }}>{team.retroCount}</span> retros
+        </span>
+        {isOwner && (
+          <>
+            <span style={{ color: theme.border }}>│</span>
+            <span
+              onClick={() => setShowEditDialog(true)}
+              style={{ color: theme.cyan, cursor: 'pointer' }}
+            >
+              [edit]
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Invite code */}
+      {isOwner && teamDetail && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginTop: 8,
+            fontSize: 11,
+            color: theme.textTertiary,
+          }}
+        >
+          invite:
+          <code
+            style={{
+              background: theme.bgSecondary,
+              border: `1px solid ${theme.border}`,
+              borderRadius: 3,
+              padding: '1px 6px',
+              fontSize: 11,
+              color: theme.yellow,
+              letterSpacing: '0.05em',
+            }}
+          >
+            {teamDetail.inviteCode}
+          </code>
+          <span
+            onClick={handleCopyInviteCode}
+            style={{ color: theme.cyan, cursor: 'pointer' }}
+          >
+            {copied ? 'copied!' : '[copy]'}
+          </span>
+        </div>
+      )}
+
+      {/* Members */}
+      {teamDetail && (
+        <div
+          style={{
+            marginTop: 12,
+            borderTop: `1px solid ${theme.border}40`,
+            paddingTop: 8,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 4,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 11,
+                color: theme.textTertiary,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}
+            >
+              members ({teamDetail.members.length})
+            </span>
             {isOwner && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setShowEditDialog(true)}
-                aria-label="Edit team"
+              <span
+                onClick={() => setShowAddMemberDialog(true)}
+                style={{
+                  fontSize: 11,
+                  color: theme.green,
+                  cursor: 'pointer',
+                }}
               >
-                <Pencil className="size-4" />
-              </Button>
+                [+ add]
+              </span>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-muted-foreground flex gap-4 text-sm">
-            <span>{team.memberCount} members</span>
-            <span>{team.retroCount} retros</span>
-          </div>
-
-          {isOwner && teamDetail && (
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">
-                Invite code:
-              </span>
-              <code className="bg-muted rounded px-2 py-1 text-sm">
-                {teamDetail.inviteCode}
-              </code>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={handleCopyInviteCode}
-                aria-label="Copy invite code"
-              >
-                <Copy className="size-3" />
-              </Button>
-              {copied && (
-                <span className="text-muted-foreground text-xs">Copied!</span>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {teamDetail && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Members</CardTitle>
-              {isOwner && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddMemberDialog(true)}
-                >
-                  <UserPlus className="size-4" />
-                  Add Member
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <MemberList
-              members={teamDetail.members}
-              ownerId={teamDetail.ownerId}
-              isOwner={isOwner}
-              onRemove={handleRemoveMember}
-            />
-          </CardContent>
-        </Card>
+          <MemberList
+            members={teamDetail.members}
+            ownerId={teamDetail.ownerId}
+            isOwner={isOwner}
+            onRemove={handleRemoveMember}
+          />
+        </div>
       )}
 
       {isOwner && teamDetail && (
@@ -272,6 +332,6 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
           />
         </>
       )}
-    </div>
+    </>
   )
 }

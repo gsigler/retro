@@ -56,21 +56,21 @@ describe('AddCardForm', () => {
     vi.clearAllMocks()
   })
 
-  it('shows add card button initially', () => {
+  it('shows add item prompt initially', () => {
     renderWithProviders()
 
-    expect(screen.getByText('Add card')).toBeDefined()
+    expect(screen.getByText(/add item/i)).toBeDefined()
   })
 
-  it('shows textarea after clicking add card', async () => {
+  it('shows textarea after clicking add item', async () => {
     renderWithProviders()
 
-    await userEvent.click(screen.getByText('Add card'))
+    await userEvent.click(screen.getByText(/add item/i))
 
     expect(screen.getByPlaceholderText('Type your thought...')).toBeDefined()
   })
 
-  it('submits form and calls createCard', async () => {
+  it('submits form via Enter and calls createCard', async () => {
     mockCreateCard.mockResolvedValue({
       id: 'card-new',
       columnId: 'col-1',
@@ -84,12 +84,11 @@ describe('AddCardForm', () => {
 
     renderWithProviders()
 
-    await userEvent.click(screen.getByText('Add card'))
+    await userEvent.click(screen.getByText(/add item/i))
     await userEvent.type(
       screen.getByPlaceholderText('Type your thought...'),
-      'My new card',
+      'My new card{Enter}',
     )
-    await userEvent.click(screen.getByText('Add'))
 
     expect(mockCreateCard).toHaveBeenCalledWith('tok', 'retro-1', {
       columnId: 'col-1',
@@ -97,13 +96,13 @@ describe('AddCardForm', () => {
     })
   })
 
-  it('cancels and hides textarea', async () => {
+  it('hides textarea on Escape', async () => {
     renderWithProviders()
 
-    await userEvent.click(screen.getByText('Add card'))
+    await userEvent.click(screen.getByText(/add item/i))
     expect(screen.getByPlaceholderText('Type your thought...')).toBeDefined()
 
-    await userEvent.click(screen.getByText('Cancel'))
+    await userEvent.keyboard('{Escape}')
     expect(screen.queryByPlaceholderText('Type your thought...')).toBeNull()
   })
 })

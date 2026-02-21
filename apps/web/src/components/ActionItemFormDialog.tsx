@@ -1,22 +1,9 @@
 import { useEffect, useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalDialog } from '@/components/terminal/TerminalDialog'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
+import { TerminalInput } from '@/components/terminal/TerminalInput'
+import { TerminalSelect } from '@/components/terminal/TerminalSelect'
 import type { TeamMember } from '@/types/api'
 
 interface ActionItemFormDialogProps {
@@ -46,6 +33,7 @@ export function ActionItemFormDialog({
   members,
   mode,
 }: ActionItemFormDialogProps) {
+  const { theme } = useTheme()
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [description, setDescription] = useState(
     initialValues?.description ?? '',
@@ -96,74 +84,80 @@ export function ActionItemFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? 'New Action Item' : 'Edit Action Item'}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'create'
-              ? 'Create a new action item for this retro'
-              : 'Update action item details'}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="item-title">Title</Label>
-            <Input
-              id="item-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="What needs to be done?"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="item-description">Description</Label>
-            <Input
-              id="item-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional details"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label>Assignee</Label>
-            <Select value={assigneeId} onValueChange={setAssigneeId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select assignee" />
-              </SelectTrigger>
-              <SelectContent>
-                {members.map((member) => (
-                  <SelectItem key={member.user.id} value={member.user.id}>
-                    {member.user.name ?? member.user.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="item-due-date">Due Date</Label>
-            <Input
-              id="item-due-date"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting || !title.trim()}>
-              {isSubmitting
-                ? 'Saving...'
-                : mode === 'create'
-                  ? 'Create'
-                  : 'Save'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <TerminalDialog
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={mode === 'create' ? 'New Action Item' : 'Edit Action Item'}
+    >
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <div className="grid gap-2">
+          <label
+            htmlFor="item-title"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Title
+          </label>
+          <TerminalInput
+            id="item-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What needs to be done?"
+            required
+          />
+        </div>
+        <div className="grid gap-2">
+          <label
+            htmlFor="item-description"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Description
+          </label>
+          <TerminalInput
+            id="item-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Optional details"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label style={{ fontSize: 13, color: theme.textTertiary }}>
+            Assignee
+          </label>
+          <TerminalSelect
+            value={assigneeId}
+            onValueChange={setAssigneeId}
+            options={members.map((m) => ({
+              value: m.user.id,
+              label: m.user.name ?? m.user.email,
+            }))}
+            placeholder="Select assignee"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label
+            htmlFor="item-due-date"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Due Date
+          </label>
+          <TerminalInput
+            id="item-due-date"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            prefix=""
+          />
+        </div>
+        {error && <p style={{ color: theme.red, fontSize: 13 }}>{error}</p>}
+        <div className="flex justify-end gap-2">
+          <TerminalButton
+            type="submit"
+            disabled={isSubmitting || !title.trim()}
+          >
+            {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Save'}
+          </TerminalButton>
+        </div>
+      </form>
+    </TerminalDialog>
   )
 }

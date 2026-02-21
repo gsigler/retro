@@ -47,11 +47,11 @@ describe('BoardPage', () => {
     vi.clearAllMocks()
   })
 
-  it('shows loading spinner while fetching board', () => {
+  it('shows loading state while fetching board', () => {
     mockFetchBoard.mockReturnValue(new Promise(() => {}))
     renderWithProviders()
 
-    expect(document.querySelector('.animate-spin')).toBeTruthy()
+    expect(screen.getByText(/loading board/i)).toBeTruthy()
   })
 
   it('shows template picker when board has no columns', async () => {

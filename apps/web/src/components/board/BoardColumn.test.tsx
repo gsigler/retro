@@ -61,14 +61,14 @@ describe('BoardColumn', () => {
   it('renders column name and card count', () => {
     renderWithProviders(column)
 
-    expect(screen.getByText('Start')).toBeDefined()
-    expect(screen.getByText('1')).toBeDefined()
+    expect(screen.getByText(/Start/)).toBeDefined()
+    expect(screen.getByText(/\(1\)/)).toBeDefined()
   })
 
   it('renders column description', () => {
     renderWithProviders(column)
 
-    expect(screen.getByText('Things to start doing')).toBeDefined()
+    expect(screen.getByText(/Things to start doing/)).toBeDefined()
   })
 
   it('renders cards within the column', () => {
@@ -77,9 +77,9 @@ describe('BoardColumn', () => {
     expect(screen.getByText('Write more tests')).toBeDefined()
   })
 
-  it('shows add card button', () => {
+  it('shows add item prompt', () => {
     renderWithProviders(column)
 
-    expect(screen.getByText('Add card')).toBeDefined()
+    expect(screen.getByText(/add item/i)).toBeDefined()
   })
 })

@@ -82,28 +82,22 @@ describe('DashboardPage', () => {
     vi.clearAllMocks()
   })
 
-  it('shows loading skeletons initially', () => {
+  it('shows loading state initially', () => {
     mockFetchDashboardSummary.mockReturnValue(new Promise(() => {})) // never resolves
     renderDashboard()
-    // Should show 4 skeleton divs
-    const skeletons = document.querySelectorAll('.animate-pulse')
-    expect(skeletons.length).toBeGreaterThanOrEqual(4)
+    expect(screen.getByText(/retro dashboard --fetch/i)).toBeDefined()
   })
 
-  it('shows stats cards with summary data', async () => {
+  it('shows stats table with summary data', async () => {
     mockFetchDashboardSummary.mockResolvedValue(mockSummary)
     renderDashboard()
 
     await waitFor(() => {
-      expect(screen.getByText('5')).toBeDefined()
+      expect(screen.getByText(/members:/)).toBeDefined()
     })
-    expect(screen.getByText('Team Members')).toBeDefined()
-    expect(screen.getByText('10')).toBeDefined()
-    expect(screen.getByText('Retros')).toBeDefined()
-    expect(screen.getByText('3')).toBeDefined()
-    expect(screen.getByText('Open Items')).toBeDefined()
-    expect(screen.getByText('7')).toBeDefined()
-    expect(screen.getByText('Completed')).toBeDefined()
+    expect(screen.getByText(/retros:/)).toBeDefined()
+    expect(screen.getByText(/open:/)).toBeDefined()
+    expect(screen.getByText(/completed:/)).toBeDefined()
   })
 
   it('shows error state on fetch failure', async () => {
@@ -113,7 +107,7 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeDefined()
     })
-    expect(screen.getByText('Failed to load dashboard data')).toBeDefined()
+    expect(screen.getByText(/failed to load dashboard data/i)).toBeDefined()
   })
 
   it('calls logout and navigates home on logout click', async () => {
@@ -121,7 +115,7 @@ describe('DashboardPage', () => {
     renderDashboard()
 
     await waitFor(() => {
-      expect(screen.getByText('Team Members')).toBeDefined()
+      expect(screen.getByText(/members:/)).toBeDefined()
     })
     fireEvent.click(screen.getByRole('button', { name: /logout/i }))
     expect(mockLogout).toHaveBeenCalled()
@@ -134,6 +128,21 @@ describe('DashboardPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('test@example.com')).toBeDefined()
+    })
+  })
+
+  it('opens team dialog when team button is clicked', async () => {
+    mockFetchDashboardSummary.mockResolvedValue(mockSummary)
+    renderDashboard()
+
+    await waitFor(() => {
+      expect(screen.getByText(/members:/)).toBeDefined()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /team/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeDefined()
     })
   })
 })

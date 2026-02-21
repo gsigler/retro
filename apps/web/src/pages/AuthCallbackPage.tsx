@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
+import { BlinkingCursor } from '@/components/board/TypingEffect'
 
 type Status = 'loading' | 'error'
 
@@ -8,6 +10,7 @@ export default function AuthCallbackPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { theme } = useTheme()
   const [status, setStatus] = useState<Status>('loading')
 
   useEffect(() => {
@@ -25,25 +28,75 @@ export default function AuthCallbackPage() {
 
   if (status === 'error') {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="text-center">
-          <h1 className="mb-2 text-2xl font-bold">Authentication failed</h1>
-          <p className="mb-4 text-muted-foreground">
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: theme.bg,
+          padding: 16,
+        }}
+      >
+        <div style={{ maxWidth: 480, fontFamily: 'inherit' }}>
+          <p style={{ color: theme.red, fontSize: 12, marginBottom: 4 }}>
+            <span style={{ color: theme.green }}>$</span> retro auth --callback
+          </p>
+          <p style={{ color: theme.red, fontSize: 12, marginBottom: 16 }}>
+            ERR! authentication failed
+          </p>
+          <h1
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              color: theme.red,
+              marginBottom: 8,
+            }}
+          >
+            Authentication failed
+          </h1>
+          <p
+            style={{
+              color: theme.textTertiary,
+              fontSize: 13,
+              marginBottom: 20,
+            }}
+          >
             Something went wrong during sign in.
           </p>
-          <Link to="/login" className="text-primary hover:underline">
-            Try again
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: theme.green }}>$</span>
+            <Link
+              to="/login"
+              style={{ color: theme.purple, textDecoration: 'none' }}
+            >
+              Try again
+            </Link>
+            <BlinkingCursor />
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-        <p className="text-muted-foreground">Signing you in...</p>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: theme.bg,
+      }}
+    >
+      <div>
+        <p style={{ color: theme.textTertiary, fontSize: 12, marginBottom: 4 }}>
+          <span style={{ color: theme.green }}>$</span> retro auth --callback
+        </p>
+        <p style={{ color: theme.green, fontSize: 13 }}>
+          Signing you in...
+          <BlinkingCursor />
+        </p>
       </div>
     </div>
   )

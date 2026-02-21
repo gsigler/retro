@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { createCard } from '@/lib/api'
+import { useTheme } from '@/contexts/ThemeContext'
 import { useBoardContext } from './BoardProvider'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
 
 interface AddCardFormProps {
   token: string
@@ -11,17 +10,15 @@ interface AddCardFormProps {
 }
 
 export function AddCardForm({ token, retroId, columnId }: AddCardFormProps) {
+  const { theme } = useTheme()
   const { dispatch } = useBoardContext()
   const [isOpen, setIsOpen] = useState(false)
   const [content, setContent] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = content.trim()
     if (!trimmed) return
 
-    setSubmitting(true)
     try {
       const card = await createCard(token, retroId, {
         columnId,
@@ -32,8 +29,6 @@ export function AddCardForm({ token, retroId, columnId }: AddCardFormProps) {
       setIsOpen(false)
     } catch {
       // Socket broadcast will also update
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -41,53 +36,84 @@ export function AddCardForm({ token, retroId, columnId }: AddCardFormProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-sm transition-colors"
+        style={{
+          width: '100%',
+          padding: '6px 10px',
+          background: 'transparent',
+          border: 'none',
+          borderRadius: 0,
+          color: theme.textTertiary,
+          fontFamily: 'inherit',
+          fontSize: 12,
+          cursor: 'pointer',
+          textAlign: 'left',
+          opacity: 0.5,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '1'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '0.5'
+        }}
       >
-        <Plus className="size-4" />
-        Add card
+        <span style={{ color: theme.green }}>$</span> add item...
       </button>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2">
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Type your thought..."
-        autoFocus
-        rows={2}
-        className="placeholder:text-muted-foreground w-full resize-none rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault()
-            handleSubmit(e)
-          }
-          if (e.key === 'Escape') {
-            setIsOpen(false)
-            setContent('')
-          }
+    <form onSubmit={handleSubmit}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+          borderLeft: `2px solid ${theme.green}`,
+          padding: '6px 10px',
         }}
-      />
-      <div className="flex gap-1">
-        <Button
-          type="submit"
-          size="xs"
-          disabled={submitting || !content.trim()}
-        >
-          {submitting ? 'Adding...' : 'Add'}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={() => {
-            setIsOpen(false)
-            setContent('')
+      >
+        <span
+          style={{
+            color: theme.green,
+            fontWeight: 600,
+            marginTop: 2,
+            flexShrink: 0,
           }}
         >
-          Cancel
-        </Button>
+          $
+        </span>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Type your thought..."
+          autoFocus
+          rows={2}
+          style={{
+            width: '100%',
+            resize: 'none',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            color: theme.textPrimary,
+            fontFamily: 'inherit',
+            fontSize: 12,
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSubmit(e)
+            }
+            if (e.key === 'Escape') {
+              setIsOpen(false)
+              setContent('')
+            }
+          }}
+        />
+      </div>
+      <div style={{ marginTop: 4, paddingLeft: 20, fontSize: 11 }}>
+        <span style={{ color: theme.textTertiary }}>
+          Enter to submit &middot; Esc to cancel
+        </span>
       </div>
     </form>
   )
