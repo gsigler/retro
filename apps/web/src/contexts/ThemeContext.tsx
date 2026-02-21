@@ -169,6 +169,125 @@ const solarized: Theme = {
   swatches: ['#dc322f', '#b58900', '#859900', '#268bd2', '#d33682', '#2aa198'],
 }
 
+const light: Theme = {
+  name: 'Light',
+  bg: '#ffffff',
+  bgSecondary: '#f5f5f5',
+  bgHover: '#e8e8e8',
+  surface: '#eeeeee',
+  border: '#cccccc',
+  textPrimary: '#1a1a1a',
+  textSecondary: '#7c3aed',
+  textTertiary: '#555555',
+  green: '#16a34a',
+  red: '#dc2626',
+  yellow: '#b45309',
+  blue: '#2563eb',
+  purple: '#9333ea',
+  cyan: '#0891b2',
+  cursor: '#1a1a1a',
+  dotRed: '#dc2626',
+  dotYellow: '#b45309',
+  dotGreen: '#16a34a',
+  swatches: ['#dc2626', '#b45309', '#16a34a', '#2563eb', '#9333ea', '#0891b2'],
+}
+
+const solarizedLight: Theme = {
+  name: 'Solarized Light',
+  bg: '#fdf6e3',
+  bgSecondary: '#eee8d5',
+  bgHover: '#e4ddc8',
+  surface: '#eee8d5',
+  border: '#93a1a1',
+  textPrimary: '#073642',
+  textSecondary: '#268bd2',
+  textTertiary: '#586e75',
+  green: '#859900',
+  red: '#dc322f',
+  yellow: '#b58900',
+  blue: '#268bd2',
+  purple: '#d33682',
+  cyan: '#2aa198',
+  cursor: '#073642',
+  dotRed: '#dc322f',
+  dotYellow: '#b58900',
+  dotGreen: '#859900',
+  swatches: ['#dc322f', '#b58900', '#859900', '#268bd2', '#d33682', '#2aa198'],
+}
+
+const highContrast: Theme = {
+  name: 'High Contrast',
+  bg: '#000000',
+  bgSecondary: '#0d0d0d',
+  bgHover: '#1a1a1a',
+  surface: '#141414',
+  border: '#ffffff',
+  textPrimary: '#ffffff',
+  textSecondary: '#ffff00',
+  textTertiary: '#dddddd',
+  green: '#00ff88',
+  red: '#ff6b6b',
+  yellow: '#ffff00',
+  blue: '#66aaff',
+  purple: '#cc88ff',
+  cyan: '#00ffff',
+  cursor: '#ffffff',
+  dotRed: '#ff6b6b',
+  dotYellow: '#ffff00',
+  dotGreen: '#00ff88',
+  swatches: ['#ff6b6b', '#ffff00', '#00ff88', '#66aaff', '#cc88ff', '#00ffff'],
+}
+
+// Color values in this theme follow the Okabe-Ito palette, which is safe for
+// deuteranopia/protanopia (red-green color blindness). The 'green' and 'red'
+// fields are repurposed as "positive" (sky blue) and "warning/error" (orange)
+// so no meaning is conveyed by red/green distinction alone.
+const colorBlind: Theme = {
+  name: 'Color Blind Friendly',
+  bg: '#0a0a1a',
+  bgSecondary: '#0d0d22',
+  bgHover: '#16163a',
+  surface: '#14142e',
+  border: '#5b72b8',
+  textPrimary: '#e8e8e8',
+  textSecondary: '#f8a100',
+  textTertiary: '#9099bb',
+  green: '#56b4e9', // sky blue — used where "positive/success" is indicated
+  red: '#e69f00', // orange — used where "error/danger" is indicated
+  yellow: '#f0e442',
+  blue: '#0072b2',
+  purple: '#cc79a7',
+  cyan: '#56b4e9',
+  cursor: '#e8e8e8',
+  dotRed: '#d55e00',
+  dotYellow: '#f0e442',
+  dotGreen: '#009e73',
+  swatches: ['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#0072b2', '#cc79a7'],
+}
+
+const devDesigned: Theme = {
+  name: 'Dev Designed',
+  bg: '#0000aa',
+  bgSecondary: '#000088',
+  bgHover: '#0000cc',
+  surface: '#0000bb',
+  border: '#ff0000',
+  textPrimary: '#ff0000',
+  textSecondary: '#ffff00',
+  textTertiary: '#ff8800',
+  green: '#00ff00',
+  red: '#ff0000',
+  yellow: '#ffff00',
+  blue: '#00aaff',
+  purple: '#ff00ff',
+  cyan: '#00ffff',
+  cursor: '#ff0000',
+  dotRed: '#ff0000',
+  dotYellow: '#ffff00',
+  dotGreen: '#00ff00',
+  swatches: ['#ff0000', '#ffff00', '#00ff00', '#ff00ff', '#00ffff', '#ff8800'],
+}
+
 export const themes: Record<string, Theme> = {
   dracula,
   oneDark,
@@ -176,6 +295,11 @@ export const themes: Record<string, Theme> = {
   gruvbox,
   nord,
   solarized,
+  light,
+  solarizedLight,
+  highContrast,
+  colorBlind,
+  devDesigned,
 }
 
 interface ThemeContextValue {
