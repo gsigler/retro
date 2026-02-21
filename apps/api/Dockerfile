@@ -38,4 +38,4 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"]
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && cd /app && node apps/api/dist/src/main.js"]
