@@ -15,7 +15,7 @@ import {
 import type { Card } from '@/types/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
-import { fetchBoard, moveCard } from '@/lib/api'
+import { fetchBoard, fetchRetro, fetchTeams, moveCard } from '@/lib/api'
 import {
   BoardProvider,
   useBoardContext,
@@ -41,6 +41,20 @@ export default function BoardPage() {
     queryFn: () => fetchBoard(token!, retroId!),
     enabled: !!token && !!retroId,
   })
+
+  const { data: retro } = useQuery({
+    queryKey: ['retro', retroId],
+    queryFn: () => fetchRetro(token!, retroId!),
+    enabled: !!token && !!retroId,
+  })
+
+  const { data: teams } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => fetchTeams(token!),
+    enabled: !!token,
+  })
+
+  const teamName = teams?.find((t) => t.id === retro?.teamId)?.name
 
   if (isLoading) {
     return (
@@ -80,12 +94,27 @@ export default function BoardPage() {
 
   return (
     <BoardProvider token={token} retroId={retroId} initialBoard={board ?? null}>
-      <BoardContent token={token} retroId={retroId} />
+      <BoardContent
+        token={token}
+        retroId={retroId}
+        teamName={teamName}
+        retroName={retro?.name}
+      />
     </BoardProvider>
   )
 }
 
-function BoardContent({ token, retroId }: { token: string; retroId: string }) {
+function BoardContent({
+  token,
+  retroId,
+  teamName,
+  retroName,
+}: {
+  token: string
+  retroId: string
+  teamName?: string
+  retroName?: string
+}) {
   const { state, dispatch } = useBoardContext()
   const { theme } = useTheme()
   const [activeCard, setActiveCard] = useState<Card | null>(null)
@@ -193,6 +222,14 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
             [&larr; dashboard]
           </Link>
           <span style={{ color: theme.border }}>|</span>
+          {teamName && <span style={{ color: theme.cyan }}>{teamName}</span>}
+          {teamName && retroName && (
+            <span style={{ color: theme.border }}>|</span>
+          )}
+          {retroName && <span>{retroName}</span>}
+          {(teamName || retroName) && (
+            <span style={{ color: theme.border }}>|</span>
+          )}
           <span>choose template</span>
         </div>
         <TemplatePicker token={token} retroId={retroId} />
@@ -232,6 +269,14 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
           [&larr; dashboard]
         </Link>
         <span style={{ color: theme.border }}>|</span>
+        {teamName && <span style={{ color: theme.cyan }}>{teamName}</span>}
+        {teamName && retroName && (
+          <span style={{ color: theme.border }}>|</span>
+        )}
+        {retroName && <span>{retroName}</span>}
+        {(teamName || retroName) && (
+          <span style={{ color: theme.border }}>|</span>
+        )}
         <span style={{ color: theme.green }}>session active</span>
         <span style={{ color: theme.border }}>|</span>
         <span>{totalCards} items</span>

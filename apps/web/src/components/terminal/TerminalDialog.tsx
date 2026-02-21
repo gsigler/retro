@@ -7,6 +7,7 @@ interface TerminalDialogProps {
   onClose: () => void
   title: string
   children: ReactNode
+  dismissable?: boolean
 }
 
 export function TerminalDialog({
@@ -14,19 +15,20 @@ export function TerminalDialog({
   onClose,
   title,
   children,
+  dismissable = true,
 }: TerminalDialogProps) {
   const { theme } = useTheme()
   const overlayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !dismissable) return
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
+  }, [open, onClose, dismissable])
 
   if (!open) return null
 
@@ -37,7 +39,7 @@ export function TerminalDialog({
       aria-modal="true"
       aria-label={title}
       onClick={(e) => {
-        if (e.target === overlayRef.current) onClose()
+        if (dismissable && e.target === overlayRef.current) onClose()
       }}
       style={{
         position: 'fixed',
@@ -70,21 +72,23 @@ export function TerminalDialog({
           }}
         >
           <TerminalDialogTitle>{title}</TerminalDialogTitle>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: theme.textTertiary,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              fontSize: 16,
-              padding: 4,
-            }}
-          >
-            &times;
-          </button>
+          {dismissable && (
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: theme.textTertiary,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 16,
+                padding: 4,
+              }}
+            >
+              &times;
+            </button>
+          )}
         </div>
         <div style={{ padding: 16 }}>{children}</div>
       </div>

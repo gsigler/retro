@@ -63,6 +63,7 @@ const api = await import('@/lib/api')
 const mockFetchDashboardSummary = api.fetchDashboardSummary as ReturnType<
   typeof vi.fn
 >
+const mockFetchTeams = api.fetchTeams as ReturnType<typeof vi.fn>
 
 function renderDashboard() {
   const queryClient = new QueryClient({
@@ -133,16 +134,36 @@ describe('DashboardPage', () => {
 
   it('opens team dialog when team button is clicked', async () => {
     mockFetchDashboardSummary.mockResolvedValue(mockSummary)
+    mockFetchTeams.mockResolvedValue([
+      {
+        id: 't1',
+        name: 'Test Team',
+        ownerId: 'user-1',
+        memberCount: 1,
+        retroCount: 0,
+      },
+    ])
     renderDashboard()
 
     await waitFor(() => {
       expect(screen.getByText(/members:/)).toBeDefined()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: /team/i }))
+    fireEvent.click(screen.getByRole('button', { name: /\[team\]/i }))
 
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeDefined()
     })
+  })
+
+  it('forces team dialog open when user has no teams', async () => {
+    mockFetchDashboardSummary.mockResolvedValue(mockSummary)
+    mockFetchTeams.mockResolvedValue([])
+    renderDashboard()
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeDefined()
+    })
+    expect(screen.getByText(/welcome/i)).toBeDefined()
   })
 })

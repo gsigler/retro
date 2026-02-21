@@ -9,7 +9,7 @@ import { BlinkingCursor } from '@/components/board/TypingEffect'
 import { TeamSection } from '@/components/TeamSection'
 import { RetrosSection } from '@/components/RetrosSection'
 import { ActionItemsSection } from '@/components/ActionItemsSection'
-import { fetchDashboardSummary } from '@/lib/api'
+import { fetchDashboardSummary, fetchTeams } from '@/lib/api'
 
 export default function DashboardPage() {
   const { user, token, logout } = useAuth()
@@ -17,6 +17,14 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showTeamPanel, setShowTeamPanel] = useState(false)
+
+  const { data: teams, isLoading: isLoadingTeams } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => fetchTeams(token!),
+    enabled: !!token,
+  })
+
+  const hasNoTeams = !isLoadingTeams && !!teams && teams.length === 0
 
   const {
     data: summary,
@@ -56,8 +64,12 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ color: theme.green }}>~</span>
           <span>{user?.email}</span>
-          <span style={{ color: theme.border }}>|</span>
-          <span>dashboard</span>
+          {teams && teams.length > 0 && (
+            <>
+              <span style={{ color: theme.border }}>|</span>
+              <span style={{ color: theme.cyan }}>{teams[0].name}</span>
+            </>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <TerminalButton size="sm" onClick={() => setShowTeamPanel(true)}>
@@ -129,9 +141,12 @@ export default function DashboardPage() {
 
       {token && user && (
         <TerminalDialog
-          open={showTeamPanel}
+          open={showTeamPanel || hasNoTeams}
           onClose={() => setShowTeamPanel(false)}
-          title="Team Settings"
+          title={
+            hasNoTeams ? 'Welcome — Join or Create a Team' : 'Team Settings'
+          }
+          dismissable={!hasNoTeams}
         >
           <TeamSection
             token={token}
