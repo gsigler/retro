@@ -128,7 +128,7 @@ describe('DashboardService', () => {
       })
     })
 
-    it('should query open action items across team with take 50', async () => {
+    it('should query all action items across team with take 50', async () => {
       prisma.client.teamMember.findMany.mockResolvedValue([{ teamId }])
       prisma.client.team.findUnique.mockResolvedValue(null)
       prisma.client.retro.count.mockResolvedValue(0)
@@ -141,7 +141,6 @@ describe('DashboardService', () => {
       expect(prisma.client.actionItem.findMany).toHaveBeenCalledWith({
         where: {
           retro: { teamId: { in: [teamId] } },
-          status: { not: 'DONE' },
         },
         include: {
           assignee: {

@@ -8,6 +8,6 @@ import { PrismaModule } from '../prisma/prisma.module.js'
   imports: [PrismaModule],
   controllers: [BoardController],
   providers: [BoardService, BoardGateway],
-  exports: [BoardService],
+  exports: [BoardService, BoardGateway],
 })
 export class BoardModule {}

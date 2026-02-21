@@ -108,6 +108,7 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
 interface BoardContextValue {
   state: BoardState
   dispatch: React.Dispatch<BoardAction>
+  socketRef: React.RefObject<Socket | null>
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null)
@@ -190,7 +191,7 @@ export function BoardProvider({
   }, [token, retroId])
 
   return (
-    <BoardContext.Provider value={{ state, dispatch }}>
+    <BoardContext.Provider value={{ state, dispatch, socketRef }}>
       {children}
     </BoardContext.Provider>
   )

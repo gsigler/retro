@@ -5,6 +5,7 @@ import type {
   TeamMember,
   RetroWithCounts,
   ActionItem,
+  ActionItemUserSummary,
   DashboardSummary,
   Board,
   Card,
@@ -114,6 +115,12 @@ export function fetchRetros(token: string, teamId: string) {
   })
 }
 
+export function fetchRetro(token: string, id: string) {
+  return api<RetroWithCounts>(`/retros/${id}`, {
+    headers: authHeaders(token),
+  })
+}
+
 export function createRetro(
   token: string,
   teamId: string,
@@ -185,6 +192,24 @@ export function updateActionItem(
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(data),
+  })
+}
+
+export function reorderActionItems(
+  token: string,
+  retroId: string,
+  orderedIds: string[],
+) {
+  return api<ActionItem[]>(`/retros/${retroId}/action-items/reorder`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify({ orderedIds }),
+  })
+}
+
+export function fetchRetroMembers(token: string, retroId: string) {
+  return api<ActionItemUserSummary[]>(`/retros/${retroId}/members`, {
+    headers: authHeaders(token),
   })
 }
 

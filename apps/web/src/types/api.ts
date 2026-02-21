@@ -69,6 +69,7 @@ export interface ActionItem {
   title: string
   description: string | null
   status: string
+  position: number
   dueDate: string | null
   retroId: string
   assignee: ActionItemUserSummary | null

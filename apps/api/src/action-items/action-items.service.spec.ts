@@ -11,16 +11,18 @@ describe('ActionItemsService', () => {
   let service: ActionItemsService
   let prisma: {
     client: {
+      $transaction: jest.Mock
       actionItem: {
         create: jest.Mock
         findMany: jest.Mock
         findUnique: jest.Mock
         update: jest.Mock
         delete: jest.Mock
+        count: jest.Mock
       }
       retro: { findUnique: jest.Mock }
       team: { findUnique: jest.Mock }
-      teamMember: { findUnique: jest.Mock }
+      teamMember: { findUnique: jest.Mock; findMany: jest.Mock }
     }
   }
 
@@ -53,16 +55,18 @@ describe('ActionItemsService', () => {
   beforeEach(async () => {
     prisma = {
       client: {
+        $transaction: jest.fn((promises: any[]) => Promise.all(promises)),
         actionItem: {
           create: jest.fn(),
           findMany: jest.fn(),
           findUnique: jest.fn(),
           update: jest.fn(),
           delete: jest.fn(),
+          count: jest.fn().mockResolvedValue(0),
         },
         retro: { findUnique: jest.fn() },
         team: { findUnique: jest.fn() },
-        teamMember: { findUnique: jest.fn() },
+        teamMember: { findUnique: jest.fn(), findMany: jest.fn() },
       },
     }
 
@@ -105,6 +109,7 @@ describe('ActionItemsService', () => {
           dueDate: new Date('2026-03-01'),
           retroId,
           createdById: userId,
+          position: 0,
         },
         include: {
           assignee: { select: { id: true, name: true, avatarUrl: true } },
@@ -168,7 +173,7 @@ describe('ActionItemsService', () => {
           assignee: { select: { id: true, name: true, avatarUrl: true } },
           createdBy: { select: { id: true, name: true, avatarUrl: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { position: 'asc' },
       })
       expect(result).toEqual([mockActionItem])
     })
@@ -267,17 +272,25 @@ describe('ActionItemsService', () => {
       )
     })
 
-    it('should throw BadRequestException for transition DONE → OPEN', async () => {
+    it('should allow transition DONE → OPEN', async () => {
       const doneItem = { ...mockActionItem, status: 'DONE' as const }
       prisma.client.actionItem.findUnique.mockResolvedValue(doneItem)
       prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
       prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.actionItem.update.mockResolvedValue({
+        ...doneItem,
+        status: 'OPEN',
+      })
 
-      await expect(
-        service.update(userId, actionItemId, {
-          status: 'OPEN' as const,
+      await service.update(userId, actionItemId, {
+        status: 'OPEN' as const,
+      })
+
+      expect(prisma.client.actionItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: 'OPEN' },
         }),
-      ).rejects.toThrow(BadRequestException)
+      )
     })
 
     it('should throw BadRequestException for same-status transition', async () => {

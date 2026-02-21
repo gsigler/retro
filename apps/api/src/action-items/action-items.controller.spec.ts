@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ActionItemsController } from './action-items.controller.js'
 import { ActionItemsService } from './action-items.service.js'
+import { BoardGateway } from '../board/board.gateway.js'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import { ActionItemResponse } from './dto/action-item-response.dto.js'
 
@@ -12,6 +13,14 @@ describe('ActionItemsController', () => {
     findOne: jest.Mock
     update: jest.Mock
     remove: jest.Mock
+    reorder: jest.Mock
+    findMembersForRetro: jest.Mock
+  }
+  let boardGateway: {
+    emitActionItemCreated: jest.Mock
+    emitActionItemUpdated: jest.Mock
+    emitActionItemDeleted: jest.Mock
+    emitActionItemsReordered: jest.Mock
   }
 
   const req = { user: { id: 'user-1' } }
@@ -23,12 +32,22 @@ describe('ActionItemsController', () => {
       findOne: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
+      reorder: jest.fn(),
+      findMembersForRetro: jest.fn(),
+    }
+
+    boardGateway = {
+      emitActionItemCreated: jest.fn(),
+      emitActionItemUpdated: jest.fn(),
+      emitActionItemDeleted: jest.fn(),
+      emitActionItemsReordered: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ActionItemsController],
       providers: [
         { provide: ActionItemsService, useValue: actionItemsService },
+        { provide: BoardGateway, useValue: boardGateway },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -49,13 +68,14 @@ describe('ActionItemsController', () => {
   })
 
   describe('create', () => {
-    it('should return an ActionItemResponse', async () => {
+    it('should return an ActionItemResponse and emit WebSocket event', async () => {
       const dto = { title: 'Fix bug', description: 'Broken' }
       const prismaResult = {
         id: 'item-1',
         title: 'Fix bug',
         description: 'Broken',
         status: 'OPEN',
+        position: 0,
         dueDate: null,
         retroId: 'retro-1',
         createdById: 'user-1',
@@ -76,7 +96,10 @@ describe('ActionItemsController', () => {
       )
       expect(result).toBeInstanceOf(ActionItemResponse)
       expect(result.id).toBe('item-1')
-      expect(result.assignee).toBeNull()
+      expect(boardGateway.emitActionItemCreated).toHaveBeenCalledWith(
+        'retro-1',
+        expect.any(ActionItemResponse),
+      )
     })
   })
 
@@ -88,6 +111,7 @@ describe('ActionItemsController', () => {
           title: 'Fix bug',
           description: null,
           status: 'OPEN',
+          position: 0,
           dueDate: null,
           retroId: 'retro-1',
           createdAt: new Date(),
@@ -116,6 +140,7 @@ describe('ActionItemsController', () => {
         title: 'Fix bug',
         description: null,
         status: 'OPEN',
+        position: 0,
         dueDate: null,
         retroId: 'retro-1',
         createdAt: new Date(),
@@ -136,13 +161,14 @@ describe('ActionItemsController', () => {
   })
 
   describe('update', () => {
-    it('should return an ActionItemResponse', async () => {
+    it('should return an ActionItemResponse and emit WebSocket event', async () => {
       const dto = { title: 'Updated' }
       const prismaResult = {
         id: 'item-1',
         title: 'Updated',
         description: null,
         status: 'OPEN',
+        position: 0,
         dueDate: null,
         retroId: 'retro-1',
         createdAt: new Date(),
@@ -161,17 +187,62 @@ describe('ActionItemsController', () => {
       )
       expect(result).toBeInstanceOf(ActionItemResponse)
       expect(result.title).toBe('Updated')
+      expect(boardGateway.emitActionItemUpdated).toHaveBeenCalledWith(
+        'retro-1',
+        expect.any(ActionItemResponse),
+      )
     })
   })
 
   describe('remove', () => {
-    it('should call actionItemsService.remove', async () => {
+    it('should call service and emit WebSocket event', async () => {
+      actionItemsService.findOne.mockResolvedValue({
+        id: 'item-1',
+        retroId: 'retro-1',
+        createdBy: { id: 'user-1', name: 'Owner', avatarUrl: null },
+      })
       actionItemsService.remove.mockResolvedValue(undefined)
 
-      const result = await controller.remove(req, 'item-1')
+      await controller.remove(req, 'item-1')
 
       expect(actionItemsService.remove).toHaveBeenCalledWith('user-1', 'item-1')
-      expect(result).toBeUndefined()
+      expect(boardGateway.emitActionItemDeleted).toHaveBeenCalledWith(
+        'retro-1',
+        'item-1',
+      )
+    })
+  })
+
+  describe('reorder', () => {
+    it('should reorder and emit WebSocket event', async () => {
+      const prismaResult = [
+        {
+          id: 'item-2',
+          title: 'B',
+          description: null,
+          status: 'OPEN',
+          position: 0,
+          dueDate: null,
+          retroId: 'retro-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          assignee: null,
+          createdBy: { id: 'user-1', name: 'Owner', avatarUrl: null },
+        },
+      ]
+      actionItemsService.reorder.mockResolvedValue(prismaResult)
+
+      const result = await controller.reorder(req, 'retro-1', {
+        orderedIds: ['item-2', 'item-1'],
+      })
+
+      expect(actionItemsService.reorder).toHaveBeenCalledWith(
+        'user-1',
+        'retro-1',
+        ['item-2', 'item-1'],
+      )
+      expect(result).toHaveLength(1)
+      expect(boardGateway.emitActionItemsReordered).toHaveBeenCalled()
     })
   })
 })

@@ -40,7 +40,6 @@ export class DashboardService {
       this.prisma.client.actionItem.findMany({
         where: {
           retro: { teamId: { in: teamIds } },
-          status: { not: 'DONE' },
         },
         include: {
           assignee: { select: userSelect },
