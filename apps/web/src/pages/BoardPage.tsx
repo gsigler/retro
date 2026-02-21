@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
   DndContext,
+  DragOverlay,
+  type DragStartEvent,
   type DragEndEvent,
   PointerSensor,
   KeyboardSensor,
@@ -9,6 +12,7 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core'
+import type { Card } from '@/types/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { fetchBoard, moveCard } from '@/lib/api'
 import {
@@ -68,11 +72,23 @@ export default function BoardPage() {
 
 function BoardContent({ token, retroId }: { token: string; retroId: string }) {
   const { state, dispatch } = useBoardContext()
+  const [activeCard, setActiveCard] = useState<Card | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor),
   )
+
+  function handleDragStart(event: DragStartEvent) {
+    const cardId = event.active.id as string
+    for (const col of state.columns) {
+      const found = col.cards.find((c) => c.id === cardId)
+      if (found) {
+        setActiveCard(found)
+        break
+      }
+    }
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -123,6 +139,8 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
       },
     })
 
+    setActiveCard(null)
+
     try {
       await moveCard(token, retroId, cardId, {
         columnId: targetColumnId,
@@ -171,6 +189,7 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-4">
@@ -183,6 +202,20 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
               />
             ))}
           </div>
+          <DragOverlay>
+            {activeCard ? (
+              <div className="rounded-lg border bg-background p-3 shadow-lg">
+                <p className="whitespace-pre-wrap text-sm">
+                  {activeCard.content}
+                </p>
+                <div className="mt-2">
+                  <span className="text-muted-foreground text-xs">
+                    {activeCard.author.name ?? 'Anonymous'}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </main>
 

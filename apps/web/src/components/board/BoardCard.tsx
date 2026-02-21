@@ -43,7 +43,7 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
       {...attributes}
       {...listeners}
       className={`group rounded-lg border bg-background p-3 shadow-xs transition-shadow hover:shadow-sm ${
-        isDragging ? 'opacity-50 shadow-md' : ''
+        isDragging ? 'opacity-30' : ''
       }`}
     >
       <p className="whitespace-pre-wrap text-sm">{card.content}</p>
