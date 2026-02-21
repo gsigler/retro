@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface StatsCardProps {
   icon: LucideIcon
@@ -8,17 +8,33 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ icon: Icon, label, value }: StatsCardProps) {
+  const { theme } = useTheme()
+
   return (
-    <Card className="py-4">
-      <CardContent className="flex items-center gap-3">
-        <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-lg">
-          <Icon className="size-5" />
-        </div>
-        <div>
-          <p className="text-muted-foreground text-sm">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      style={{
+        padding: '12px 16px',
+        border: `1px solid ${theme.border}`,
+        borderRadius: 4,
+        borderLeft: `3px solid ${theme.purple}`,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Icon
+          style={{ width: 14, height: 14, color: theme.purple, flexShrink: 0 }}
+        />
+        <span style={{ fontSize: 12, color: theme.textTertiary }}>{label}</span>
+        <span
+          style={{
+            marginLeft: 'auto',
+            fontSize: 20,
+            fontWeight: 700,
+            color: theme.textPrimary,
+          }}
+        >
+          {value}
+        </span>
+      </div>
+    </div>
   )
 }

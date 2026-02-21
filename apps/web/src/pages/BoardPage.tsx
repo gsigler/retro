@@ -1,15 +1,20 @@
-import { useParams, Link } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import {
   DndContext,
+  DragOverlay,
   type DragEndEvent,
+  type DragStartEvent,
   PointerSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
   closestCorners,
 } from '@dnd-kit/core'
+import type { Card } from '@/types/api'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { fetchBoard, moveCard } from '@/lib/api'
 import {
   BoardProvider,
@@ -19,12 +24,13 @@ import { TemplatePicker } from '@/components/board/TemplatePicker'
 import { BoardColumn } from '@/components/board/BoardColumn'
 import { ActiveUsers } from '@/components/board/ActiveUsers'
 import { ActionItemsPanel } from '@/components/board/ActionItemsPanel'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
+import { StatusBar } from '@/components/board/StatusBar'
+import { BlinkingCursor } from '@/components/board/TypingEffect'
 
 export default function BoardPage() {
   const { retroId } = useParams<{ retroId: string }>()
   const { token } = useAuth()
+  const { theme } = useTheme()
 
   const {
     data: board,
@@ -38,18 +44,31 @@ export default function BoardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+      <div
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: theme.bg }}
+      >
+        <p style={{ color: theme.green, fontSize: 14 }}>
+          Loading board...
+          <BlinkingCursor />
+        </p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: theme.bg }}
+      >
         <div
           role="alert"
-          className="bg-destructive/10 text-destructive rounded-lg p-4"
+          style={{
+            color: theme.red,
+            fontSize: 13,
+            padding: 16,
+          }}
         >
           Failed to load board
         </div>
@@ -68,11 +87,29 @@ export default function BoardPage() {
 
 function BoardContent({ token, retroId }: { token: string; retroId: string }) {
   const { state, dispatch } = useBoardContext()
+  const { theme } = useTheme()
+  const [activeCard, setActiveCard] = useState<Card | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor),
   )
+
+  const totalCards = state.columns.reduce(
+    (sum, col) => sum + col.cards.length,
+    0,
+  )
+
+  function handleDragStart(event: DragStartEvent) {
+    const cardId = event.active.id as string
+    for (const col of state.columns) {
+      const found = col.cards.find((c) => c.id === cardId)
+      if (found) {
+        setActiveCard(found)
+        return
+      }
+    }
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -80,18 +117,15 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
 
     const cardId = active.id as string
 
-    // Find which column the card is being dropped into
     let targetColumnId: string | null = null
     let targetPosition = 0
 
     for (const col of state.columns) {
-      // Dropped directly onto a column
       if (col.id === over.id) {
         targetColumnId = col.id
         targetPosition = col.cards.length
         break
       }
-      // Dropped onto another card — find its column
       const overCardIndex = col.cards.findIndex((c) => c.id === over.id)
       if (overCardIndex !== -1) {
         targetColumnId = col.id
@@ -102,7 +136,6 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
 
     if (!targetColumnId) return
 
-    // Find the card data
     let movedCard = null
     for (const col of state.columns) {
       const found = col.cards.find((c) => c.id === cardId)
@@ -113,7 +146,6 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
     }
     if (!movedCard) return
 
-    // Optimistic update
     dispatch({
       type: 'CARD_MOVED',
       card: {
@@ -122,6 +154,8 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
         position: targetPosition,
       },
     })
+
+    setActiveCard(null)
 
     try {
       await moveCard(token, retroId, cardId, {
@@ -135,45 +169,88 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
 
   if (!state.initialized) {
     return (
-      <div className="min-h-screen bg-muted/30">
-        <header className="border-b bg-background">
-          <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-4">
-            <Link to="/dashboard">
-              <Button variant="ghost" size="icon-xs">
-                <ArrowLeft className="size-4" />
-              </Button>
-            </Link>
-            <h1 className="text-lg font-semibold">Retro Board</h1>
-          </div>
-        </header>
+      <div>
+        <div
+          style={{
+            borderBottom: `1px solid ${theme.border}`,
+            padding: '8px 16px',
+            fontSize: 12,
+            color: theme.textTertiary,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <Link
+            to="/dashboard"
+            style={{
+              color: theme.cyan,
+              textDecoration: 'none',
+              fontFamily: 'inherit',
+              fontSize: 12,
+            }}
+          >
+            [&larr; dashboard]
+          </Link>
+          <span style={{ color: theme.border }}>|</span>
+          <span>choose template</span>
+        </div>
         <TemplatePicker token={token} retroId={retroId} />
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-4">
-          <Link to="/dashboard">
-            <Button variant="ghost" size="icon-xs">
-              <ArrowLeft className="size-4" />
-            </Button>
-          </Link>
-          <h1 className="text-lg font-semibold">Retro Board</h1>
-          <div className="ml-auto">
-            <ActiveUsers />
-          </div>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 'calc(100vh - 40px)',
+      }}
+    >
+      {/* Board header */}
+      <div
+        style={{
+          padding: '6px 16px',
+          fontSize: 12,
+          color: theme.textTertiary,
+          borderBottom: `1px solid ${theme.border}40`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <Link
+          to="/dashboard"
+          style={{
+            color: theme.cyan,
+            textDecoration: 'none',
+            fontFamily: 'inherit',
+            fontSize: 12,
+          }}
+        >
+          [&larr; dashboard]
+        </Link>
+        <span style={{ color: theme.border }}>|</span>
+        <span style={{ color: theme.green }}>session active</span>
+        <span style={{ color: theme.border }}>|</span>
+        <span>{totalCards} items</span>
+        <span style={{ color: theme.border }}>|</span>
+        <span>{new Date().toLocaleDateString()}</span>
+        <div style={{ marginLeft: 'auto' }}>
+          <ActiveUsers />
         </div>
-      </header>
+      </div>
 
-      <main className="flex-1 overflow-x-auto p-6">
+      {/* Columns */}
+      <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4">
+          <div style={{ display: 'flex', gap: 12 }}>
             {state.columns.map((column) => (
               <BoardColumn
                 key={column.id}
@@ -183,14 +260,47 @@ function BoardContent({ token, retroId }: { token: string; retroId: string }) {
               />
             ))}
           </div>
+          <DragOverlay dropAnimation={null}>
+            {activeCard ? (
+              <div
+                style={{
+                  borderLeft: `2px solid ${state.columns.find((c) => c.id === activeCard.columnId)?.color ?? theme.cyan}`,
+                  padding: '6px 10px',
+                  background: theme.bg,
+                  fontSize: 12,
+                  color: theme.textPrimary,
+                  opacity: 0.9,
+                  boxShadow: `0 2px 8px ${theme.border}40`,
+                }}
+              >
+                <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: theme.textTertiary,
+                    opacity: 0.6,
+                  }}
+                >
+                  {activeCard.author.name ?? 'Anonymous'}
+                </span>
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </main>
 
-      <div className="border-t bg-background p-6">
-        <div className="mx-auto max-w-7xl">
-          <ActionItemsPanel token={token} retroId={retroId} />
-        </div>
+      {/* Action items */}
+      <div style={{ padding: '0 16px 16px', marginBottom: 24 }}>
+        <ActionItemsPanel token={token} retroId={retroId} />
       </div>
+
+      <StatusBar
+        items={[
+          `${state.columns.length} columns`,
+          `${totalCards} cards`,
+          `${state.activeUsers.length} online`,
+        ]}
+      />
     </div>
   )
 }

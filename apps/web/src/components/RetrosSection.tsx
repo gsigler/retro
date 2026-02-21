@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
+import { TerminalFrame } from '@/components/terminal/TerminalFrame'
 import { RetroCard } from '@/components/RetroCard'
 import { RetroFormDialog } from '@/components/RetroFormDialog'
+import { BlinkingCursor } from '@/components/board/TypingEffect'
 import {
   fetchTeams,
   fetchRetros,
@@ -25,6 +26,7 @@ export function RetrosSection({
   userId,
   onMutation,
 }: RetrosSectionProps) {
+  const { theme } = useTheme()
   const queryClient = useQueryClient()
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -66,56 +68,53 @@ export function RetrosSection({
     await refresh()
   }
 
-  async function handleStatusTransition(retroId: string, status: string) {
-    await updateRetro(token, retroId, { status })
-    await refresh()
-  }
-
   function canManageRetro(retro: RetroWithCounts) {
     return retro.createdBy.id === userId || team?.ownerId === userId
   }
 
   if (isLoading) {
-    return <div className="bg-muted/50 mt-6 h-48 animate-pulse rounded-xl" />
+    return (
+      <div style={{ marginTop: 20 }}>
+        <p style={{ color: theme.textTertiary, fontSize: 11, marginBottom: 8 }}>
+          <span style={{ color: theme.green }}>$</span> retro list --all
+        </p>
+        <p style={{ color: theme.green, fontSize: 12 }}>
+          Loading...
+          <BlinkingCursor />
+        </p>
+      </div>
+    )
   }
 
   if (!team) return null
 
   return (
-    <div className="mt-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Retros</CardTitle>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="size-4" />
-              New Retro
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!retros || retros.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No retros yet. Create one to get started.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {retros.map((retro) => (
-                <RetroCard
-                  key={retro.id}
-                  retro={retro}
-                  canManage={canManageRetro(retro)}
-                  onEdit={() => setEditingRetro(retro)}
-                  onDelete={() => handleDeleteRetro(retro.id)}
-                  onStatusTransition={(status) =>
-                    handleStatusTransition(retro.id, status)
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <TerminalFrame
+      title="$ retro list --all"
+      right={
+        <TerminalButton size="sm" onClick={() => setShowCreateDialog(true)}>
+          + new retro
+        </TerminalButton>
+      }
+    >
+      {!retros || retros.length === 0 ? (
+        <p style={{ fontSize: 12, color: theme.textTertiary }}>
+          <span style={{ color: theme.yellow }}>0</span> retros found. Create
+          one to get started.
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {retros.map((retro) => (
+            <RetroCard
+              key={retro.id}
+              retro={retro}
+              canManage={canManageRetro(retro)}
+              onEdit={() => setEditingRetro(retro)}
+              onDelete={() => handleDeleteRetro(retro.id)}
+            />
+          ))}
+        </div>
+      )}
 
       <RetroFormDialog
         open={showCreateDialog}
@@ -138,6 +137,6 @@ export function RetrosSection({
           mode="edit"
         />
       )}
-    </div>
+    </TerminalFrame>
   )
 }

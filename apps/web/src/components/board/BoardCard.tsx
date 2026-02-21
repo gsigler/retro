@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Trash2 } from 'lucide-react'
+import { useTheme } from '@/contexts/ThemeContext'
 import { deleteCard } from '@/lib/api'
 import { useBoardContext } from './BoardProvider'
 import type { Card } from '@/types/api'
@@ -9,9 +9,16 @@ interface BoardCardProps {
   card: Card
   token: string
   retroId: string
+  columnColor?: string
 }
 
-export function BoardCard({ card, token, retroId }: BoardCardProps) {
+export function BoardCard({
+  card,
+  token,
+  retroId,
+  columnColor,
+}: BoardCardProps) {
+  const { theme } = useTheme()
   const { dispatch } = useBoardContext()
   const {
     attributes,
@@ -25,6 +32,13 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    borderLeft: `2px solid ${columnColor ?? theme.border}`,
+    borderRadius: 0,
+    padding: '6px 10px',
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab',
+    position: 'relative' as const,
+    borderBottom: `1px solid ${theme.border}22`,
   }
 
   async function handleDelete() {
@@ -37,26 +51,50 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`group rounded-lg border bg-background p-3 shadow-xs transition-shadow hover:shadow-sm ${
-        isDragging ? 'opacity-50 shadow-md' : ''
-      }`}
-    >
-      <p className="whitespace-pre-wrap text-sm">{card.content}</p>
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-muted-foreground text-xs">
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <p
+        style={{
+          whiteSpace: 'pre-wrap',
+          fontSize: 12,
+          color: theme.textPrimary,
+        }}
+      >
+        {card.content}
+      </p>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 4,
+        }}
+      >
+        <span style={{ fontSize: 11, color: theme.textTertiary, opacity: 0.6 }}>
           {card.author.name ?? 'Anonymous'}
         </span>
         <button
           onClick={handleDelete}
-          className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
           aria-label="Delete card"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: theme.textTertiary,
+            cursor: 'pointer',
+            fontSize: 11,
+            padding: 0,
+            fontFamily: 'inherit',
+            opacity: 0,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1'
+            e.currentTarget.style.color = theme.red
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '0'
+            e.currentTarget.style.color = theme.textTertiary
+          }}
         >
-          <Trash2 className="size-3.5" />
+          [rm]
         </button>
       </div>
     </div>

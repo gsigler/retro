@@ -1,38 +1,12 @@
 import { Link } from 'react-router'
-import {
-  Pencil,
-  Trash2,
-  Play,
-  CheckCircle2,
-  LayoutDashboard,
-} from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { useTheme } from '@/contexts/ThemeContext'
 import type { RetroWithCounts } from '@/types/api'
-
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  SCHEDULED: {
-    label: 'Scheduled',
-    className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  },
-  IN_PROGRESS: {
-    label: 'In Progress',
-    className:
-      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
-  },
-  COMPLETED: {
-    label: 'Completed',
-    className:
-      'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-  },
-}
 
 interface RetroCardProps {
   retro: RetroWithCounts
   canManage: boolean
   onEdit: () => void
   onDelete: () => void
-  onStatusTransition: (status: string) => void
 }
 
 export function RetroCard({
@@ -40,66 +14,77 @@ export function RetroCard({
   canManage,
   onEdit,
   onDelete,
-  onStatusTransition,
 }: RetroCardProps) {
-  const badge = STATUS_BADGE[retro.status] ?? STATUS_BADGE.SCHEDULED
+  const { theme } = useTheme()
+
+  const linkStyle = {
+    color: theme.cyan,
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer' as const,
+    fontFamily: 'inherit',
+    fontSize: 12,
+    padding: 0,
+    textDecoration: 'none',
+  }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-base">{retro.name}</CardTitle>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-          >
-            {badge.label}
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-muted-foreground mb-3 flex gap-3 text-sm">
-          <span>{new Date(retro.date).toLocaleDateString()}</span>
-          <span>{retro.actionItemCount} action items</span>
-        </div>
-        <div className="flex gap-1">
-          <Link to={`/retros/${retro.id}/board`}>
-            <Button variant="ghost" size="xs">
-              <LayoutDashboard className="size-3" />
-              Open Board
-            </Button>
-          </Link>
-          {retro.status === 'SCHEDULED' && (
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => onStatusTransition('IN_PROGRESS')}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '6px 8px',
+        fontSize: 12,
+        borderBottom: `1px solid ${theme.border}22`,
+      }}
+    >
+      <Link
+        to={`/retros/${retro.id}/board`}
+        style={{
+          color: theme.textPrimary,
+          fontWeight: 600,
+          textDecoration: 'none',
+          minWidth: 120,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {retro.name}
+      </Link>
+      <span style={{ color: theme.textTertiary, flexShrink: 0 }}>
+        {new Date(retro.date).toLocaleDateString()}
+      </span>
+      <span style={{ color: theme.purple, flexShrink: 0 }}>
+        {retro.actionItemCount} actions
+      </span>
+
+      <div
+        style={{
+          marginLeft: 'auto',
+          display: 'flex',
+          gap: 6,
+          flexShrink: 0,
+        }}
+      >
+        <Link to={`/retros/${retro.id}/board`} style={linkStyle}>
+          [open]
+        </Link>
+        {canManage && (
+          <>
+            <button style={linkStyle} onClick={onEdit}>
+              [edit]
+            </button>
+            <button
+              style={{ ...linkStyle, color: theme.red }}
+              onClick={onDelete}
             >
-              <Play className="size-3" />
-              Start
-            </Button>
-          )}
-          {retro.status === 'IN_PROGRESS' && (
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => onStatusTransition('COMPLETED')}
-            >
-              <CheckCircle2 className="size-3" />
-              Complete
-            </Button>
-          )}
-          {canManage && (
-            <>
-              <Button variant="ghost" size="icon-xs" onClick={onEdit}>
-                <Pencil className="size-3" />
-              </Button>
-              <Button variant="ghost" size="icon-xs" onClick={onDelete}>
-                <Trash2 className="size-3" />
-              </Button>
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+              [rm]
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   )
 }

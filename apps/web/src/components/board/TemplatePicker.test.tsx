@@ -111,7 +111,7 @@ describe('TemplatePicker', () => {
       expect(screen.getByText('Start / Stop / Continue')).toBeDefined()
     })
 
-    const buttons = screen.getAllByText('Use Template')
+    const buttons = screen.getAllByText(/Use Template/)
     await userEvent.click(buttons[0])
 
     expect(mockInitBoard).toHaveBeenCalledWith(

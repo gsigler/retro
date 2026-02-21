@@ -1,5 +1,4 @@
-import { X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useTheme } from '@/contexts/ThemeContext'
 import type { TeamMember } from '@/types/api'
 
 interface MemberListProps {
@@ -15,44 +14,87 @@ export function MemberList({
   isOwner,
   onRemove,
 }: MemberListProps) {
+  const { theme } = useTheme()
+
   return (
-    <div className="space-y-2">
-      {members.map((member) => (
-        <div
-          key={member.id}
-          className="flex items-center justify-between rounded-lg border px-4 py-2"
-        >
-          <div className="flex items-center gap-3">
-            {member.user.avatarUrl ? (
-              <img
-                src={member.user.avatarUrl}
-                alt=""
-                className="size-8 rounded-full"
-              />
-            ) : (
-              <div className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-full text-sm font-medium">
-                {(member.user.name ?? member.user.email)?.[0]?.toUpperCase()}
-              </div>
-            )}
-            <div>
-              <p className="text-sm font-medium">
-                {member.user.name ?? member.user.email}
-              </p>
-              <p className="text-muted-foreground text-xs">{member.role}</p>
-            </div>
-          </div>
-          {isOwner && member.user.id !== ownerId && (
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => onRemove(member.user.id)}
-              aria-label={`Remove ${member.user.name ?? member.user.email}`}
+    <div
+      style={{
+        fontFamily: 'inherit',
+        fontSize: 12,
+        lineHeight: 1.8,
+      }}
+    >
+      {members.map((member) => {
+        const isTeamOwner = member.user.id === ownerId
+        const displayName = member.user.name ?? member.user.email
+
+        return (
+          <div
+            key={member.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '2px 4px',
+              borderRadius: 3,
+            }}
+          >
+            <span
+              style={{
+                color: isTeamOwner ? theme.green : theme.textTertiary,
+                width: 12,
+                flexShrink: 0,
+                textAlign: 'center',
+              }}
             >
-              <X className="size-3" />
-            </Button>
-          )}
-        </div>
-      ))}
+              {isTeamOwner ? '*' : ' '}
+            </span>
+            <span
+              style={{
+                color: theme.textPrimary,
+                minWidth: 180,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {displayName}
+            </span>
+            <span
+              style={{
+                color: isTeamOwner ? theme.yellow : theme.textTertiary,
+                minWidth: 64,
+                textTransform: 'uppercase',
+                fontSize: 11,
+              }}
+            >
+              {member.role.toLowerCase()}
+            </span>
+            {isTeamOwner && (
+              <span style={{ color: theme.textTertiary, fontSize: 11 }}>
+                &larr; you
+              </span>
+            )}
+            {isOwner && !isTeamOwner && (
+              <button
+                onClick={() => onRemove(member.user.id)}
+                aria-label={`Remove ${displayName}`}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: theme.red,
+                  cursor: 'pointer',
+                  padding: '0 4px',
+                  fontFamily: 'inherit',
+                  fontSize: 12,
+                }}
+              >
+                [&times;]
+              </button>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

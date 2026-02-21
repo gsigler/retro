@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App from './App'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 vi.mock('@/lib/api', () => ({
   api: vi.fn(),
@@ -11,9 +12,11 @@ vi.mock('@/lib/api', () => ({
 function renderApp(route: string) {
   return render(
     <MemoryRouter initialEntries={[route]}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ThemeProvider>
     </MemoryRouter>,
   )
 }

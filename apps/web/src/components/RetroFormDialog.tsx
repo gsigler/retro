@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalDialog } from '@/components/terminal/TerminalDialog'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
+import { TerminalInput } from '@/components/terminal/TerminalInput'
 
 interface RetroFormDialogProps {
   open: boolean
@@ -26,6 +19,7 @@ export function RetroFormDialog({
   initialValues,
   mode,
 }: RetroFormDialogProps) {
+  const { theme } = useTheme()
   const [name, setName] = useState(initialValues?.name ?? '')
   const [date, setDate] = useState(initialValues?.date ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -57,54 +51,54 @@ export function RetroFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? 'New Retro' : 'Edit Retro'}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'create'
-              ? 'Schedule a new retrospective'
-              : 'Update retro details'}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="retro-name">Name</Label>
-            <Input
-              id="retro-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Sprint 1 Retro"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="retro-date">Date</Label>
-            <Input
-              id="retro-date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </div>
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <DialogFooter>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !name.trim() || !date}
-            >
-              {isSubmitting
-                ? 'Saving...'
-                : mode === 'create'
-                  ? 'Create'
-                  : 'Save'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <TerminalDialog
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={mode === 'create' ? 'New Retro' : 'Edit Retro'}
+    >
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <div className="grid gap-2">
+          <label
+            htmlFor="retro-name"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Name
+          </label>
+          <TerminalInput
+            id="retro-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Sprint 1 Retro"
+            required
+          />
+        </div>
+        <div className="grid gap-2">
+          <label
+            htmlFor="retro-date"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Date
+          </label>
+          <TerminalInput
+            id="retro-date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            prefix=""
+            required
+          />
+        </div>
+        {error && <p style={{ color: theme.red, fontSize: 13 }}>{error}</p>}
+        <div className="flex justify-end gap-2">
+          <TerminalButton
+            type="submit"
+            variant="submit"
+            disabled={isSubmitting || !name.trim() || !date}
+          >
+            {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Save'}
+          </TerminalButton>
+        </div>
+      </form>
+    </TerminalDialog>
   )
 }

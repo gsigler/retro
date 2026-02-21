@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalDialog } from '@/components/terminal/TerminalDialog'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
+import { TerminalInput } from '@/components/terminal/TerminalInput'
 
 interface AddMemberDialogProps {
   open: boolean
@@ -22,6 +15,7 @@ export function AddMemberDialog({
   onOpenChange,
   onSubmit,
 }: AddMemberDialogProps) {
+  const { theme } = useTheme()
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,34 +44,39 @@ export function AddMemberDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Member</DialogTitle>
-          <DialogDescription>
-            Invite a user by their email address
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="member-email">Email</Label>
-            <Input
-              id="member-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="user@example.com"
-              required
-            />
-          </div>
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting || !email.trim()}>
-              {isSubmitting ? 'Adding...' : 'Add Member'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <TerminalDialog
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Add Member"
+    >
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <div className="grid gap-2">
+          <label
+            htmlFor="member-email"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Email
+          </label>
+          <TerminalInput
+            id="member-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="user@example.com"
+            required
+          />
+        </div>
+        {error && <p style={{ color: theme.red, fontSize: 13 }}>{error}</p>}
+        <div className="flex justify-end gap-2">
+          <TerminalButton
+            type="submit"
+            variant="submit"
+            disabled={isSubmitting || !email.trim()}
+          >
+            {isSubmitting ? 'Adding...' : 'Add Member'}
+          </TerminalButton>
+        </div>
+      </form>
+    </TerminalDialog>
   )
 }

@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Users, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/button'
-import { StatsCard } from '@/components/StatsCard'
+import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
+import { TerminalDialog } from '@/components/terminal/TerminalDialog'
+import { BlinkingCursor } from '@/components/board/TypingEffect'
 import { TeamSection } from '@/components/TeamSection'
 import { RetrosSection } from '@/components/RetrosSection'
 import { ActionItemsSection } from '@/components/ActionItemsSection'
@@ -11,8 +13,10 @@ import { fetchDashboardSummary } from '@/lib/api'
 
 export default function DashboardPage() {
   const { user, token, logout } = useAuth()
+  const { theme } = useTheme()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [showTeamPanel, setShowTeamPanel] = useState(false)
 
   const {
     data: summary,
@@ -36,70 +40,74 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold">Retro</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-muted-foreground text-sm">{user?.email}</span>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
+    <div>
+      {/* Subheader bar */}
+      <div
+        style={{
+          padding: '6px 24px',
+          borderBottom: `1px solid ${theme.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 12,
+          color: theme.textTertiary,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: theme.green }}>~</span>
+          <span>{user?.email}</span>
+          <span style={{ color: theme.border }}>|</span>
+          <span>dashboard</span>
         </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <TerminalButton size="sm" onClick={() => setShowTeamPanel(true)}>
+            team
+          </TerminalButton>
+          <TerminalButton size="sm" onClick={handleLogout}>
+            logout
+          </TerminalButton>
+        </div>
+      </div>
+
+      <div
+        style={{
+          maxWidth: 960,
+          margin: '0 auto',
+          padding: '24px 24px 48px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+        }}
+      >
         {isLoading && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-muted/50 h-24 animate-pulse rounded-xl"
-              />
-            ))}
+          <div>
+            <p style={{ color: theme.green, fontSize: 12 }}>
+              <span style={{ color: theme.green }}>$</span> retro dashboard
+              --fetch
+            </p>
+            <p
+              style={{ color: theme.textTertiary, fontSize: 12, marginTop: 4 }}
+            >
+              Loading...
+              <BlinkingCursor />
+            </p>
           </div>
         )}
 
         {error && (
           <div
             role="alert"
-            className="bg-destructive/10 text-destructive rounded-lg p-4"
+            style={{
+              padding: '12px 16px',
+              border: `1px solid ${theme.red}`,
+              borderRadius: 4,
+              borderLeft: `3px solid ${theme.red}`,
+            }}
           >
-            Failed to load dashboard data
+            <p style={{ color: theme.red, fontSize: 12 }}>
+              ERR! Failed to load dashboard data
+            </p>
           </div>
-        )}
-
-        {summary && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatsCard
-              icon={Users}
-              label="Team Members"
-              value={summary.memberCount}
-            />
-            <StatsCard
-              icon={Calendar}
-              label="Retros"
-              value={summary.retroCount}
-            />
-            <StatsCard
-              icon={AlertCircle}
-              label="Open Items"
-              value={summary.openActionItemCount}
-            />
-            <StatsCard
-              icon={CheckCircle2}
-              label="Completed"
-              value={summary.completedActionItemCount}
-            />
-          </div>
-        )}
-
-        {token && user && (
-          <TeamSection
-            token={token}
-            userId={user.id}
-            onMutation={handleMutation}
-          />
         )}
 
         {token && user && (
@@ -117,7 +125,69 @@ export default function DashboardPage() {
             onMutation={handleMutation}
           />
         )}
-      </main>
+      </div>
+
+      {token && user && (
+        <TerminalDialog
+          open={showTeamPanel}
+          onClose={() => setShowTeamPanel(false)}
+          title="Team Settings"
+        >
+          <TeamSection
+            token={token}
+            userId={user.id}
+            onMutation={handleMutation}
+          />
+        </TerminalDialog>
+      )}
+
+      {summary && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: theme.bgSecondary,
+            borderTop: `1px solid ${theme.border}`,
+            padding: '4px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            fontSize: 11,
+            color: theme.textTertiary,
+            zIndex: 40,
+          }}
+        >
+          <span>
+            members:{' '}
+            <span style={{ color: theme.blue, fontWeight: 600 }}>
+              {summary.memberCount}
+            </span>
+          </span>
+          <span style={{ color: theme.border }}>│</span>
+          <span>
+            retros:{' '}
+            <span style={{ color: theme.purple, fontWeight: 600 }}>
+              {summary.retroCount}
+            </span>
+          </span>
+          <span style={{ color: theme.border }}>│</span>
+          <span>
+            open:{' '}
+            <span style={{ color: theme.yellow, fontWeight: 600 }}>
+              {summary.openActionItemCount}
+            </span>
+          </span>
+          <span style={{ color: theme.border }}>│</span>
+          <span>
+            completed:{' '}
+            <span style={{ color: theme.green, fontWeight: 600 }}>
+              {summary.completedActionItemCount}
+            </span>
+          </span>
+        </div>
+      )}
     </div>
   )
 }

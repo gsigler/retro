@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalDialog } from '@/components/terminal/TerminalDialog'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
+import { TerminalInput } from '@/components/terminal/TerminalInput'
 
 interface TeamFormDialogProps {
   open: boolean
@@ -26,6 +19,7 @@ export function TeamFormDialog({
   initialValues,
   mode,
 }: TeamFormDialogProps) {
+  const { theme } = useTheme()
   const [name, setName] = useState(initialValues?.name ?? '')
   const [description, setDescription] = useState(
     initialValues?.description ?? '',
@@ -62,50 +56,52 @@ export function TeamFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? 'Create Team' : 'Edit Team'}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'create'
-              ? 'Create a new team to get started'
-              : 'Update your team details'}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="team-name">Name</Label>
-            <Input
-              id="team-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="My Team"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="team-description">Description</Label>
-            <Input
-              id="team-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description"
-            />
-          </div>
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting || !name.trim()}>
-              {isSubmitting
-                ? 'Saving...'
-                : mode === 'create'
-                  ? 'Create'
-                  : 'Save'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <TerminalDialog
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={mode === 'create' ? 'Create Team' : 'Edit Team'}
+    >
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <div className="grid gap-2">
+          <label
+            htmlFor="team-name"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Name
+          </label>
+          <TerminalInput
+            id="team-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="My Team"
+            required
+          />
+        </div>
+        <div className="grid gap-2">
+          <label
+            htmlFor="team-description"
+            style={{ fontSize: 13, color: theme.textTertiary }}
+          >
+            Description
+          </label>
+          <TerminalInput
+            id="team-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Optional description"
+          />
+        </div>
+        {error && <p style={{ color: theme.red, fontSize: 13 }}>{error}</p>}
+        <div className="flex justify-end gap-2">
+          <TerminalButton
+            type="submit"
+            variant="submit"
+            disabled={isSubmitting || !name.trim()}
+          >
+            {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create' : 'Save'}
+          </TerminalButton>
+        </div>
+      </form>
+    </TerminalDialog>
   )
 }
