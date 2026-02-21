@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { RetrosController } from './retros.controller.js'
 import { RetrosService } from './retros.service.js'
+import { BoardGateway } from '../board/board.gateway.js'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import {
   RetroResponse,
@@ -14,8 +15,10 @@ describe('RetrosController', () => {
     findAll: jest.Mock
     findOne: jest.Mock
     update: jest.Mock
+    updatePhase: jest.Mock
     remove: jest.Mock
   }
+  let boardGateway: { emitPhaseChanged: jest.Mock }
 
   const req = { user: { id: 'user-1' } }
 
@@ -23,6 +26,7 @@ describe('RetrosController', () => {
     id: 'retro-1',
     name: 'Sprint 1 Retro',
     status: 'SCHEDULED',
+    phase: 'BRAINSTORM',
     date: new Date('2026-02-16'),
     teamId: 'team-1',
     createdAt: new Date(),
@@ -41,12 +45,20 @@ describe('RetrosController', () => {
       findAll: jest.fn(),
       findOne: jest.fn(),
       update: jest.fn(),
+      updatePhase: jest.fn(),
       remove: jest.fn(),
+    }
+
+    boardGateway = {
+      emitPhaseChanged: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RetrosController],
-      providers: [{ provide: RetrosService, useValue: retrosService }],
+      providers: [
+        { provide: RetrosService, useValue: retrosService },
+        { provide: BoardGateway, useValue: boardGateway },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })

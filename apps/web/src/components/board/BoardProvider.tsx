@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { Socket } from 'socket.io-client'
-import type { Board, Card, Column } from '@/types/api'
+import type { Board, Card, Column, RetroPhase } from '@/types/api'
 import { createBoardSocket } from '@/lib/socket'
 
 interface ActiveUser {
@@ -19,6 +19,7 @@ interface BoardState {
   columns: Column[]
   activeUsers: ActiveUser[]
   initialized: boolean
+  phase: RetroPhase
 }
 
 type BoardAction =
@@ -29,6 +30,7 @@ type BoardAction =
   | { type: 'CARD_DELETED'; id: string }
   | { type: 'USER_JOINED'; user: ActiveUser }
   | { type: 'USER_LEFT'; userId: string }
+  | { type: 'PHASE_CHANGED'; phase: RetroPhase }
 
 function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
@@ -100,6 +102,9 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
         ),
       }
 
+    case 'PHASE_CHANGED':
+      return { ...state, phase: action.phase }
+
     default:
       return state
   }
@@ -123,6 +128,7 @@ interface BoardProviderProps {
   token: string
   retroId: string
   initialBoard: Board | null
+  initialPhase?: RetroPhase
   children: ReactNode
 }
 
@@ -130,12 +136,14 @@ export function BoardProvider({
   token,
   retroId,
   initialBoard,
+  initialPhase,
   children,
 }: BoardProviderProps) {
   const [state, dispatch] = useReducer(boardReducer, {
     columns: initialBoard?.columns ?? [],
     activeUsers: [],
     initialized: (initialBoard?.columns.length ?? 0) > 0,
+    phase: initialPhase ?? 'ICEBREAKER',
   })
 
   const socketRef = useRef<Socket | null>(null)
@@ -179,6 +187,10 @@ export function BoardProvider({
 
     socket.on('board:user-left', (data: { userId: string }) => {
       dispatch({ type: 'USER_LEFT', userId: data.userId })
+    })
+
+    socket.on('retro:phase-changed', (data: { phase: RetroPhase }) => {
+      dispatch({ type: 'PHASE_CHANGED', phase: data.phase })
     })
 
     socket.connect()

@@ -162,6 +162,12 @@ export class BoardGateway implements OnGatewayDisconnect {
     this.server.to(`retro:${retroId}`).emit('action-item:reordered', items)
   }
 
+  emitPhaseChanged(retroId: string, phase: string) {
+    this.server
+      .to(`retro:${retroId}`)
+      .emit('retro:phase-changed', { retroId, phase })
+  }
+
   private async verifyRetroAccess(
     userId: string,
     retroId: string,

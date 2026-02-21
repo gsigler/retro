@@ -33,6 +33,7 @@ describe('RetrosService', () => {
     name: 'Sprint 1 Retro',
     date: new Date('2026-02-16'),
     status: 'SCHEDULED' as const,
+    phase: 'ICEBREAKER' as const,
     teamId,
     createdById: userId,
     createdAt: new Date(),
@@ -305,6 +306,115 @@ describe('RetrosService', () => {
       await expect(
         service.update(otherUserId, retroId, { name: 'X' }),
       ).rejects.toThrow(ForbiddenException)
+    })
+  })
+
+  describe('updatePhase', () => {
+    it('should allow facilitator (retro creator) to advance phase', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.retro.update.mockResolvedValue({
+        ...mockRetro,
+        phase: 'RETROSPECT',
+      })
+
+      const result = await service.updatePhase(userId, retroId, 'RETROSPECT')
+
+      expect(result.phase).toBe('RETROSPECT')
+      expect(prisma.client.retro.update).toHaveBeenCalledWith({
+        where: { id: retroId },
+        data: { phase: 'RETROSPECT' },
+        include: {
+          createdBy: { select: { id: true, email: true, name: true } },
+          _count: { select: { actionItems: true } },
+        },
+      })
+    })
+
+    it('should allow team owner to advance phase', async () => {
+      const otherCreatorRetro = {
+        ...mockRetro,
+        createdById: otherUserId,
+      }
+      prisma.client.retro.findUnique.mockResolvedValue(otherCreatorRetro)
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.retro.update.mockResolvedValue({
+        ...otherCreatorRetro,
+        phase: 'RETROSPECT',
+      })
+
+      const result = await service.updatePhase(userId, retroId, 'RETROSPECT')
+
+      expect(result.phase).toBe('RETROSPECT')
+    })
+
+    it('should throw ForbiddenException when non-facilitator tries to change phase', async () => {
+      const otherCreatorRetro = {
+        ...mockRetro,
+        createdById: 'user-3',
+      }
+      prisma.client.retro.findUnique.mockResolvedValue(otherCreatorRetro)
+      prisma.client.team.findUnique.mockResolvedValue({
+        ...mockTeam,
+        ownerId: 'user-3',
+      })
+
+      await expect(
+        service.updatePhase(otherUserId, retroId, 'RETROSPECT'),
+      ).rejects.toThrow(ForbiddenException)
+    })
+
+    it('should allow forward transitions (ICEBREAKER → RETROSPECT)', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.retro.update.mockResolvedValue({
+        ...mockRetro,
+        phase: 'RETROSPECT',
+      })
+
+      await expect(
+        service.updatePhase(userId, retroId, 'RETROSPECT'),
+      ).resolves.toBeDefined()
+    })
+
+    it('should allow skipping phases forward (ICEBREAKER → GROUP_VOTE)', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.retro.update.mockResolvedValue({
+        ...mockRetro,
+        phase: 'GROUP_VOTE',
+      })
+
+      await expect(
+        service.updatePhase(userId, retroId, 'GROUP_VOTE'),
+      ).resolves.toBeDefined()
+    })
+
+    it('should allow backward by one step (GROUP_VOTE → RETROSPECT)', async () => {
+      const groupVoteRetro = { ...mockRetro, phase: 'GROUP_VOTE' as const }
+      prisma.client.retro.findUnique.mockResolvedValue(groupVoteRetro)
+      prisma.client.retro.update.mockResolvedValue({
+        ...groupVoteRetro,
+        phase: 'RETROSPECT',
+      })
+
+      await expect(
+        service.updatePhase(userId, retroId, 'RETROSPECT'),
+      ).resolves.toBeDefined()
+    })
+
+    it('should throw BadRequestException for backward by more than one step', async () => {
+      const groupVoteRetro = { ...mockRetro, phase: 'GROUP_VOTE' as const }
+      prisma.client.retro.findUnique.mockResolvedValue(groupVoteRetro)
+
+      await expect(
+        service.updatePhase(userId, retroId, 'ICEBREAKER'),
+      ).rejects.toThrow(BadRequestException)
+    })
+
+    it('should throw BadRequestException for same phase', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+
+      await expect(
+        service.updatePhase(userId, retroId, 'ICEBREAKER'),
+      ).rejects.toThrow(BadRequestException)
     })
   })
 

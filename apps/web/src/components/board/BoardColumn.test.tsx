@@ -48,6 +48,7 @@ function renderWithProviders(col: Column) {
         token="tok"
         retroId="retro-1"
         initialBoard={{ retroId: 'retro-1', columns: [col] }}
+        initialPhase="RETROSPECT"
       >
         <DndContext>
           <BoardColumn column={col} token="tok" retroId="retro-1" />
