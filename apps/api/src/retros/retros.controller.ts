@@ -13,8 +13,10 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import { RetrosService } from './retros.service.js'
+import { BoardGateway } from '../board/board.gateway.js'
 import { CreateRetroDto } from './dto/create-retro.dto.js'
 import { UpdateRetroDto } from './dto/update-retro.dto.js'
+import { UpdatePhaseDto } from './dto/update-phase.dto.js'
 import {
   RetroResponse,
   RetroWithCountsResponse,
@@ -23,7 +25,10 @@ import {
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class RetrosController {
-  constructor(private readonly retrosService: RetrosService) {}
+  constructor(
+    private readonly retrosService: RetrosService,
+    private readonly boardGateway: BoardGateway,
+  ) {}
 
   @Post('teams/:teamId/retros')
   async create(
@@ -60,6 +65,21 @@ export class RetrosController {
     @Body() dto: UpdateRetroDto,
   ): Promise<RetroWithCountsResponse> {
     const retro = await this.retrosService.update(req.user.id, id, dto)
+    return RetroWithCountsResponse.from(retro)
+  }
+
+  @Patch('retros/:id/phase')
+  async updatePhase(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body() dto: UpdatePhaseDto,
+  ): Promise<RetroWithCountsResponse> {
+    const retro = await this.retrosService.updatePhase(
+      req.user.id,
+      id,
+      dto.phase,
+    )
+    this.boardGateway.emitPhaseChanged(id, dto.phase)
     return RetroWithCountsResponse.from(retro)
   }
 

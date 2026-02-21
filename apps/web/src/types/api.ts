@@ -44,10 +44,17 @@ export interface TeamDetail {
   updatedAt: string
 }
 
+export type RetroPhase =
+  | 'ICEBREAKER'
+  | 'RETROSPECT'
+  | 'GROUP_VOTE'
+  | 'DISCUSS_ACTION'
+
 export interface Retro {
   id: string
   name: string
   status: string
+  phase: RetroPhase
   date: string
   teamId: string
   createdAt: string

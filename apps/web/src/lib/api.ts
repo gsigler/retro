@@ -3,6 +3,7 @@ import type {
   TeamWithCounts,
   TeamDetail,
   TeamMember,
+  RetroPhase,
   RetroWithCounts,
   ActionItem,
   ActionItemUserSummary,
@@ -142,6 +143,18 @@ export function updateRetro(
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(data),
+  })
+}
+
+export function updateRetroPhase(
+  token: string,
+  retroId: string,
+  phase: RetroPhase,
+) {
+  return api<RetroWithCounts>(`/retros/${retroId}/phase`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify({ phase }),
   })
 }
 

@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "RetroPhase" AS ENUM ('BRAINSTORM', 'GROUP', 'VOTE', 'DISCUSS', 'ACTION_ITEMS');
+
+-- AlterTable
+ALTER TABLE "Retro" ADD COLUMN     "phase" "RetroPhase" NOT NULL DEFAULT 'BRAINSTORM';

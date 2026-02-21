@@ -22,6 +22,22 @@ const STATUS_ORDER: Record<RetroStatus, number> = {
   COMPLETED: 2,
 }
 
+export const RetroPhase = {
+  ICEBREAKER: 'ICEBREAKER',
+  RETROSPECT: 'RETROSPECT',
+  GROUP_VOTE: 'GROUP_VOTE',
+  DISCUSS_ACTION: 'DISCUSS_ACTION',
+} as const
+
+export type RetroPhase = (typeof RetroPhase)[keyof typeof RetroPhase]
+
+const PHASE_ORDER: Record<RetroPhase, number> = {
+  ICEBREAKER: 0,
+  RETROSPECT: 1,
+  GROUP_VOTE: 2,
+  DISCUSS_ACTION: 3,
+}
+
 @Injectable()
 export class RetrosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -83,6 +99,34 @@ export class RetrosService {
     })
   }
 
+  async updatePhase(userId: string, retroId: string, phase: RetroPhase) {
+    const retro = await this.findRetroOrThrow(retroId)
+    await this.assertFacilitator(userId, retro)
+
+    const currentOrder = PHASE_ORDER[retro.phase as RetroPhase]
+    const nextOrder = PHASE_ORDER[phase]
+    const diff = nextOrder - currentOrder
+
+    if (diff === 0) {
+      throw new BadRequestException('Already in this phase')
+    }
+
+    if (diff < -1) {
+      throw new BadRequestException(
+        'Cannot go back more than one phase at a time',
+      )
+    }
+
+    return this.prisma.client.retro.update({
+      where: { id: retroId },
+      data: { phase },
+      include: {
+        createdBy: { select: { id: true, email: true, name: true } },
+        _count: { select: { actionItems: true } },
+      },
+    })
+  }
+
   async remove(userId: string, retroId: string) {
     const retro = await this.findRetroOrThrow(retroId)
     await this.assertTeamOwner(userId, retro.teamId)
@@ -114,6 +158,16 @@ export class RetrosService {
     if (!membership) {
       throw new ForbiddenException('You are not a member of this team')
     }
+  }
+
+  private async assertFacilitator(
+    userId: string,
+    retro: { createdById: string; teamId: string },
+  ) {
+    if (retro.createdById === userId) {
+      return
+    }
+    await this.assertTeamOwner(userId, retro.teamId)
   }
 
   private async assertTeamOwner(userId: string, teamId: string) {

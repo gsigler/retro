@@ -30,6 +30,7 @@ function renderWithProviders() {
       <BoardProvider
         token="tok"
         retroId="retro-1"
+        initialPhase="RETROSPECT"
         initialBoard={{
           retroId: 'retro-1',
           columns: [

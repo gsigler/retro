@@ -11,9 +11,11 @@ interface AddCardFormProps {
 
 export function AddCardForm({ token, retroId, columnId }: AddCardFormProps) {
   const { theme } = useTheme()
-  const { dispatch } = useBoardContext()
+  const { state, dispatch } = useBoardContext()
   const [isOpen, setIsOpen] = useState(false)
   const [content, setContent] = useState('')
+
+  if (state.phase !== 'RETROSPECT') return null
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = content.trim()

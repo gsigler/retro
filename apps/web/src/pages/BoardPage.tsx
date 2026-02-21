@@ -15,7 +15,13 @@ import {
 import type { Card } from '@/types/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
-import { fetchBoard, fetchRetro, fetchTeams, moveCard } from '@/lib/api'
+import {
+  fetchBoard,
+  fetchRetro,
+  fetchTeams,
+  moveCard,
+  updateRetroPhase,
+} from '@/lib/api'
 import {
   BoardProvider,
   useBoardContext,
@@ -24,6 +30,7 @@ import { TemplatePicker } from '@/components/board/TemplatePicker'
 import { BoardColumn } from '@/components/board/BoardColumn'
 import { ActiveUsers } from '@/components/board/ActiveUsers'
 import { ActionItemsPanel } from '@/components/board/ActionItemsPanel'
+import { RetroStepper } from '@/components/board/RetroStepper'
 import { StatusBar } from '@/components/board/StatusBar'
 import { BlinkingCursor } from '@/components/board/TypingEffect'
 
@@ -93,12 +100,18 @@ export default function BoardPage() {
   if (!token || !retroId) return null
 
   return (
-    <BoardProvider token={token} retroId={retroId} initialBoard={board ?? null}>
+    <BoardProvider
+      token={token}
+      retroId={retroId}
+      initialBoard={board ?? null}
+      initialPhase={retro?.phase}
+    >
       <BoardContent
         token={token}
         retroId={retroId}
         teamName={teamName}
         retroName={retro?.name}
+        retroCreatedById={retro?.createdBy.id}
       />
     </BoardProvider>
   )
@@ -109,16 +122,23 @@ function BoardContent({
   retroId,
   teamName,
   retroName,
+  retroCreatedById,
 }: {
   token: string
   retroId: string
   teamName?: string
   retroName?: string
+  retroCreatedById?: string
 }) {
   const { state, dispatch } = useBoardContext()
+  const { user } = useAuth()
   const { theme } = useTheme()
+  const isFacilitator =
+    !!user && !!retroCreatedById && user.id === retroCreatedById
   const [activeCard, setActiveCard] = useState<Card | null>(null)
 
+  const isDragEnabled =
+    state.phase === 'RETROSPECT' || state.phase === 'GROUP_VOTE'
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor),
@@ -287,13 +307,27 @@ function BoardContent({
         </div>
       </div>
 
+      {/* Phase stepper */}
+      <RetroStepper
+        phase={state.phase}
+        isFacilitator={isFacilitator}
+        onPhaseChange={async (phase) => {
+          dispatch({ type: 'PHASE_CHANGED', phase })
+          try {
+            await updateRetroPhase(token, retroId, phase)
+          } catch {
+            // Server broadcast will reconcile
+          }
+        }}
+      />
+
       {/* Columns */}
       <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          onDragStart={isDragEnabled ? handleDragStart : undefined}
+          onDragEnd={isDragEnabled ? handleDragEnd : undefined}
         >
           <div style={{ display: 'flex', gap: 12 }}>
             {state.columns.map((column) => (
