@@ -11,27 +11,6 @@ interface ActionItemsSectionProps {
   onMutation: () => void
 }
 
-function ProgressBar({ done, total }: { done: number; total: number }) {
-  const { theme } = useTheme()
-  const barWidth = 20
-  const filled = total > 0 ? Math.round((done / total) * barWidth) : 0
-  const empty = barWidth - filled
-
-  return (
-    <span
-      className="box-drawing"
-      style={{ fontSize: 12, color: theme.textTertiary }}
-    >
-      [<span style={{ color: theme.green }}>{'█'.repeat(filled)}</span>
-      <span style={{ color: theme.surface }}>{'░'.repeat(empty)}</span>]{' '}
-      <span style={{ color: theme.textPrimary }}>
-        {done}/{total}
-      </span>{' '}
-      complete
-    </span>
-  )
-}
-
 export function ActionItemsSection({
   token,
   items,
@@ -93,12 +72,6 @@ export function ActionItemsSection({
         </span>
       }
     >
-      {items.length > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <ProgressBar done={doneCount} total={items.length} />
-        </div>
-      )}
-
       {items.length === 0 ? (
         <p style={{ fontSize: 12, color: theme.textTertiary }}>
           <span style={{ color: theme.green }}>&#10003;</span> All clear — no
