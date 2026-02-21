@@ -6,14 +6,14 @@ import { PrismaService } from '../prisma/prisma.service.js'
 describe('AuthService', () => {
   let service: AuthService
   let prisma: {
-    client: { user: { upsert: jest.Mock; findUniqueOrThrow: jest.Mock } }
+    client: { user: { upsert: jest.Mock; findUnique: jest.Mock } }
   }
   let jwtService: { sign: jest.Mock }
 
   beforeEach(async () => {
     prisma = {
       client: {
-        user: { upsert: jest.fn(), findUniqueOrThrow: jest.fn() },
+        user: { upsert: jest.fn(), findUnique: jest.fn() },
       },
     }
     jwtService = { sign: jest.fn() }
@@ -84,11 +84,11 @@ describe('AuthService', () => {
         avatarUrl: null,
         createdAt: new Date(),
       }
-      prisma.client.user.findUniqueOrThrow.mockResolvedValue(mockUser)
+      prisma.client.user.findUnique.mockResolvedValue(mockUser)
 
       const result = await service.getProfile('user-1')
 
-      expect(prisma.client.user.findUniqueOrThrow).toHaveBeenCalledWith({
+      expect(prisma.client.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         select: {
           id: true,
@@ -99,6 +99,14 @@ describe('AuthService', () => {
         },
       })
       expect(result).toEqual(mockUser)
+    })
+
+    it('should throw UnauthorizedException when user not found', async () => {
+      prisma.client.user.findUnique.mockResolvedValue(null)
+
+      await expect(service.getProfile('nonexistent')).rejects.toThrow(
+        'User no longer exists',
+      )
     })
   })
 })
