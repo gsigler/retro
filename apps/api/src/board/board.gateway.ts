@@ -134,6 +134,18 @@ export class BoardGateway implements OnGatewayDisconnect {
     this.server.to(`retro:${retroId}`).emit('card:created', card)
   }
 
+  emitCardCreatedToAuthor(retroId: string, authorId: string, card: any) {
+    const room = `retro:${retroId}`
+    const sockets = this.server.in(room).fetchSockets()
+    sockets.then((clients) => {
+      for (const client of clients) {
+        if ((client as any).data?.userId === authorId) {
+          client.emit('card:created', card)
+        }
+      }
+    })
+  }
+
   emitCardMoved(retroId: string, card: any) {
     this.server.to(`retro:${retroId}`).emit('card:moved', card)
   }
@@ -142,6 +154,12 @@ export class BoardGateway implements OnGatewayDisconnect {
     this.server
       .to(`retro:${retroId}`)
       .emit('card:deleted', { id: cardId, retroId })
+  }
+
+  emitBoardRevealed(retroId: string, columns: any) {
+    this.server
+      .to(`retro:${retroId}`)
+      .emit('board:revealed', { retroId, columns })
   }
 
   emitActionItemCreated(retroId: string, item: any) {

@@ -129,6 +129,8 @@ export interface Board {
   columns: Column[]
 }
 
+export const ANONYMOUS_AUTHOR_ID = 'anonymous'
+
 export interface DashboardSummary {
   memberCount: number
   retroCount: number

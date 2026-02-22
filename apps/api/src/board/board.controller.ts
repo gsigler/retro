@@ -67,7 +67,14 @@ export class BoardController {
   ): Promise<CardResponse> {
     const card = await this.boardService.createCard(req.user.id, retroId, dto)
     const response = CardResponse.from(card)
-    this.boardGateway.emitCardCreated(retroId, response)
+
+    const phase = await this.boardService.getRetroPhase(retroId)
+    if (phase === 'RETROSPECT' || phase === 'ICEBREAKER') {
+      this.boardGateway.emitCardCreatedToAuthor(retroId, req.user.id, response)
+    } else {
+      this.boardGateway.emitCardCreated(retroId, response)
+    }
+
     return response
   }
 

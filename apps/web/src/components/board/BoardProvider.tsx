@@ -31,6 +31,7 @@ type BoardAction =
   | { type: 'USER_JOINED'; user: ActiveUser }
   | { type: 'USER_LEFT'; userId: string }
   | { type: 'PHASE_CHANGED'; phase: RetroPhase }
+  | { type: 'BOARD_REVEALED'; columns: Column[] }
 
 function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
@@ -104,6 +105,9 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
 
     case 'PHASE_CHANGED':
       return { ...state, phase: action.phase }
+
+    case 'BOARD_REVEALED':
+      return { ...state, columns: action.columns }
 
     default:
       return state
@@ -191,6 +195,10 @@ export function BoardProvider({
 
     socket.on('retro:phase-changed', (data: { phase: RetroPhase }) => {
       dispatch({ type: 'PHASE_CHANGED', phase: data.phase })
+    })
+
+    socket.on('board:revealed', (data: { columns: Column[] }) => {
+      dispatch({ type: 'BOARD_REVEALED', columns: data.columns })
     })
 
     socket.connect()

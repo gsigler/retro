@@ -12,6 +12,7 @@ describe('BoardController', () => {
   let boardGateway: {
     emitBoardInitialized: jest.Mock
     emitCardCreated: jest.Mock
+    emitCardCreatedToAuthor: jest.Mock
     emitCardMoved: jest.Mock
     emitCardDeleted: jest.Mock
   }
@@ -22,6 +23,7 @@ describe('BoardController', () => {
     createCard: jest.Mock
     moveCard: jest.Mock
     deleteCard: jest.Mock
+    getRetroPhase: jest.Mock
   }
 
   const req = { user: { id: 'user-1' } }
@@ -52,6 +54,7 @@ describe('BoardController', () => {
     boardGateway = {
       emitBoardInitialized: jest.fn(),
       emitCardCreated: jest.fn(),
+      emitCardCreatedToAuthor: jest.fn(),
       emitCardMoved: jest.fn(),
       emitCardDeleted: jest.fn(),
     }
@@ -63,6 +66,7 @@ describe('BoardController', () => {
       createCard: jest.fn(),
       moveCard: jest.fn(),
       deleteCard: jest.fn(),
+      getRetroPhase: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -134,8 +138,9 @@ describe('BoardController', () => {
   })
 
   describe('createCard', () => {
-    it('should return a CardResponse and emit event', async () => {
+    it('should broadcast to all when phase is GROUP_VOTE', async () => {
       boardService.createCard.mockResolvedValue(mockCard)
+      boardService.getRetroPhase.mockResolvedValue('GROUP_VOTE')
 
       const result = await controller.createCard(req, retroId, {
         columnId: 'column-1',
@@ -149,6 +154,24 @@ describe('BoardController', () => {
       expect(result).toBeInstanceOf(CardResponse)
       expect(result.id).toBe('card-1')
       expect(boardGateway.emitCardCreated).toHaveBeenCalledWith(retroId, result)
+    })
+
+    it('should emit only to author when phase is RETROSPECT', async () => {
+      boardService.createCard.mockResolvedValue(mockCard)
+      boardService.getRetroPhase.mockResolvedValue('RETROSPECT')
+
+      const result = await controller.createCard(req, retroId, {
+        columnId: 'column-1',
+        content: 'Test card',
+      })
+
+      expect(result).toBeInstanceOf(CardResponse)
+      expect(boardGateway.emitCardCreatedToAuthor).toHaveBeenCalledWith(
+        retroId,
+        'user-1',
+        result,
+      )
+      expect(boardGateway.emitCardCreated).not.toHaveBeenCalled()
     })
   })
 

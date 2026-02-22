@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { RetrosController } from './retros.controller.js'
 import { RetrosService } from './retros.service.js'
+import { BoardService } from '../board/board.service.js'
 import { BoardGateway } from '../board/board.gateway.js'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import {
@@ -18,7 +19,11 @@ describe('RetrosController', () => {
     updatePhase: jest.Mock
     remove: jest.Mock
   }
-  let boardGateway: { emitPhaseChanged: jest.Mock }
+  let boardService: { getAllCards: jest.Mock }
+  let boardGateway: {
+    emitPhaseChanged: jest.Mock
+    emitBoardRevealed: jest.Mock
+  }
 
   const req = { user: { id: 'user-1' } }
 
@@ -49,14 +54,20 @@ describe('RetrosController', () => {
       remove: jest.fn(),
     }
 
+    boardService = {
+      getAllCards: jest.fn(),
+    }
+
     boardGateway = {
       emitPhaseChanged: jest.fn(),
+      emitBoardRevealed: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RetrosController],
       providers: [
         { provide: RetrosService, useValue: retrosService },
+        { provide: BoardService, useValue: boardService },
         { provide: BoardGateway, useValue: boardGateway },
       ],
     })

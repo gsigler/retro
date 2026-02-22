@@ -15,6 +15,13 @@ vi.mock('@/lib/socket', () => ({
   }),
 }))
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1', email: 'alice@test.com', name: 'Alice' },
+    token: 'tok',
+  }),
+}))
+
 vi.mock('@/lib/api', () => ({}))
 
 const column: Column = {

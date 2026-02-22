@@ -7,6 +7,10 @@ export class CardAuthorSummary {
   static from(user: any): CardAuthorSummary {
     return new CardAuthorSummary(user.id, user.name)
   }
+
+  static anonymous(): CardAuthorSummary {
+    return new CardAuthorSummary('anonymous', 'Anonymous')
+  }
 }
 
 export class CardResponse {
@@ -31,6 +35,19 @@ export class CardResponse {
       card.createdAt,
       card.updatedAt,
       CardAuthorSummary.from(card.author),
+    )
+  }
+
+  static fromAnonymous(card: any): CardResponse {
+    return new CardResponse(
+      card.id,
+      card.columnId,
+      card.retroId,
+      card.content,
+      card.position,
+      card.createdAt,
+      card.updatedAt,
+      CardAuthorSummary.anonymous(),
     )
   }
 }

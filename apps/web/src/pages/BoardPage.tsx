@@ -313,6 +313,23 @@ function BoardContent({
         </div>
       )}
 
+      {state.phase === 'RETROSPECT' && (
+        <div
+          style={{
+            padding: '8px 16px',
+            fontSize: 12,
+            color: theme.yellow,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span style={{ opacity: 0.8 }}>&#128274;</span>
+          Cards are anonymous &mdash; only you can see yours. They will be
+          revealed in the next phase.
+        </div>
+      )}
+
       <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
         <DndContext
           sensors={sensors}

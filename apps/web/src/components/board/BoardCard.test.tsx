@@ -16,6 +16,13 @@ vi.mock('@/lib/socket', () => ({
   }),
 }))
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1', email: 'alice@test.com', name: 'Alice' },
+    token: 'tok',
+  }),
+}))
+
 vi.mock('@/lib/api', () => ({
   deleteCard: vi.fn(),
 }))
@@ -77,7 +84,7 @@ describe('BoardCard', () => {
     renderWithProviders(card)
 
     expect(screen.getByText('Write more tests')).toBeDefined()
-    expect(screen.getByText('Alice')).toBeDefined()
+    expect(screen.getByText('Alice (you)')).toBeDefined()
   })
 
   it('calls deleteCard API when delete button is clicked', async () => {

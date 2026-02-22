@@ -20,6 +20,25 @@ export class BoardService {
   }
 
   async getBoard(userId: string, retroId: string) {
+    const retro = await this.assertRetroAccess(userId, retroId)
+
+    const isRevealed =
+      retro.phase === 'GROUP_VOTE' || retro.phase === 'DISCUSS_ACTION'
+
+    return this.prisma.client.column.findMany({
+      where: { retroId },
+      orderBy: { position: 'asc' },
+      include: {
+        cards: {
+          where: isRevealed ? undefined : { authorId: userId },
+          orderBy: { position: 'asc' },
+          include: { author: { select: AUTHOR_SELECT } },
+        },
+      },
+    })
+  }
+
+  async getAllCards(userId: string, retroId: string) {
     await this.assertRetroAccess(userId, retroId)
 
     return this.prisma.client.column.findMany({
@@ -145,6 +164,17 @@ export class BoardService {
     }
 
     await this.prisma.client.card.delete({ where: { id: cardId } })
+  }
+
+  async getRetroPhase(retroId: string): Promise<string> {
+    const retro = await this.prisma.client.retro.findUnique({
+      where: { id: retroId },
+      select: { phase: true },
+    })
+    if (!retro) {
+      throw new NotFoundException('Retro not found')
+    }
+    return retro.phase
   }
 
   private async assertRetroAccess(userId: string, retroId: string) {

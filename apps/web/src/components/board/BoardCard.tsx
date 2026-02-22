@@ -1,9 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { deleteCard } from '@/lib/api'
 import { useBoardContext } from './BoardProvider'
 import type { Card } from '@/types/api'
+import { ANONYMOUS_AUTHOR_ID } from '@/types/api'
 
 interface BoardCardProps {
   card: Card
@@ -19,7 +21,8 @@ export function BoardCard({
   columnColor,
 }: BoardCardProps) {
   const { theme } = useTheme()
-  const { dispatch } = useBoardContext()
+  const { user } = useAuth()
+  const { state, dispatch } = useBoardContext()
   const {
     attributes,
     listeners,
@@ -28,6 +31,18 @@ export function BoardCard({
     transition,
     isDragging,
   } = useSortable({ id: card.id })
+
+  const isAnonymousPhase =
+    state.phase === 'GROUP_VOTE' || state.phase === 'DISCUSS_ACTION'
+  const isOwnCard = user?.id === card.author.id
+  const showAnonymous =
+    isAnonymousPhase && !isOwnCard && card.author.id === ANONYMOUS_AUTHOR_ID
+
+  const authorDisplay = showAnonymous
+    ? 'Anonymous'
+    : isOwnCard
+      ? `${card.author.name ?? 'Anonymous'} (you)`
+      : (card.author.name ?? 'Anonymous')
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -70,7 +85,7 @@ export function BoardCard({
         }}
       >
         <span style={{ fontSize: 11, color: theme.textTertiary, opacity: 0.6 }}>
-          {card.author.name ?? 'Anonymous'}
+          {authorDisplay}
         </span>
         <button
           onClick={handleDelete}

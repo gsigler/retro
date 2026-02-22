@@ -36,7 +36,7 @@ describe('BoardService', () => {
   const columnId = 'column-1'
   const cardId = 'card-1'
 
-  const mockRetro = { id: retroId, teamId }
+  const mockRetro = { id: retroId, teamId, phase: 'ICEBREAKER' }
   const mockMembership = { teamId, userId }
   const mockAuthor = { id: userId, name: 'Test User' }
 
@@ -100,7 +100,7 @@ describe('BoardService', () => {
   })
 
   describe('getBoard', () => {
-    it('should return columns with cards for a retro', async () => {
+    it('should filter cards to author during ICEBREAKER phase', async () => {
       prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
       prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
       prisma.client.column.findMany.mockResolvedValue([mockColumn])
@@ -112,6 +112,31 @@ describe('BoardService', () => {
         orderBy: { position: 'asc' },
         include: {
           cards: {
+            where: { authorId: userId },
+            orderBy: { position: 'asc' },
+            include: { author: { select: { id: true, name: true } } },
+          },
+        },
+      })
+      expect(result).toEqual([mockColumn])
+    })
+
+    it('should return all cards during GROUP_VOTE phase', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue({
+        ...mockRetro,
+        phase: 'GROUP_VOTE',
+      })
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findMany.mockResolvedValue([mockColumn])
+
+      const result = await service.getBoard(userId, retroId)
+
+      expect(prisma.client.column.findMany).toHaveBeenCalledWith({
+        where: { retroId },
+        orderBy: { position: 'asc' },
+        include: {
+          cards: {
+            where: undefined,
             orderBy: { position: 'asc' },
             include: { author: { select: { id: true, name: true } } },
           },
