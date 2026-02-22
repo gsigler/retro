@@ -39,6 +39,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "dotenv": "^17.3.1",
+    "helmet": "^8.1.0",
     "nanoid": "^3.3.8",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
@@ -51,6 +52,8 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@swc/core": "^1.11.29",
+    "@swc/jest": "^0.2.39",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
@@ -60,9 +63,7 @@
     "jest": "^30.0.0",
     "prisma": "^7.4.1",
     "source-map-support": "^0.5.21",
-    "supertest": "^7.0.0",
-    "@swc/core": "^1.11.29",
-    "@swc/jest": "^0.2.39"
+    "supertest": "^7.0.0"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
