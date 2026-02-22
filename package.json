@@ -36,6 +36,17 @@
       "prettier --write"
     ]
   },
+  "overrides": {
+    "minimatch": "^10.2.1",
+    "@angular-devkit/core": {
+      "ajv": "^8.18.0"
+    },
+    "ajv-formats": {
+      "ajv": "^8.18.0"
+    },
+    "hono": "^4.12.1",
+    "lodash": "^4.17.23"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "concurrently": "^9.2.1",
