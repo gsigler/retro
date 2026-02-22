@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { BoardController } from './board.controller.js'
 import { BoardService } from './board.service.js'
 import { BoardGateway } from './board.gateway.js'
+import { TimerService } from './timer.service.js'
 import { PrismaModule } from '../prisma/prisma.module.js'
 
 @Module({
@@ -17,7 +18,7 @@ import { PrismaModule } from '../prisma/prisma.module.js'
     }),
   ],
   controllers: [BoardController],
-  providers: [BoardService, BoardGateway],
+  providers: [BoardService, BoardGateway, TimerService],
   exports: [BoardService, BoardGateway],
 })
 export class BoardModule {}

@@ -22,12 +22,14 @@ describe('BoardService', () => {
       card: {
         findFirst: jest.Mock
         findUnique: jest.Mock
+        findUniqueOrThrow: jest.Mock
         create: jest.Mock
         update: jest.Mock
         updateMany: jest.Mock
         delete: jest.Mock
         aggregate: jest.Mock
       }
+      $transaction: jest.Mock
       vote: {
         count: jest.Mock
         create: jest.Mock
@@ -84,12 +86,14 @@ describe('BoardService', () => {
         card: {
           findFirst: jest.fn(),
           findUnique: jest.fn(),
+          findUniqueOrThrow: jest.fn(),
           create: jest.fn(),
           update: jest.fn(),
           updateMany: jest.fn(),
           delete: jest.fn(),
           aggregate: jest.fn(),
         },
+        $transaction: jest.fn(),
         vote: {
           count: jest.fn(),
           create: jest.fn(),
@@ -130,7 +134,7 @@ describe('BoardService', () => {
         orderBy: { position: 'asc' },
         include: {
           cards: {
-            where: { authorId: userId },
+            where: { authorId: userId, parentCardId: null },
             orderBy: { position: 'asc' },
             include: {
               author: { select: { id: true, name: true } },
@@ -164,7 +168,7 @@ describe('BoardService', () => {
         orderBy: { position: 'asc' },
         include: {
           cards: {
-            where: undefined,
+            where: { parentCardId: null },
             orderBy: { position: 'asc' },
             include: {
               author: { select: { id: true, name: true } },
@@ -276,7 +280,7 @@ describe('BoardService', () => {
           },
         },
       })
-      expect(result).toEqual(mockCard)
+      expect(result).toEqual({ card: mockCard, phase: 'ICEBREAKER' })
     })
 
     it('should set position to 0 when column has no cards', async () => {
@@ -399,6 +403,272 @@ describe('BoardService', () => {
       await expect(
         service.deleteCard(userId, retroId, 'nonexistent'),
       ).rejects.toThrow(NotFoundException)
+    })
+  })
+
+  describe('voteCard', () => {
+    const mockGroupVoteRetro = {
+      ...mockRetro,
+      phase: 'GROUP_VOTE',
+      maxVotesPerUser: 5,
+    }
+
+    it('should create a vote and return vote count', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(mockCard)
+      prisma.client.$transaction.mockImplementation((cb) => cb(prisma.client))
+      prisma.client.vote.count
+        .mockResolvedValueOnce(2) // userVoteCount
+        .mockResolvedValueOnce(3) // voteCount for card
+      prisma.client.vote.create.mockResolvedValue({
+        id: 'vote-1',
+        cardId,
+        userId,
+        retroId,
+      })
+
+      const result = await service.voteCard(userId, retroId, cardId)
+
+      expect(result).toEqual({
+        vote: { id: 'vote-1', cardId, userId, retroId },
+        voteCount: 3,
+        remainingVotes: 2,
+      })
+    })
+
+    it('should throw BadRequestException when not in GROUP_VOTE phase', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+
+      await expect(service.voteCard(userId, retroId, cardId)).rejects.toThrow(
+        BadRequestException,
+      )
+    })
+
+    it('should throw NotFoundException when card not found', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(null)
+
+      await expect(service.voteCard(userId, retroId, cardId)).rejects.toThrow(
+        NotFoundException,
+      )
+    })
+
+    it('should throw BadRequestException when vote limit reached', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(mockCard)
+      prisma.client.$transaction.mockImplementation((cb) => cb(prisma.client))
+      prisma.client.vote.count.mockResolvedValueOnce(5) // userVoteCount >= maxVotesPerUser
+
+      await expect(service.voteCard(userId, retroId, cardId)).rejects.toThrow(
+        BadRequestException,
+      )
+    })
+  })
+
+  describe('unvoteCard', () => {
+    const mockGroupVoteRetro = {
+      ...mockRetro,
+      phase: 'GROUP_VOTE',
+      maxVotesPerUser: 5,
+    }
+
+    it('should remove a vote and return updated counts', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.vote.findFirst.mockResolvedValue({
+        id: 'vote-1',
+        cardId,
+        userId,
+        retroId,
+      })
+      prisma.client.vote.delete.mockResolvedValue({})
+      prisma.client.vote.count
+        .mockResolvedValueOnce(2) // voteCount for card
+        .mockResolvedValueOnce(3) // userVoteCount
+
+      const result = await service.unvoteCard(userId, retroId, cardId)
+
+      expect(prisma.client.vote.delete).toHaveBeenCalledWith({
+        where: { id: 'vote-1' },
+      })
+      expect(result).toEqual({
+        voteCount: 2,
+        remainingVotes: 2,
+      })
+    })
+
+    it('should throw BadRequestException when not in GROUP_VOTE phase', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+
+      await expect(service.unvoteCard(userId, retroId, cardId)).rejects.toThrow(
+        BadRequestException,
+      )
+    })
+
+    it('should throw NotFoundException when no vote exists', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.vote.findFirst.mockResolvedValue(null)
+
+      await expect(service.unvoteCard(userId, retroId, cardId)).rejects.toThrow(
+        NotFoundException,
+      )
+    })
+  })
+
+  describe('mergeCards', () => {
+    const mockGroupVoteRetro = {
+      ...mockRetro,
+      phase: 'GROUP_VOTE',
+      maxVotesPerUser: 5,
+    }
+
+    const parentCardId = 'card-parent'
+    const childCardIds = ['card-child-1', 'card-child-2']
+
+    const mockParentCard = {
+      ...mockCard,
+      id: parentCardId,
+      parentCardId: null,
+    }
+
+    const mockMergedParent = {
+      ...mockParentCard,
+      children: [
+        {
+          id: 'card-child-1',
+          content: 'Child 1',
+          author: mockAuthor,
+          _count: { votes: 0 },
+        },
+        {
+          id: 'card-child-2',
+          content: 'Child 2',
+          author: mockAuthor,
+          _count: { votes: 0 },
+        },
+      ],
+    }
+
+    it('should merge child cards into parent', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(mockParentCard)
+      prisma.client.card.updateMany.mockResolvedValue({ count: 2 })
+      prisma.client.card.findUniqueOrThrow.mockResolvedValue(mockMergedParent)
+
+      const result = await service.mergeCards(
+        userId,
+        retroId,
+        parentCardId,
+        childCardIds,
+      )
+
+      expect(prisma.client.card.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: childCardIds }, retroId, parentCardId: null },
+        data: { parentCardId, columnId: mockParentCard.columnId },
+      })
+      expect(result).toEqual(mockMergedParent)
+    })
+
+    it('should throw BadRequestException when not in GROUP_VOTE phase', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+
+      await expect(
+        service.mergeCards(userId, retroId, parentCardId, childCardIds),
+      ).rejects.toThrow(BadRequestException)
+    })
+
+    it('should throw BadRequestException when merging card into itself', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+
+      await expect(
+        service.mergeCards(userId, retroId, parentCardId, [parentCardId]),
+      ).rejects.toThrow(BadRequestException)
+    })
+
+    it('should throw NotFoundException when parent card not found', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.findFirst.mockResolvedValue(null)
+
+      await expect(
+        service.mergeCards(userId, retroId, parentCardId, childCardIds),
+      ).rejects.toThrow(NotFoundException)
+    })
+  })
+
+  describe('unmergeCard', () => {
+    const mockGroupVoteRetro = {
+      ...mockRetro,
+      phase: 'GROUP_VOTE',
+      maxVotesPerUser: 5,
+    }
+
+    const mockUnmergedCard = {
+      ...mockCard,
+      children: [],
+    }
+
+    it('should unmerge children from parent card', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.card.updateMany.mockResolvedValue({ count: 2 })
+      prisma.client.card.findUniqueOrThrow.mockResolvedValue(mockUnmergedCard)
+
+      const result = await service.unmergeCard(userId, retroId, cardId)
+
+      expect(prisma.client.card.updateMany).toHaveBeenCalledWith({
+        where: { parentCardId: cardId, retroId },
+        data: { parentCardId: null },
+      })
+      expect(result).toEqual(mockUnmergedCard)
+    })
+
+    it('should throw BadRequestException when not in GROUP_VOTE phase', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+
+      await expect(
+        service.unmergeCard(userId, retroId, cardId),
+      ).rejects.toThrow(BadRequestException)
+    })
+  })
+
+  describe('getUserVotes', () => {
+    const mockGroupVoteRetro = {
+      ...mockRetro,
+      phase: 'GROUP_VOTE',
+      maxVotesPerUser: 5,
+    }
+
+    it('should return voted card IDs and remaining votes', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockGroupVoteRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.vote.findMany.mockResolvedValue([
+        { cardId: 'card-1' },
+        { cardId: 'card-2' },
+        { cardId: 'card-3' },
+      ])
+
+      const result = await service.getUserVotes(userId, retroId)
+
+      expect(prisma.client.vote.findMany).toHaveBeenCalledWith({
+        where: { retroId, userId },
+        select: { cardId: true },
+      })
+      expect(result).toEqual({
+        votedCardIds: ['card-1', 'card-2', 'card-3'],
+        maxVotes: 5,
+        remainingVotes: 2,
+      })
     })
   })
 })

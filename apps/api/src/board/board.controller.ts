@@ -20,6 +20,7 @@ import { MoveCardDto } from './dto/move-card.dto.js'
 import { MergeCardsDto } from './dto/merge-cards.dto.js'
 import { BoardResponse } from './dto/board-response.dto.js'
 import { CardResponse } from './dto/card-response.dto.js'
+import { VoteResponse, UserVotesResponse } from './dto/vote-response.dto.js'
 import { RetroTemplate } from './templates.js'
 
 @Controller()
@@ -66,10 +67,13 @@ export class BoardController {
     @Param('retroId') retroId: string,
     @Body() dto: CreateCardDto,
   ): Promise<CardResponse> {
-    const card = await this.boardService.createCard(req.user.id, retroId, dto)
+    const { card, phase } = await this.boardService.createCard(
+      req.user.id,
+      retroId,
+      dto,
+    )
     const response = CardResponse.from(card)
 
-    const phase = await this.boardService.getRetroPhase(retroId)
     if (phase === 'RETROSPECT' || phase === 'ICEBREAKER') {
       this.boardGateway.emitCardCreatedToAuthor(retroId, req.user.id, response)
     } else {
@@ -113,7 +117,7 @@ export class BoardController {
     @Request() req: { user: { id: string } },
     @Param('retroId') retroId: string,
     @Param('cardId') cardId: string,
-  ) {
+  ): Promise<VoteResponse> {
     const result = await this.boardService.voteCard(
       req.user.id,
       retroId,
@@ -124,10 +128,7 @@ export class BoardController {
       voteCount: result.voteCount,
       userId: req.user.id,
     })
-    return {
-      voteCount: result.voteCount,
-      remainingVotes: result.remainingVotes,
-    }
+    return VoteResponse.from(result)
   }
 
   @Delete('retros/:retroId/board/cards/:cardId/vote')
@@ -135,7 +136,7 @@ export class BoardController {
     @Request() req: { user: { id: string } },
     @Param('retroId') retroId: string,
     @Param('cardId') cardId: string,
-  ) {
+  ): Promise<VoteResponse> {
     const result = await this.boardService.unvoteCard(
       req.user.id,
       retroId,
@@ -146,18 +147,16 @@ export class BoardController {
       voteCount: result.voteCount,
       userId: req.user.id,
     })
-    return {
-      voteCount: result.voteCount,
-      remainingVotes: result.remainingVotes,
-    }
+    return VoteResponse.from(result)
   }
 
   @Get('retros/:retroId/board/votes')
   async getUserVotes(
     @Request() req: { user: { id: string } },
     @Param('retroId') retroId: string,
-  ) {
-    return this.boardService.getUserVotes(req.user.id, retroId)
+  ): Promise<UserVotesResponse> {
+    const result = await this.boardService.getUserVotes(req.user.id, retroId)
+    return UserVotesResponse.from(result)
   }
 
   @Post('retros/:retroId/board/cards/merge')
