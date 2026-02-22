@@ -47,7 +47,13 @@ describe('BoardService', () => {
   const columnId = 'column-1'
   const cardId = 'card-1'
 
-  const mockRetro = { id: retroId, teamId, phase: 'ICEBREAKER' }
+  const facilitatorId = 'facilitator-1'
+  const mockRetro = {
+    id: retroId,
+    teamId,
+    phase: 'ICEBREAKER',
+    createdById: facilitatorId,
+  }
   const mockMembership = { teamId, userId }
   const mockAuthor = { id: userId, name: 'Test User' }
 
@@ -382,7 +388,7 @@ describe('BoardService', () => {
   })
 
   describe('deleteCard', () => {
-    it('should delete a card', async () => {
+    it('should allow card author to delete their own card', async () => {
       prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
       prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
       prisma.client.card.findFirst.mockResolvedValue(mockCard)
@@ -393,6 +399,35 @@ describe('BoardService', () => {
       expect(prisma.client.card.delete).toHaveBeenCalledWith({
         where: { id: cardId },
       })
+    })
+
+    it('should allow facilitator to delete any card', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue({
+        teamId,
+        userId: facilitatorId,
+      })
+      prisma.client.card.findFirst.mockResolvedValue(mockCard)
+      prisma.client.card.delete.mockResolvedValue(mockCard)
+
+      await service.deleteCard(facilitatorId, retroId, cardId)
+
+      expect(prisma.client.card.delete).toHaveBeenCalledWith({
+        where: { id: cardId },
+      })
+    })
+
+    it('should throw ForbiddenException when non-author non-facilitator deletes', async () => {
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue({
+        teamId,
+        userId: otherUserId,
+      })
+      prisma.client.card.findFirst.mockResolvedValue(mockCard)
+
+      await expect(
+        service.deleteCard(otherUserId, retroId, cardId),
+      ).rejects.toThrow(ForbiddenException)
     })
 
     it('should throw NotFoundException when card does not exist', async () => {
