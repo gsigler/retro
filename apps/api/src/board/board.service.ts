@@ -169,13 +169,19 @@ export class BoardService {
   }
 
   async deleteCard(userId: string, retroId: string, cardId: string) {
-    await this.assertRetroAccess(userId, retroId)
+    const retro = await this.assertRetroAccess(userId, retroId)
 
     const card = await this.prisma.client.card.findFirst({
       where: { id: cardId, retroId },
     })
     if (!card) {
       throw new NotFoundException('Card not found')
+    }
+
+    if (card.authorId !== userId && retro.createdById !== userId) {
+      throw new ForbiddenException(
+        'Only the card author or facilitator can delete this card',
+      )
     }
 
     await this.prisma.client.card.delete({ where: { id: cardId } })
