@@ -308,3 +308,23 @@ export function fetchUserVotes(token: string, retroId: string) {
     headers: authHeaders(token),
   })
 }
+
+export function mergeCards(
+  token: string,
+  retroId: string,
+  parentCardId: string,
+  childCardIds: string[],
+) {
+  return api<Card>(`/retros/${retroId}/board/cards/merge`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ parentCardId, childCardIds }),
+  })
+}
+
+export function unmergeCard(token: string, retroId: string, cardId: string) {
+  return api<Card>(`/retros/${retroId}/board/cards/${cardId}/unmerge`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}

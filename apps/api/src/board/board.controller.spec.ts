@@ -17,6 +17,8 @@ describe('BoardController', () => {
     emitCardDeleted: jest.Mock
     emitCardVoted: jest.Mock
     emitCardUnvoted: jest.Mock
+    emitCardsMerged: jest.Mock
+    emitCardsUnmerged: jest.Mock
   }
   let boardService: {
     getTemplates: jest.Mock
@@ -29,6 +31,8 @@ describe('BoardController', () => {
     voteCard: jest.Mock
     unvoteCard: jest.Mock
     getUserVotes: jest.Mock
+    mergeCards: jest.Mock
+    unmergeCard: jest.Mock
   }
 
   const req = { user: { id: 'user-1' } }
@@ -54,6 +58,8 @@ describe('BoardController', () => {
     updatedAt: new Date(),
     author: { id: 'user-1', name: 'Test User' },
     _count: { votes: 0 },
+    parentCardId: null,
+    children: [],
   }
 
   beforeEach(async () => {
@@ -65,6 +71,8 @@ describe('BoardController', () => {
       emitCardDeleted: jest.fn(),
       emitCardVoted: jest.fn(),
       emitCardUnvoted: jest.fn(),
+      emitCardsMerged: jest.fn(),
+      emitCardsUnmerged: jest.fn(),
     }
 
     boardService = {
@@ -78,6 +86,8 @@ describe('BoardController', () => {
       voteCard: jest.fn(),
       unvoteCard: jest.fn(),
       getUserVotes: jest.fn(),
+      mergeCards: jest.fn(),
+      unmergeCard: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({

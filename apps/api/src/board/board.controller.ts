@@ -17,6 +17,7 @@ import { BoardGateway } from './board.gateway.js'
 import { InitBoardDto } from './dto/init-board.dto.js'
 import { CreateCardDto } from './dto/create-card.dto.js'
 import { MoveCardDto } from './dto/move-card.dto.js'
+import { MergeCardsDto } from './dto/merge-cards.dto.js'
 import { BoardResponse } from './dto/board-response.dto.js'
 import { CardResponse } from './dto/card-response.dto.js'
 import { RetroTemplate } from './templates.js'
@@ -157,5 +158,41 @@ export class BoardController {
     @Param('retroId') retroId: string,
   ) {
     return this.boardService.getUserVotes(req.user.id, retroId)
+  }
+
+  @Post('retros/:retroId/board/cards/merge')
+  async mergeCards(
+    @Request() req: { user: { id: string } },
+    @Param('retroId') retroId: string,
+    @Body() dto: MergeCardsDto,
+  ): Promise<CardResponse> {
+    const card = await this.boardService.mergeCards(
+      req.user.id,
+      retroId,
+      dto.parentCardId,
+      dto.childCardIds,
+    )
+    const response = CardResponse.from(card)
+    this.boardGateway.emitCardsMerged(retroId, {
+      parentCard: response,
+      childCardIds: dto.childCardIds,
+    })
+    return response
+  }
+
+  @Post('retros/:retroId/board/cards/:cardId/unmerge')
+  async unmergeCard(
+    @Request() req: { user: { id: string } },
+    @Param('retroId') retroId: string,
+    @Param('cardId') cardId: string,
+  ): Promise<CardResponse> {
+    const card = await this.boardService.unmergeCard(
+      req.user.id,
+      retroId,
+      cardId,
+    )
+    const response = CardResponse.from(card)
+    this.boardGateway.emitCardsUnmerged(retroId, response)
+    return response
   }
 }

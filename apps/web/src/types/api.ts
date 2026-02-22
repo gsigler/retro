@@ -113,6 +113,8 @@ export interface Card {
   updatedAt: string
   author: CardAuthor
   voteCount: number
+  parentCardId: string | null
+  children: Card[]
 }
 
 export interface UserVotes {

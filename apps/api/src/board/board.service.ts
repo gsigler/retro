@@ -14,6 +14,13 @@ const AUTHOR_SELECT = { id: true, name: true }
 const CARD_INCLUDE = {
   author: { select: AUTHOR_SELECT },
   _count: { select: { votes: true } },
+  children: {
+    include: {
+      author: { select: AUTHOR_SELECT },
+      _count: { select: { votes: true } },
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
 }
 
 @Injectable()
@@ -169,6 +176,56 @@ export class BoardService {
     }
 
     await this.prisma.client.card.delete({ where: { id: cardId } })
+  }
+
+  async mergeCards(
+    userId: string,
+    retroId: string,
+    parentCardId: string,
+    childCardIds: string[],
+  ) {
+    const retro = await this.assertRetroAccess(userId, retroId)
+
+    if (retro.phase !== 'GROUP_VOTE') {
+      throw new BadRequestException('Merging is only allowed during GROUP_VOTE')
+    }
+
+    const parentCard = await this.prisma.client.card.findFirst({
+      where: { id: parentCardId, retroId, parentCardId: null },
+    })
+    if (!parentCard) {
+      throw new NotFoundException('Parent card not found or is already a child')
+    }
+
+    await this.prisma.client.card.updateMany({
+      where: { id: { in: childCardIds }, retroId },
+      data: { parentCardId, columnId: parentCard.columnId },
+    })
+
+    return this.prisma.client.card.findUnique({
+      where: { id: parentCardId },
+      include: CARD_INCLUDE,
+    })
+  }
+
+  async unmergeCard(userId: string, retroId: string, cardId: string) {
+    const retro = await this.assertRetroAccess(userId, retroId)
+
+    if (retro.phase !== 'GROUP_VOTE') {
+      throw new BadRequestException(
+        'Unmerging is only allowed during GROUP_VOTE',
+      )
+    }
+
+    await this.prisma.client.card.updateMany({
+      where: { parentCardId: cardId, retroId },
+      data: { parentCardId: null },
+    })
+
+    return this.prisma.client.card.findUnique({
+      where: { id: cardId },
+      include: CARD_INCLUDE,
+    })
   }
 
   async voteCard(userId: string, retroId: string, cardId: string) {

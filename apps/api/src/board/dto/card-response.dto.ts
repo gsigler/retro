@@ -24,6 +24,8 @@ export class CardResponse {
     public updatedAt: Date,
     public author: CardAuthorSummary,
     public voteCount: number,
+    public parentCardId: string | null,
+    public children: CardResponse[],
   ) {}
 
   static from(card: any): CardResponse {
@@ -37,6 +39,8 @@ export class CardResponse {
       card.updatedAt,
       CardAuthorSummary.from(card.author),
       card._count?.votes ?? 0,
+      card.parentCardId ?? null,
+      (card.children ?? []).map(CardResponse.from),
     )
   }
 
@@ -51,6 +55,8 @@ export class CardResponse {
       card.updatedAt,
       CardAuthorSummary.anonymous(),
       card._count?.votes ?? 0,
+      card.parentCardId ?? null,
+      (card.children ?? []).map(CardResponse.fromAnonymous),
     )
   }
 }

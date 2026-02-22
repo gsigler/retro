@@ -170,6 +170,17 @@ export class BoardGateway implements OnGatewayDisconnect {
     this.server.to(`retro:${retroId}`).emit('card:unvoted', data)
   }
 
+  emitCardsMerged(
+    retroId: string,
+    data: { parentCard: any; childCardIds: string[] },
+  ) {
+    this.server.to(`retro:${retroId}`).emit('cards:merged', data)
+  }
+
+  emitCardsUnmerged(retroId: string, parentCard: any) {
+    this.server.to(`retro:${retroId}`).emit('cards:unmerged', { parentCard })
+  }
+
   emitBoardRevealed(retroId: string, columns: any) {
     this.server
       .to(`retro:${retroId}`)

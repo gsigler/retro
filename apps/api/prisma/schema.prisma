@@ -131,19 +131,22 @@ model Column {
 }
 
 model Card {
-  id        String   @id @default(cuid())
-  columnId  String
-  retroId   String
-  authorId  String
-  content   String
-  position  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  columnId     String
+  retroId      String
+  authorId     String
+  content      String
+  position     Int
+  parentCardId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  column Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  retro  Retro  @relation(fields: [retroId], references: [id], onDelete: Cascade)
-  author User   @relation(fields: [authorId], references: [id])
-  votes  Vote[]
+  column     Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  retro      Retro  @relation(fields: [retroId], references: [id], onDelete: Cascade)
+  author     User   @relation(fields: [authorId], references: [id])
+  votes      Vote[]
+  parentCard Card?  @relation("CardGroup", fields: [parentCardId], references: [id], onDelete: SetNull)
+  children   Card[] @relation("CardGroup")
 
   @@index([columnId, position])
   @@index([retroId])

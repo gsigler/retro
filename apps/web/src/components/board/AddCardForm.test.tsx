@@ -82,6 +82,8 @@ describe('AddCardForm', () => {
       updatedAt: '2026-02-20',
       author: { id: 'user-1', name: 'Alice' },
       voteCount: 0,
+      parentCardId: null,
+      children: [],
     })
 
     renderWithProviders()
