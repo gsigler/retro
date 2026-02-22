@@ -30,6 +30,7 @@ import { BoardColumn } from '@/components/board/BoardColumn'
 import { ActiveUsers } from '@/components/board/ActiveUsers'
 import { ActionItemsPanel } from '@/components/board/ActionItemsPanel'
 import { RetroStepper } from '@/components/board/RetroStepper'
+import { IceBreaker } from '@/components/board/IceBreaker'
 import { StatusBar } from '@/components/board/StatusBar'
 import { BlinkingCursor } from '@/components/board/TypingEffect'
 
@@ -306,6 +307,12 @@ function BoardContent({
       />
 
       {/* Columns */}
+      {state.phase === 'ICEBREAKER' && (
+        <div style={{ padding: '16px 16px 0' }}>
+          <IceBreaker retroId={retroId} isFacilitator={isFacilitator} />
+        </div>
+      )}
+
       <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
         <DndContext
           sensors={sensors}
