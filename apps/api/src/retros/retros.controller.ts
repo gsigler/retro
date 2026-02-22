@@ -13,7 +13,9 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import { RetrosService } from './retros.service.js'
+import { BoardService } from '../board/board.service.js'
 import { BoardGateway } from '../board/board.gateway.js'
+import { BoardResponse } from '../board/dto/board-response.dto.js'
 import { CreateRetroDto } from './dto/create-retro.dto.js'
 import { UpdateRetroDto } from './dto/update-retro.dto.js'
 import { UpdatePhaseDto } from './dto/update-phase.dto.js'
@@ -27,6 +29,7 @@ import {
 export class RetrosController {
   constructor(
     private readonly retrosService: RetrosService,
+    private readonly boardService: BoardService,
     private readonly boardGateway: BoardGateway,
   ) {}
 
@@ -80,6 +83,13 @@ export class RetrosController {
       dto.phase,
     )
     this.boardGateway.emitPhaseChanged(id, dto.phase)
+
+    if (dto.phase === 'GROUP_VOTE') {
+      const columns = await this.boardService.getAllCards(req.user.id, id)
+      const boardResponse = BoardResponse.fromAnonymous(id, columns)
+      this.boardGateway.emitBoardRevealed(id, boardResponse.columns)
+    }
+
     return RetroWithCountsResponse.from(retro)
   }
 

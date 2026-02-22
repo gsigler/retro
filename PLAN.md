@@ -96,7 +96,7 @@ This plan implements 8 features that transform the retro board from a basic card
 
 ---
 
-### Task 4: Anonymous card submission with reveal (#39) [pending]
+### Task 4: Anonymous card submission with reveal (#39) [completed]
 **Size:** L
 **Files:** `apps/api/prisma/schema.prisma`, `apps/api/src/board/board.service.ts`, `apps/api/src/board/board.controller.ts`, `apps/api/src/board/board.gateway.ts`, `apps/api/src/board/dto/card-response.dto.ts`, `apps/web/src/components/board/BoardProvider.tsx`, `apps/web/src/components/board/BoardCard.tsx`, `apps/web/src/components/board/BoardColumn.tsx`, `apps/web/src/components/board/AddCardForm.tsx`, `apps/web/src/types/api.ts`
 

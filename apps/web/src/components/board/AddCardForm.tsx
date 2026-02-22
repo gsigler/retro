@@ -114,7 +114,7 @@ export function AddCardForm({ token, retroId, columnId }: AddCardFormProps) {
       </div>
       <div style={{ marginTop: 4, paddingLeft: 20, fontSize: 11 }}>
         <span style={{ color: theme.textTertiary }}>
-          Enter to submit &middot; Esc to cancel
+          Enter to submit &middot; Esc to cancel &middot; Cards are anonymous
         </span>
       </div>
     </form>

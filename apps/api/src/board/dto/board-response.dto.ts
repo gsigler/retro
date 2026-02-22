@@ -9,4 +9,8 @@ export class BoardResponse {
   static from(retroId: string, columns: any[]): BoardResponse {
     return new BoardResponse(retroId, columns.map(ColumnResponse.from))
   }
+
+  static fromAnonymous(retroId: string, columns: any[]): BoardResponse {
+    return new BoardResponse(retroId, columns.map(ColumnResponse.fromAnonymous))
+  }
 }
