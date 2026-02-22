@@ -22,6 +22,8 @@ export function MemberList({
         fontFamily: 'inherit',
         fontSize: 12,
         lineHeight: 1.8,
+        maxHeight: 240,
+        overflowY: 'auto',
       }}
     >
       {members.map((member) => {
