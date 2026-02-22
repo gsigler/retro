@@ -78,7 +78,14 @@ export function ActionItemsSection({
           open action items.
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: 400,
+            overflowY: 'auto',
+          }}
+        >
           {items.map((item) => (
             <ActionItemCard
               key={item.id}

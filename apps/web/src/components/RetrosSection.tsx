@@ -109,7 +109,14 @@ export function RetrosSection({
           one to get started.
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: 400,
+            overflowY: 'auto',
+          }}
+        >
           {retros.map((retro) => (
             <RetroCard
               key={retro.id}

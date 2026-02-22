@@ -52,6 +52,8 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
             flexDirection: 'column',
             gap: 2,
             minHeight: 24,
+            maxHeight: 'calc(100vh - 280px)',
+            overflowY: 'auto',
           }}
         >
           <SortableContext
