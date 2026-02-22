@@ -23,6 +23,7 @@ export class CardResponse {
     public createdAt: Date,
     public updatedAt: Date,
     public author: CardAuthorSummary,
+    public voteCount: number,
   ) {}
 
   static from(card: any): CardResponse {
@@ -35,6 +36,7 @@ export class CardResponse {
       card.createdAt,
       card.updatedAt,
       CardAuthorSummary.from(card.author),
+      card._count?.votes ?? 0,
     )
   }
 
@@ -48,6 +50,7 @@ export class CardResponse {
       card.createdAt,
       card.updatedAt,
       CardAuthorSummary.anonymous(),
+      card._count?.votes ?? 0,
     )
   }
 }

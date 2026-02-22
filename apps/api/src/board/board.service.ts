@@ -11,6 +11,11 @@ import { MoveCardDto } from './dto/move-card.dto.js'
 
 const AUTHOR_SELECT = { id: true, name: true }
 
+const CARD_INCLUDE = {
+  author: { select: AUTHOR_SELECT },
+  _count: { select: { votes: true } },
+}
+
 @Injectable()
 export class BoardService {
   constructor(private readonly prisma: PrismaService) {}
@@ -32,7 +37,7 @@ export class BoardService {
         cards: {
           where: isRevealed ? undefined : { authorId: userId },
           orderBy: { position: 'asc' },
-          include: { author: { select: AUTHOR_SELECT } },
+          include: CARD_INCLUDE,
         },
       },
     })
@@ -47,7 +52,7 @@ export class BoardService {
       include: {
         cards: {
           orderBy: { position: 'asc' },
-          include: { author: { select: AUTHOR_SELECT } },
+          include: CARD_INCLUDE,
         },
       },
     })
@@ -84,7 +89,7 @@ export class BoardService {
       include: {
         cards: {
           orderBy: { position: 'asc' },
-          include: { author: { select: AUTHOR_SELECT } },
+          include: CARD_INCLUDE,
         },
       },
     })
@@ -113,7 +118,7 @@ export class BoardService {
         content: dto.content,
         position: (maxPosition._max.position ?? -1) + 1,
       },
-      include: { author: { select: AUTHOR_SELECT } },
+      include: CARD_INCLUDE,
     })
 
     return card
@@ -147,7 +152,7 @@ export class BoardService {
         columnId: dto.columnId,
         position: dto.position,
       },
-      include: { author: { select: AUTHOR_SELECT } },
+      include: CARD_INCLUDE,
     })
 
     return updatedCard
@@ -164,6 +169,93 @@ export class BoardService {
     }
 
     await this.prisma.client.card.delete({ where: { id: cardId } })
+  }
+
+  async voteCard(userId: string, retroId: string, cardId: string) {
+    const retro = await this.assertRetroAccess(userId, retroId)
+
+    if (retro.phase !== 'GROUP_VOTE') {
+      throw new BadRequestException('Voting is only allowed during GROUP_VOTE')
+    }
+
+    const card = await this.prisma.client.card.findFirst({
+      where: { id: cardId, retroId },
+    })
+    if (!card) {
+      throw new NotFoundException('Card not found')
+    }
+
+    const userVoteCount = await this.prisma.client.vote.count({
+      where: { retroId, userId },
+    })
+    if (userVoteCount >= retro.maxVotesPerUser) {
+      throw new BadRequestException(
+        `You have used all ${retro.maxVotesPerUser} votes`,
+      )
+    }
+
+    const vote = await this.prisma.client.vote.create({
+      data: { cardId, userId, retroId },
+    })
+
+    const voteCount = await this.prisma.client.vote.count({
+      where: { cardId },
+    })
+
+    return {
+      vote,
+      voteCount,
+      remainingVotes: retro.maxVotesPerUser - userVoteCount - 1,
+    }
+  }
+
+  async unvoteCard(userId: string, retroId: string, cardId: string) {
+    const retro = await this.assertRetroAccess(userId, retroId)
+
+    if (retro.phase !== 'GROUP_VOTE') {
+      throw new BadRequestException(
+        'Unvoting is only allowed during GROUP_VOTE',
+      )
+    }
+
+    const vote = await this.prisma.client.vote.findFirst({
+      where: { cardId, userId, retroId },
+    })
+    if (!vote) {
+      throw new NotFoundException('No vote to remove')
+    }
+
+    await this.prisma.client.vote.delete({ where: { id: vote.id } })
+
+    const voteCount = await this.prisma.client.vote.count({
+      where: { cardId },
+    })
+
+    const userVoteCount = await this.prisma.client.vote.count({
+      where: { retroId, userId },
+    })
+
+    return { voteCount, remainingVotes: retro.maxVotesPerUser - userVoteCount }
+  }
+
+  async getUserVotes(userId: string, retroId: string) {
+    await this.assertRetroAccess(userId, retroId)
+
+    const votes = await this.prisma.client.vote.findMany({
+      where: { retroId, userId },
+      select: { cardId: true },
+    })
+
+    const retro = await this.prisma.client.retro.findUnique({
+      where: { id: retroId },
+      select: { maxVotesPerUser: true },
+    })
+
+    return {
+      votedCardIds: votes.map((v) => v.cardId),
+      maxVotes: retro!.maxVotesPerUser,
+      remainingVotes: retro!.maxVotesPerUser - votes.length,
+    }
   }
 
   async getRetroPhase(retroId: string): Promise<string> {

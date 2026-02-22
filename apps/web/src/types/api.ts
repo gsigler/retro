@@ -112,6 +112,18 @@ export interface Card {
   createdAt: string
   updatedAt: string
   author: CardAuthor
+  voteCount: number
+}
+
+export interface UserVotes {
+  votedCardIds: string[]
+  maxVotes: number
+  remainingVotes: number
+}
+
+export interface VoteResult {
+  voteCount: number
+  remainingVotes: number
 }
 
 export interface Column {

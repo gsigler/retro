@@ -25,6 +25,8 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 vi.mock('@/lib/api', () => ({
   deleteCard: vi.fn(),
+  voteCard: vi.fn(),
+  unvoteCard: vi.fn(),
 }))
 
 const api = await import('@/lib/api')
@@ -39,6 +41,7 @@ const card: Card = {
   createdAt: '2026-02-20',
   updatedAt: '2026-02-20',
   author: { id: 'user-1', name: 'Alice' },
+  voteCount: 0,
 }
 
 function renderWithProviders(c: Card) {

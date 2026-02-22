@@ -106,4 +106,56 @@ export class BoardController {
     await this.boardService.deleteCard(req.user.id, retroId, cardId)
     this.boardGateway.emitCardDeleted(retroId, cardId)
   }
+
+  @Post('retros/:retroId/board/cards/:cardId/vote')
+  async voteCard(
+    @Request() req: { user: { id: string } },
+    @Param('retroId') retroId: string,
+    @Param('cardId') cardId: string,
+  ) {
+    const result = await this.boardService.voteCard(
+      req.user.id,
+      retroId,
+      cardId,
+    )
+    this.boardGateway.emitCardVoted(retroId, {
+      cardId,
+      voteCount: result.voteCount,
+      userId: req.user.id,
+    })
+    return {
+      voteCount: result.voteCount,
+      remainingVotes: result.remainingVotes,
+    }
+  }
+
+  @Delete('retros/:retroId/board/cards/:cardId/vote')
+  async unvoteCard(
+    @Request() req: { user: { id: string } },
+    @Param('retroId') retroId: string,
+    @Param('cardId') cardId: string,
+  ) {
+    const result = await this.boardService.unvoteCard(
+      req.user.id,
+      retroId,
+      cardId,
+    )
+    this.boardGateway.emitCardUnvoted(retroId, {
+      cardId,
+      voteCount: result.voteCount,
+      userId: req.user.id,
+    })
+    return {
+      voteCount: result.voteCount,
+      remainingVotes: result.remainingVotes,
+    }
+  }
+
+  @Get('retros/:retroId/board/votes')
+  async getUserVotes(
+    @Request() req: { user: { id: string } },
+    @Param('retroId') retroId: string,
+  ) {
+    return this.boardService.getUserVotes(req.user.id, retroId)
+  }
 }

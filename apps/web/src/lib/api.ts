@@ -11,6 +11,8 @@ import type {
   Board,
   Card,
   RetroTemplate,
+  UserVotes,
+  VoteResult,
 } from '../types/api'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -283,6 +285,26 @@ export function moveCard(
 export function deleteCard(token: string, retroId: string, cardId: string) {
   return api<void>(`/retros/${retroId}/board/cards/${cardId}`, {
     method: 'DELETE',
+    headers: authHeaders(token),
+  })
+}
+
+export function voteCard(token: string, retroId: string, cardId: string) {
+  return api<VoteResult>(`/retros/${retroId}/board/cards/${cardId}/vote`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}
+
+export function unvoteCard(token: string, retroId: string, cardId: string) {
+  return api<VoteResult>(`/retros/${retroId}/board/cards/${cardId}/vote`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+}
+
+export function fetchUserVotes(token: string, retroId: string) {
+  return api<UserVotes>(`/retros/${retroId}/board/votes`, {
     headers: authHeaders(token),
   })
 }

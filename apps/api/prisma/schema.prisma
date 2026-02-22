@@ -22,6 +22,7 @@ model User {
   assignedActionItems ActionItem[] @relation("AssignedActionItems")
   createdActionItems  ActionItem[] @relation("CreatedActionItems")
   cards               Card[]
+  votes               Vote[]
 }
 
 enum TeamRole {
@@ -71,13 +72,14 @@ model TeamMember {
 }
 
 model Retro {
-  id        String      @id @default(cuid())
-  name      String
-  status    RetroStatus @default(SCHEDULED)
-  phase     String      @default("ICEBREAKER")
-  date      DateTime
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              String      @id @default(cuid())
+  name            String
+  status          RetroStatus @default(SCHEDULED)
+  phase           String      @default("ICEBREAKER")
+  maxVotesPerUser Int         @default(5)
+  date            DateTime
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   teamId String
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -88,6 +90,7 @@ model Retro {
   actionItems ActionItem[]
   columns     Column[]
   cards       Card[]
+  votes       Vote[]
 }
 
 model ActionItem {
@@ -140,7 +143,22 @@ model Card {
   column Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
   retro  Retro  @relation(fields: [retroId], references: [id], onDelete: Cascade)
   author User   @relation(fields: [authorId], references: [id])
+  votes  Vote[]
 
   @@index([columnId, position])
   @@index([retroId])
+}
+
+model Vote {
+  id      String @id @default(cuid())
+  cardId  String
+  userId  String
+  retroId String
+
+  card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  retro Retro @relation(fields: [retroId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([retroId, userId])
 }

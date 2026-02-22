@@ -26,6 +26,13 @@ describe('BoardService', () => {
         delete: jest.Mock
         aggregate: jest.Mock
       }
+      vote: {
+        count: jest.Mock
+        create: jest.Mock
+        findFirst: jest.Mock
+        findMany: jest.Mock
+        delete: jest.Mock
+      }
     }
   }
 
@@ -79,6 +86,13 @@ describe('BoardService', () => {
           delete: jest.fn(),
           aggregate: jest.fn(),
         },
+        vote: {
+          count: jest.fn(),
+          create: jest.fn(),
+          findFirst: jest.fn(),
+          findMany: jest.fn(),
+          delete: jest.fn(),
+        },
       },
     }
 
@@ -114,7 +128,10 @@ describe('BoardService', () => {
           cards: {
             where: { authorId: userId },
             orderBy: { position: 'asc' },
-            include: { author: { select: { id: true, name: true } } },
+            include: {
+              author: { select: { id: true, name: true } },
+              _count: { select: { votes: true } },
+            },
           },
         },
       })
@@ -138,7 +155,10 @@ describe('BoardService', () => {
           cards: {
             where: undefined,
             orderBy: { position: 'asc' },
-            include: { author: { select: { id: true, name: true } } },
+            include: {
+              author: { select: { id: true, name: true } },
+              _count: { select: { votes: true } },
+            },
           },
         },
       })
@@ -226,7 +246,10 @@ describe('BoardService', () => {
           content: 'Test card content',
           position: 3,
         },
-        include: { author: { select: { id: true, name: true } } },
+        include: {
+          author: { select: { id: true, name: true } },
+          _count: { select: { votes: true } },
+        },
       })
       expect(result).toEqual(mockCard)
     })
@@ -286,7 +309,10 @@ describe('BoardService', () => {
       expect(prisma.client.card.update).toHaveBeenCalledWith({
         where: { id: cardId },
         data: { columnId: 'column-2', position: 1 },
-        include: { author: { select: { id: true, name: true } } },
+        include: {
+          author: { select: { id: true, name: true } },
+          _count: { select: { votes: true } },
+        },
       })
       expect(result.columnId).toBe('column-2')
     })
