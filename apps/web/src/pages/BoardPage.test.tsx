@@ -19,13 +19,11 @@ vi.mock('@/lib/socket', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchBoard: vi.fn(),
-  fetchTemplates: vi.fn(),
   fetchActionItems: vi.fn(),
 }))
 
 const api = await import('@/lib/api')
 const mockFetchBoard = api.fetchBoard as ReturnType<typeof vi.fn>
-const mockFetchTemplates = api.fetchTemplates as ReturnType<typeof vi.fn>
 
 function renderWithProviders() {
   const queryClient = new QueryClient({
@@ -54,27 +52,13 @@ describe('BoardPage', () => {
     expect(screen.getByText(/loading board/i)).toBeTruthy()
   })
 
-  it('shows template picker when board has no columns', async () => {
+  it('shows fallback message when board has no columns', async () => {
     mockFetchBoard.mockResolvedValue({ retroId: 'retro-1', columns: [] })
-    mockFetchTemplates.mockResolvedValue([
-      {
-        id: 'start-stop-continue',
-        name: 'Start / Stop / Continue',
-        columns: [
-          {
-            name: 'Start',
-            description: 'Start doing',
-            color: '#22c55e',
-            position: 0,
-          },
-        ],
-      },
-    ])
 
     renderWithProviders()
 
     await waitFor(() => {
-      expect(screen.getByText('Choose a Template')).toBeDefined()
+      expect(screen.getByText(/board not initialized/i)).toBeDefined()
     })
   })
 

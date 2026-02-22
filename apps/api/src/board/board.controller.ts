@@ -29,7 +29,7 @@ export class BoardController {
     private readonly boardGateway: BoardGateway,
   ) {}
 
-  @Get('retros/:retroId/board/templates')
+  @Get('board/templates')
   getTemplates(): RetroTemplate[] {
     return this.boardService.getTemplates()
   }

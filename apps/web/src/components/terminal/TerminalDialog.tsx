@@ -59,7 +59,7 @@ export function TerminalDialog({
           width: '100%',
           maxWidth: 480,
           margin: '0 16px',
-          overflow: 'hidden',
+          overflow: 'visible',
         }}
       >
         <div

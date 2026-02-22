@@ -125,7 +125,7 @@ export function fetchRetro(token: string, id: string) {
 export function createRetro(
   token: string,
   teamId: string,
-  data: { name: string; date: string; status?: string },
+  data: { name: string; date: string; status?: string; templateId?: string },
 ) {
   return api<RetroWithCounts>(`/teams/${teamId}/retros`, {
     method: 'POST',
@@ -235,8 +235,8 @@ export function deleteActionItem(token: string, id: string) {
 
 // Board
 
-export function fetchTemplates(token: string, retroId: string) {
-  return api<RetroTemplate[]>(`/retros/${retroId}/board/templates`, {
+export function fetchTemplates(token: string) {
+  return api<RetroTemplate[]>('/board/templates', {
     headers: authHeaders(token),
   })
 }

@@ -52,7 +52,11 @@ export function RetrosSection({
     onMutation()
   }
 
-  async function handleCreateRetro(data: { name: string; date: string }) {
+  async function handleCreateRetro(data: {
+    name: string
+    date: string
+    templateId?: string
+  }) {
     if (!team) return
     const retro = await createRetro(token, team.id, data)
     navigate(`/retros/${retro.id}/board`)

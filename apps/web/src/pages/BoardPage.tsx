@@ -26,7 +26,6 @@ import {
   BoardProvider,
   useBoardContext,
 } from '@/components/board/BoardProvider'
-import { TemplatePicker } from '@/components/board/TemplatePicker'
 import { BoardColumn } from '@/components/board/BoardColumn'
 import { ActiveUsers } from '@/components/board/ActiveUsers'
 import { ActionItemsPanel } from '@/components/board/ActionItemsPanel'
@@ -218,41 +217,26 @@ function BoardContent({
 
   if (!state.initialized) {
     return (
-      <div>
-        <div
+      <div
+        className="flex min-h-screen flex-col items-center justify-center"
+        style={{ background: theme.bg }}
+      >
+        <p
+          style={{ color: theme.textTertiary, fontSize: 13, marginBottom: 12 }}
+        >
+          Board not initialized. Go back and create a retro with a template.
+        </p>
+        <Link
+          to="/dashboard"
           style={{
-            borderBottom: `1px solid ${theme.border}`,
-            padding: '8px 16px',
-            fontSize: 12,
-            color: theme.textTertiary,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
+            color: theme.cyan,
+            textDecoration: 'none',
+            fontFamily: 'inherit',
+            fontSize: 13,
           }}
         >
-          <Link
-            to="/dashboard"
-            style={{
-              color: theme.cyan,
-              textDecoration: 'none',
-              fontFamily: 'inherit',
-              fontSize: 12,
-            }}
-          >
-            [&larr; dashboard]
-          </Link>
-          <span style={{ color: theme.border }}>|</span>
-          {teamName && <span style={{ color: theme.cyan }}>{teamName}</span>}
-          {teamName && retroName && (
-            <span style={{ color: theme.border }}>|</span>
-          )}
-          {retroName && <span>{retroName}</span>}
-          {(teamName || retroName) && (
-            <span style={{ color: theme.border }}>|</span>
-          )}
-          <span>choose template</span>
-        </div>
-        <TemplatePicker token={token} retroId={retroId} />
+          [&larr; back to dashboard]
+        </Link>
       </div>
     )
   }
