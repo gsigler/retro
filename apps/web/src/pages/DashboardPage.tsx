@@ -5,10 +5,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { TerminalButton } from '@/components/terminal/TerminalButton'
 import { TerminalDialog } from '@/components/terminal/TerminalDialog'
-import { BlinkingCursor } from '@/components/board/TypingEffect'
 import { TeamSection } from '@/components/TeamSection'
 import { RetrosSection } from '@/components/RetrosSection'
 import { ActionItemsSection } from '@/components/ActionItemsSection'
+import { TerminalLoader } from '@/components/terminal/TerminalLoader'
+import { TerminalFrame } from '@/components/terminal/TerminalFrame'
+import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 import { fetchDashboardSummary, fetchTeams } from '@/lib/api'
 
 export default function DashboardPage() {
@@ -92,18 +94,15 @@ export default function DashboardPage() {
         }}
       >
         {isLoading && (
-          <div>
-            <p style={{ color: theme.green, fontSize: 12 }}>
-              <span style={{ color: theme.green }}>$</span> retro dashboard
-              --fetch
-            </p>
-            <p
-              style={{ color: theme.textTertiary, fontSize: 12, marginTop: 4 }}
-            >
-              Loading...
-              <BlinkingCursor />
-            </p>
-          </div>
+          <>
+            <TerminalLoader command="retro dashboard --fetch" inline />
+            <TerminalFrame title="$ retro list --all">
+              <TerminalSkeleton lines={3} widths={[90, 75, 60]} />
+            </TerminalFrame>
+            <TerminalFrame title="$ retro actions --all">
+              <TerminalSkeleton lines={2} widths={[80, 55]} />
+            </TerminalFrame>
+          </>
         )}
 
         {error && (
@@ -122,20 +121,24 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {token && user && (
-          <RetrosSection
-            token={token}
-            userId={user.id}
-            onMutation={handleMutation}
-          />
+        {!isLoading && token && user && (
+          <div className="fade-in">
+            <RetrosSection
+              token={token}
+              userId={user.id}
+              onMutation={handleMutation}
+            />
+          </div>
         )}
 
-        {token && summary && (
-          <ActionItemsSection
-            token={token}
-            items={summary.recentActionItems}
-            onMutation={handleMutation}
-          />
+        {!isLoading && token && summary && (
+          <div className="fade-in">
+            <ActionItemsSection
+              token={token}
+              items={summary.recentActionItems}
+              onMutation={handleMutation}
+            />
+          </div>
         )}
       </div>
 

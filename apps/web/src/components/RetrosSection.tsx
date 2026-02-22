@@ -6,7 +6,7 @@ import { TerminalButton } from '@/components/terminal/TerminalButton'
 import { TerminalFrame } from '@/components/terminal/TerminalFrame'
 import { RetroCard } from '@/components/RetroCard'
 import { RetroFormDialog } from '@/components/RetroFormDialog'
-import { BlinkingCursor } from '@/components/board/TypingEffect'
+import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 import {
   fetchTeams,
   fetchRetros,
@@ -80,15 +80,9 @@ export function RetrosSection({
 
   if (isLoading) {
     return (
-      <div style={{ marginTop: 20 }}>
-        <p style={{ color: theme.textTertiary, fontSize: 11, marginBottom: 8 }}>
-          <span style={{ color: theme.green }}>$</span> retro list --all
-        </p>
-        <p style={{ color: theme.green, fontSize: 12 }}>
-          Loading...
-          <BlinkingCursor />
-        </p>
-      </div>
+      <TerminalFrame title="$ retro list --all">
+        <TerminalSkeleton lines={3} widths={[90, 75, 60]} />
+      </TerminalFrame>
     )
   }
 

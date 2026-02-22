@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { BlinkingCursor } from '@/components/board/TypingEffect'
+import { TerminalLoader } from '@/components/terminal/TerminalLoader'
 
 type Status = 'loading' | 'error'
 
@@ -80,24 +81,6 @@ export default function AuthCallbackPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: theme.bg,
-      }}
-    >
-      <div>
-        <p style={{ color: theme.textTertiary, fontSize: 12, marginBottom: 4 }}>
-          <span style={{ color: theme.green }}>$</span> retro auth --callback
-        </p>
-        <p style={{ color: theme.green, fontSize: 13 }}>
-          Signing you in...
-          <BlinkingCursor />
-        </p>
-      </div>
-    </div>
+    <TerminalLoader command="retro auth --callback" message="Signing you in" />
   )
 }

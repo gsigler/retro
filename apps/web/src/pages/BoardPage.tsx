@@ -35,7 +35,8 @@ import { RetroStepper } from '@/components/board/RetroStepper'
 import { IceBreaker } from '@/components/board/IceBreaker'
 import { Timer } from '@/components/board/Timer'
 import { StatusBar } from '@/components/board/StatusBar'
-import { BlinkingCursor } from '@/components/board/TypingEffect'
+import { TerminalLoader } from '@/components/terminal/TerminalLoader'
+import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 
 export default function BoardPage() {
   const { retroId } = useParams<{ retroId: string }>()
@@ -69,13 +70,80 @@ export default function BoardPage() {
   if (isLoading) {
     return (
       <div
-        className="flex min-h-screen items-center justify-center"
-        style={{ background: theme.bg }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 'calc(100vh - 40px)',
+          background: theme.bg,
+        }}
       >
-        <p style={{ color: theme.green, fontSize: 14 }}>
-          Loading board...
-          <BlinkingCursor />
-        </p>
+        {/* Skeleton header bar */}
+        <div
+          style={{
+            padding: '6px 16px',
+            fontSize: 12,
+            borderBottom: `1px solid ${theme.border}40`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <TerminalSkeleton lines={1} widths={[100]} />
+        </div>
+
+        {/* Skeleton phase stepper */}
+        <div
+          style={{
+            padding: '8px 16px',
+            borderBottom: `1px solid ${theme.border}40`,
+          }}
+        >
+          <TerminalSkeleton lines={1} widths={[60]} />
+        </div>
+
+        {/* Skeleton columns */}
+        <main style={{ flex: 1, padding: 16 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  border: `1px solid ${theme.border}40`,
+                  borderRadius: 6,
+                  padding: 12,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <TerminalSkeleton lines={1} widths={[50]} />
+                <div
+                  style={{
+                    borderTop: `1px solid ${theme.border}20`,
+                    paddingTop: 8,
+                  }}
+                >
+                  <TerminalSkeleton lines={3} widths={[90, 70, 80]} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 16, textAlign: 'center' }}>
+            <TerminalLoader command="retro board --load" inline />
+          </div>
+        </main>
+
+        {/* Skeleton status bar */}
+        <div
+          style={{
+            padding: '4px 16px',
+            borderTop: `1px solid ${theme.border}`,
+            background: theme.bgSecondary,
+          }}
+        >
+          <TerminalSkeleton lines={1} widths={[40]} />
+        </div>
       </div>
     )
   }
@@ -103,20 +171,22 @@ export default function BoardPage() {
   if (!token || !retroId) return null
 
   return (
-    <BoardProvider
-      token={token}
-      retroId={retroId}
-      initialBoard={board ?? null}
-      initialPhase={retro?.phase}
-    >
-      <BoardContent
+    <div className="fade-in">
+      <BoardProvider
         token={token}
         retroId={retroId}
-        teamName={teamName}
-        retroName={retro?.name}
-        retroCreatedById={retro?.createdBy.id}
-      />
-    </BoardProvider>
+        initialBoard={board ?? null}
+        initialPhase={retro?.phase}
+      >
+        <BoardContent
+          token={token}
+          retroId={retroId}
+          teamName={teamName}
+          retroName={retro?.name}
+          retroCreatedById={retro?.createdBy.id}
+        />
+      </BoardProvider>
+    </div>
   )
 }
 
