@@ -21,6 +21,8 @@ export default function AuthCallbackPage() {
       return
     }
 
+    window.history.replaceState({}, '', window.location.pathname)
+
     login(token)
       .then(() => navigate('/dashboard', { replace: true }))
       .catch(() => setStatus('error'))
