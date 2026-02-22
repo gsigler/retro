@@ -11,7 +11,13 @@ async function bootstrap() {
   app.enableCors({
     origin: configService.get<string>('APP_URL', 'http://localhost:5173'),
   })
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  )
   await app.listen(process.env.PORT ?? 3000)
 }
 bootstrap()
