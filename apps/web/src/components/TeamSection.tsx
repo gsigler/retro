@@ -6,7 +6,7 @@ import { TerminalInput } from '@/components/terminal/TerminalInput'
 import { MemberList } from '@/components/MemberList'
 import { TeamFormDialog } from '@/components/TeamFormDialog'
 import { AddMemberDialog } from '@/components/AddMemberDialog'
-import { BlinkingCursor } from '@/components/board/TypingEffect'
+import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 import {
   fetchTeams,
   fetchTeam,
@@ -108,11 +108,17 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
 
   if (isLoadingTeams) {
     return (
-      <div>
-        <p style={{ color: theme.green, fontSize: 12 }}>
-          Loading...
-          <BlinkingCursor />
-        </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <TerminalSkeleton lines={1} widths={[70]} />
+        <TerminalSkeleton lines={1} widths={[45]} />
+        <div
+          style={{
+            borderTop: `1px solid ${theme.border}40`,
+            paddingTop: 8,
+          }}
+        >
+          <TerminalSkeleton lines={3} widths={[60, 55, 50]} />
+        </div>
       </div>
     )
   }

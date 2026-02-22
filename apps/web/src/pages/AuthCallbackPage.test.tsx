@@ -32,7 +32,7 @@ describe('AuthCallbackPage', () => {
   it('shows loading spinner while processing', () => {
     mockedApi.mockReturnValueOnce(new Promise(() => {}))
     renderCallbackPage('valid-token')
-    expect(screen.getByText('Signing you in...')).toBeDefined()
+    expect(screen.getByText('Signing you in')).toBeDefined()
   })
 
   it('shows error when no token in URL', async () => {

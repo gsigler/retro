@@ -49,7 +49,7 @@ describe('BoardPage', () => {
     mockFetchBoard.mockReturnValue(new Promise(() => {}))
     renderWithProviders()
 
-    expect(screen.getByText(/loading board/i)).toBeTruthy()
+    expect(screen.getByText(/retro board --load/)).toBeTruthy()
   })
 
   it('shows fallback message when board has no columns', async () => {
