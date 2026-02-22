@@ -33,6 +33,7 @@ import { ActiveUsers } from '@/components/board/ActiveUsers'
 import { ActionItemsPanel } from '@/components/board/ActionItemsPanel'
 import { RetroStepper } from '@/components/board/RetroStepper'
 import { IceBreaker } from '@/components/board/IceBreaker'
+import { Timer } from '@/components/board/Timer'
 import { StatusBar } from '@/components/board/StatusBar'
 import { BlinkingCursor } from '@/components/board/TypingEffect'
 
@@ -307,7 +308,16 @@ function BoardContent({
         <span>{totalCards} items</span>
         <span style={{ color: theme.border }}>|</span>
         <span>{new Date().toLocaleDateString()}</span>
-        <div style={{ marginLeft: 'auto' }}>
+        <div
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <Timer retroId={retroId} isFacilitator={isFacilitator} />
+          <span style={{ color: theme.border }}>|</span>
           <ActiveUsers />
         </div>
       </div>

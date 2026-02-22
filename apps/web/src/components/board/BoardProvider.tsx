@@ -18,6 +18,12 @@ interface ActiveUser {
   userName?: string
 }
 
+interface TimerState {
+  duration: number
+  remaining: number
+  running: boolean
+}
+
 interface BoardState {
   columns: Column[]
   activeUsers: ActiveUser[]
@@ -26,6 +32,7 @@ interface BoardState {
   votedCardIds: string[]
   maxVotes: number
   remainingVotes: number
+  timer: TimerState | null
 }
 
 type BoardAction =
@@ -49,6 +56,11 @@ type BoardAction =
   | { type: 'LOCAL_UNVOTE'; cardId: string }
   | { type: 'CARDS_MERGED'; parentCard: Card; childCardIds: string[] }
   | { type: 'CARDS_UNMERGED'; parentCard: Card }
+  | {
+      type: 'TIMER_SYNC'
+      timer: { duration: number; remaining: number; running: boolean }
+    }
+  | { type: 'TIMER_TICK'; remaining: number }
 
 function getCardVoteCount(columns: Column[], cardId: string): number {
   for (const col of columns) {
@@ -240,6 +252,17 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
       }
     }
 
+    case 'TIMER_SYNC':
+      return { ...state, timer: action.timer }
+
+    case 'TIMER_TICK':
+      return state.timer
+        ? {
+            ...state,
+            timer: { ...state.timer, remaining: action.remaining },
+          }
+        : state
+
     default:
       return state
   }
@@ -290,6 +313,7 @@ export function BoardProvider({
     votedCardIds: [],
     maxVotes: 5,
     remainingVotes: 5,
+    timer: null,
   })
 
   const socketRef = useRef<Socket | null>(null)
@@ -408,6 +432,17 @@ export function BoardProvider({
 
     socket.on('cards:unmerged', (data: { parentCard: Card }) => {
       dispatch({ type: 'CARDS_UNMERGED', parentCard: data.parentCard })
+    })
+
+    socket.on(
+      'timer:sync',
+      (data: { duration: number; remaining: number; running: boolean }) => {
+        dispatch({ type: 'TIMER_SYNC', timer: data })
+      },
+    )
+
+    socket.on('timer:tick', (data: { remaining: number }) => {
+      dispatch({ type: 'TIMER_TICK', remaining: data.remaining })
     })
 
     socket.connect()
