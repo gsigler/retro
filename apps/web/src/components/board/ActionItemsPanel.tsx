@@ -227,10 +227,12 @@ function SortableActionItem(props: {
   }) => Promise<void>
   onDelete: () => void
 }) {
+  const { theme } = useTheme()
   const {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -243,18 +245,41 @@ function SortableActionItem(props: {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.4 : 1,
+        display: 'flex',
+        alignItems: 'center',
       }}
       {...attributes}
-      {...listeners}
     >
-      <ActionItemCard
-        item={props.item}
-        members={props.members}
-        onMarkDone={props.onMarkDone}
-        onMarkOpen={props.onMarkOpen}
-        onUpdate={props.onUpdate}
-        onDelete={props.onDelete}
-      />
+      <button
+        ref={setActivatorNodeRef}
+        {...listeners}
+        aria-label="Drag to reorder"
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: theme.textTertiary,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          padding: '4px 2px 4px 4px',
+          fontFamily: 'inherit',
+          fontSize: 14,
+          lineHeight: 1,
+          flexShrink: 0,
+          opacity: 0.5,
+          touchAction: 'none',
+        }}
+      >
+        ⠿
+      </button>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <ActionItemCard
+          item={props.item}
+          members={props.members}
+          onMarkDone={props.onMarkDone}
+          onMarkOpen={props.onMarkOpen}
+          onUpdate={props.onUpdate}
+          onDelete={props.onDelete}
+        />
+      </div>
     </div>
   )
 }
