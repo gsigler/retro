@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { UserVotes } from '@/types/api'
 import {
   DndContext,
@@ -139,6 +139,8 @@ function BoardContent({
   const isFacilitator =
     !!user && !!retroCreatedById && user.id === retroCreatedById
   const [activeCard, setActiveCard] = useState<Card | null>(null)
+  const [actionPanelOpen, setActionPanelOpen] = useState(true)
+  const toggleActionPanel = useCallback(() => setActionPanelOpen((v) => !v), [])
 
   const isDragEnabled =
     state.phase === 'RETROSPECT' || state.phase === 'GROUP_VOTE'
@@ -449,55 +451,113 @@ function BoardContent({
           )
         })()}
 
-      <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={isDragEnabled ? handleDragStart : undefined}
-          onDragEnd={isDragEnabled ? handleDragEnd : undefined}
-        >
-          <div style={{ display: 'flex', gap: 12 }}>
-            {state.columns.map((column) => (
-              <BoardColumn
-                key={column.id}
-                column={column}
-                token={token}
-                retroId={retroId}
-              />
-            ))}
-          </div>
-          <DragOverlay dropAnimation={null}>
-            {activeCard ? (
-              <div
-                style={{
-                  borderLeft: `2px solid ${state.columns.find((c) => c.id === activeCard.columnId)?.color ?? theme.cyan}`,
-                  padding: '6px 10px',
-                  background: theme.bg,
-                  fontSize: 12,
-                  color: theme.textPrimary,
-                  opacity: 0.9,
-                  boxShadow: `0 2px 8px ${theme.border}40`,
-                }}
-              >
-                <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
-                <span
+      <div
+        style={{
+          display: 'flex',
+          flex: 1,
+          overflow: 'hidden',
+          marginBottom: 24,
+        }}
+      >
+        <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={isDragEnabled ? handleDragStart : undefined}
+            onDragEnd={isDragEnabled ? handleDragEnd : undefined}
+          >
+            <div style={{ display: 'flex', gap: 12 }}>
+              {state.columns.map((column) => (
+                <BoardColumn
+                  key={column.id}
+                  column={column}
+                  token={token}
+                  retroId={retroId}
+                />
+              ))}
+            </div>
+            <DragOverlay dropAnimation={null}>
+              {activeCard ? (
+                <div
                   style={{
-                    fontSize: 11,
-                    color: theme.textTertiary,
-                    opacity: 0.6,
+                    borderLeft: `2px solid ${state.columns.find((c) => c.id === activeCard.columnId)?.color ?? theme.cyan}`,
+                    padding: '6px 10px',
+                    background: theme.bg,
+                    fontSize: 12,
+                    color: theme.textPrimary,
+                    opacity: 0.9,
+                    boxShadow: `0 2px 8px ${theme.border}40`,
                   }}
                 >
-                  {activeCard.author.name ?? 'Anonymous'}
-                </span>
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      </main>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: theme.textTertiary,
+                      opacity: 0.6,
+                    }}
+                  >
+                    {activeCard.author.name ?? 'Anonymous'}
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </main>
 
-      {/* Action items */}
-      <div style={{ padding: '0 16px 16px', marginBottom: 24 }}>
-        <ActionItemsPanel token={token} retroId={retroId} />
+        {/* Action items — sticky side panel */}
+        <aside
+          style={{
+            width: actionPanelOpen ? 340 : 0,
+            flexShrink: 0,
+            transition: 'width 0.2s ease',
+            overflow: 'hidden',
+            position: 'sticky',
+            top: 0,
+            alignSelf: 'flex-start',
+            maxHeight: 'calc(100vh - 140px)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              width: 340,
+              padding: '16px 16px 16px 0',
+              overflowY: 'auto',
+              flex: 1,
+            }}
+          >
+            <ActionItemsPanel token={token} retroId={retroId} />
+          </div>
+        </aside>
+
+        {/* Collapse / expand toggle tab */}
+        <button
+          onClick={toggleActionPanel}
+          aria-label={
+            actionPanelOpen ? 'Collapse action items' : 'Expand action items'
+          }
+          style={{
+            position: 'sticky',
+            top: 16,
+            alignSelf: 'flex-start',
+            background: `${theme.bg}`,
+            border: `1px solid ${theme.border}40`,
+            borderRadius: '4px 0 0 4px',
+            color: theme.textTertiary,
+            cursor: 'pointer',
+            fontSize: 11,
+            fontFamily: 'inherit',
+            padding: '6px 4px',
+            writingMode: 'vertical-rl',
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap',
+            marginRight: -1,
+          }}
+        >
+          {actionPanelOpen ? 'actions ›' : '‹ actions'}
+        </button>
       </div>
 
       <StatusBar
