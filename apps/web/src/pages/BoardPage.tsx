@@ -148,7 +148,7 @@ function BoardContent({
   )
 
   const totalCards = state.columns.reduce(
-    (sum, col) => sum + col.cards.length,
+    (sum, col) => sum + col.cards.filter((c) => !c.parentCardId).length,
     0,
   )
 
@@ -384,51 +384,70 @@ function BoardContent({
         </div>
       )}
 
-      {mergeSelection.selectedIds.length >= 2 && (
-        <div
-          style={{
-            padding: '6px 16px',
-            fontSize: 12,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            borderBottom: `1px solid ${theme.border}40`,
-          }}
-        >
-          <span style={{ color: theme.cyan }}>
-            {mergeSelection.selectedIds.length} cards selected
-          </span>
-          <button
-            onClick={mergeSelection.doMerge}
-            style={{
-              background: `${theme.cyan}20`,
-              border: `1px solid ${theme.cyan}60`,
-              borderRadius: 2,
-              color: theme.cyan,
-              cursor: 'pointer',
-              fontSize: 11,
-              padding: '2px 8px',
-              fontFamily: 'inherit',
-            }}
-          >
-            [merge]
-          </button>
-          <button
-            onClick={mergeSelection.clearSelection}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: theme.textTertiary,
-              cursor: 'pointer',
-              fontSize: 11,
-              padding: '2px 4px',
-              fontFamily: 'inherit',
-            }}
-          >
-            [cancel]
-          </button>
-        </div>
-      )}
+      {mergeSelection.selectedIds.length >= 2 &&
+        (() => {
+          const selectedColumns = new Set(
+            mergeSelection.selectedIds.map((id) => {
+              for (const col of state.columns) {
+                if (col.cards.some((c) => c.id === id)) return col.id
+              }
+              return null
+            }),
+          )
+          const sameColumn = selectedColumns.size === 1
+          return (
+            <div
+              style={{
+                padding: '6px 16px',
+                fontSize: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                borderBottom: `1px solid ${theme.border}40`,
+              }}
+            >
+              <span style={{ color: theme.cyan }}>
+                {mergeSelection.selectedIds.length} cards selected
+              </span>
+              {!sameColumn && (
+                <span style={{ color: theme.yellow, fontSize: 11 }}>
+                  (must be from same column)
+                </span>
+              )}
+              <button
+                onClick={mergeSelection.doMerge}
+                disabled={!sameColumn}
+                style={{
+                  background: sameColumn ? `${theme.cyan}20` : 'transparent',
+                  border: `1px solid ${sameColumn ? theme.cyan : theme.textTertiary}60`,
+                  borderRadius: 2,
+                  color: sameColumn ? theme.cyan : theme.textTertiary,
+                  cursor: sameColumn ? 'pointer' : 'default',
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  fontFamily: 'inherit',
+                  opacity: sameColumn ? 1 : 0.5,
+                }}
+              >
+                [merge]
+              </button>
+              <button
+                onClick={mergeSelection.clearSelection}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: theme.textTertiary,
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  padding: '2px 4px',
+                  fontFamily: 'inherit',
+                }}
+              >
+                [cancel]
+              </button>
+            </div>
+          )
+        })()}
 
       <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
         <DndContext

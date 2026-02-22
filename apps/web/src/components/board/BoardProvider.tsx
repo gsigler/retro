@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react'
 import type { Socket } from 'socket.io-client'
@@ -62,10 +63,15 @@ type BoardAction =
     }
   | { type: 'TIMER_TICK'; remaining: number }
 
-function getCardVoteCount(columns: Column[], cardId: string): number {
+function findCardVoteCount(columns: Column[], cardId: string): number {
   for (const col of columns) {
     for (const c of col.cards) {
       if (c.id === cardId) return c.voteCount ?? 0
+      if (c.children) {
+        for (const child of c.children) {
+          if (child.id === cardId) return child.voteCount ?? 0
+        }
+      }
     }
   }
   return 0
@@ -78,7 +84,18 @@ function updateCardVoteCount(
 ): Column[] {
   return columns.map((col) => ({
     ...col,
-    cards: col.cards.map((c) => (c.id === cardId ? { ...c, voteCount } : c)),
+    cards: col.cards.map((c) => {
+      if (c.id === cardId) return { ...c, voteCount }
+      if (c.children?.length) {
+        return {
+          ...c,
+          children: c.children.map((child) =>
+            child.id === cardId ? { ...child, voteCount } : child,
+          ),
+        }
+      }
+      return c
+    }),
   }))
 }
 
@@ -87,12 +104,22 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
     case 'SET_BOARD':
       return {
         ...state,
-        columns: action.columns,
+        columns: action.columns.map((col) => ({
+          ...col,
+          cards: col.cards.filter((c) => !c.parentCardId),
+        })),
         initialized: action.columns.length > 0,
       }
 
     case 'BOARD_INITIALIZED':
-      return { ...state, columns: action.columns, initialized: true }
+      return {
+        ...state,
+        columns: action.columns.map((col) => ({
+          ...col,
+          cards: col.cards.filter((c) => !c.parentCardId),
+        })),
+        initialized: true,
+      }
 
     case 'CARD_CREATED': {
       const card = action.card
@@ -156,7 +183,13 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
       return { ...state, phase: action.phase }
 
     case 'BOARD_REVEALED':
-      return { ...state, columns: action.columns }
+      return {
+        ...state,
+        columns: action.columns.map((col) => ({
+          ...col,
+          cards: col.cards.filter((c) => !c.parentCardId),
+        })),
+      }
 
     case 'VOTE_COUNT_UPDATED':
       return {
@@ -182,7 +215,7 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
         columns: updateCardVoteCount(
           state.columns,
           action.cardId,
-          getCardVoteCount(state.columns, action.cardId) + 1,
+          findCardVoteCount(state.columns, action.cardId) + 1,
         ),
         votedCardIds: [...state.votedCardIds, action.cardId],
         remainingVotes: state.remainingVotes - 1,
@@ -196,7 +229,7 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
         columns: updateCardVoteCount(
           state.columns,
           action.cardId,
-          Math.max(0, getCardVoteCount(state.columns, action.cardId) - 1),
+          Math.max(0, findCardVoteCount(state.columns, action.cardId) - 1),
         ),
         votedCardIds: [
           ...state.votedCardIds.slice(0, idx),
@@ -221,7 +254,6 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
 
     case 'CARDS_UNMERGED': {
       const { parentCard } = action
-      // Get children from current state since the API response already cleared them
       let formerChildren: Card[] = []
       for (const col of state.columns) {
         const existing = col.cards.find((c) => c.id === parentCard.id)
@@ -319,6 +351,13 @@ export function BoardProvider({
   const socketRef = useRef<Socket | null>(null)
   const [selectedForMerge, setSelectedForMerge] = useState<string[]>([])
 
+  // Clear merge selection when phase changes away from GROUP_VOTE
+  useEffect(() => {
+    if (state.phase !== 'GROUP_VOTE') {
+      setSelectedForMerge([])
+    }
+  }, [state.phase])
+
   const toggleSelect = useCallback((cardId: string) => {
     setSelectedForMerge((prev) =>
       prev.includes(cardId)
@@ -335,24 +374,23 @@ export function BoardProvider({
     if (selectedForMerge.length < 2) return
     const [parentId, ...childIds] = selectedForMerge
     try {
-      const result = await mergeCardsApi(token, retroId, parentId, childIds)
-      dispatch({
-        type: 'CARDS_MERGED',
-        parentCard: result,
-        childCardIds: childIds,
-      })
+      await mergeCardsApi(token, retroId, parentId, childIds)
+      // Let the WebSocket broadcast handle the state update
       setSelectedForMerge([])
     } catch (err) {
       console.error('Merge failed:', err)
     }
   }, [selectedForMerge, token, retroId])
 
-  const mergeSelection: MergeSelection = {
-    selectedIds: selectedForMerge,
-    toggleSelect,
-    doMerge,
-    clearSelection,
-  }
+  const mergeSelection = useMemo<MergeSelection>(
+    () => ({
+      selectedIds: selectedForMerge,
+      toggleSelect,
+      doMerge,
+      clearSelection,
+    }),
+    [selectedForMerge, toggleSelect, doMerge, clearSelection],
+  )
 
   useEffect(() => {
     if (initialBoard) {
@@ -454,11 +492,10 @@ export function BoardProvider({
     }
   }, [token, retroId])
 
-  return (
-    <BoardContext.Provider
-      value={{ state, dispatch, socketRef, mergeSelection }}
-    >
-      {children}
-    </BoardContext.Provider>
+  const value = useMemo(
+    () => ({ state, dispatch, socketRef, mergeSelection }),
+    [state, mergeSelection],
   )
+
+  return <BoardContext.Provider value={value}>{children}</BoardContext.Provider>
 }

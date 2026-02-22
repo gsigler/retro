@@ -27,7 +27,6 @@ describe('BoardController', () => {
     createCard: jest.Mock
     moveCard: jest.Mock
     deleteCard: jest.Mock
-    getRetroPhase: jest.Mock
     voteCard: jest.Mock
     unvoteCard: jest.Mock
     getUserVotes: jest.Mock
@@ -82,7 +81,6 @@ describe('BoardController', () => {
       createCard: jest.fn(),
       moveCard: jest.fn(),
       deleteCard: jest.fn(),
-      getRetroPhase: jest.fn(),
       voteCard: jest.fn(),
       unvoteCard: jest.fn(),
       getUserVotes: jest.fn(),
@@ -160,8 +158,10 @@ describe('BoardController', () => {
 
   describe('createCard', () => {
     it('should broadcast to all when phase is GROUP_VOTE', async () => {
-      boardService.createCard.mockResolvedValue(mockCard)
-      boardService.getRetroPhase.mockResolvedValue('GROUP_VOTE')
+      boardService.createCard.mockResolvedValue({
+        card: mockCard,
+        phase: 'GROUP_VOTE',
+      })
 
       const result = await controller.createCard(req, retroId, {
         columnId: 'column-1',
@@ -178,8 +178,10 @@ describe('BoardController', () => {
     })
 
     it('should emit only to author when phase is RETROSPECT', async () => {
-      boardService.createCard.mockResolvedValue(mockCard)
-      boardService.getRetroPhase.mockResolvedValue('RETROSPECT')
+      boardService.createCard.mockResolvedValue({
+        card: mockCard,
+        phase: 'RETROSPECT',
+      })
 
       const result = await controller.createCard(req, retroId, {
         columnId: 'column-1',

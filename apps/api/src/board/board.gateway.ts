@@ -7,17 +7,13 @@ import {
   MessageBody,
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
-import { ConfigService } from '@nestjs/config'
 import { SkipThrottle } from '@nestjs/throttler'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service.js'
-
-interface TimerState {
-  duration: number
-  remaining: number
-  running: boolean
-  startedAt: number | null
-}
+import { TimerService } from './timer.service.js'
+import { CardResponse } from './dto/card-response.dto.js'
+import { ColumnResponse } from './dto/column-response.dto.js'
+import { ActionItemResponse } from '../action-items/dto/action-item-response.dto.js'
 
 interface AuthenticatedSocket extends Socket {
   data: {
@@ -38,13 +34,10 @@ export class BoardGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server
 
-  private timers = new Map<string, TimerState>()
-  private timerIntervals = new Map<string, ReturnType<typeof setInterval>>()
-
   constructor(
-    private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly timerService: TimerService,
   ) {}
 
   afterInit(server: Server) {
@@ -88,33 +81,33 @@ export class BoardGateway implements OnGatewayDisconnect {
     @MessageBody() data: { retroId: string; duration?: number },
   ) {
     if (!data?.retroId) return
-    if (!(await this.verifyFacilitator(client.data.userId, data.retroId)))
-      return
-
-    const room = `retro:${data.retroId}`
-    let timer = this.timers.get(data.retroId)
-
-    if (data.duration) {
-      this.clearTimerInterval(data.retroId)
-      timer = {
-        duration: data.duration,
-        remaining: data.duration,
-        running: true,
-        startedAt: Date.now(),
-      }
-    } else if (timer) {
-      timer = { ...timer, running: true, startedAt: Date.now() }
-    } else {
+    if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
+      client.emit('timer:error', {
+        message: 'Only the facilitator can control the timer',
+      })
       return
     }
 
-    this.timers.set(data.retroId, timer)
-    this.server.to(room).emit('timer:sync', {
-      duration: timer.duration,
-      remaining: timer.remaining,
-      running: true,
-    })
-    this.startTimerInterval(data.retroId)
+    const room = `retro:${data.retroId}`
+    const payload = this.timerService.start(
+      data.retroId,
+      data.duration,
+      (remaining) => {
+        this.server.to(room).emit('timer:tick', { remaining })
+      },
+      (syncPayload) => {
+        this.server.to(room).emit('timer:sync', syncPayload)
+      },
+    )
+
+    if (!payload) {
+      client.emit('timer:error', {
+        message: 'Invalid duration (must be 10-3600 seconds)',
+      })
+      return
+    }
+
+    this.server.to(room).emit('timer:sync', payload)
   }
 
   @SubscribeMessage('timer:pause')
@@ -123,28 +116,17 @@ export class BoardGateway implements OnGatewayDisconnect {
     @MessageBody() data: { retroId: string },
   ) {
     if (!data?.retroId) return
-    if (!(await this.verifyFacilitator(client.data.userId, data.retroId)))
+    if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
+      client.emit('timer:error', {
+        message: 'Only the facilitator can control the timer',
+      })
       return
-
-    const timer = this.timers.get(data.retroId)
-    if (!timer || !timer.running) return
-
-    this.clearTimerInterval(data.retroId)
-    const elapsed = timer.startedAt
-      ? Math.floor((Date.now() - timer.startedAt) / 1000)
-      : 0
-    const updated: TimerState = {
-      ...timer,
-      remaining: Math.max(0, timer.remaining - elapsed),
-      running: false,
-      startedAt: null,
     }
-    this.timers.set(data.retroId, updated)
-    this.server.to(`retro:${data.retroId}`).emit('timer:sync', {
-      duration: updated.duration,
-      remaining: updated.remaining,
-      running: false,
-    })
+
+    const payload = this.timerService.pause(data.retroId)
+    if (payload) {
+      this.server.to(`retro:${data.retroId}`).emit('timer:sync', payload)
+    }
   }
 
   @SubscribeMessage('timer:reset')
@@ -153,25 +135,17 @@ export class BoardGateway implements OnGatewayDisconnect {
     @MessageBody() data: { retroId: string },
   ) {
     if (!data?.retroId) return
-    if (!(await this.verifyFacilitator(client.data.userId, data.retroId)))
+    if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
+      client.emit('timer:error', {
+        message: 'Only the facilitator can control the timer',
+      })
       return
-
-    this.clearTimerInterval(data.retroId)
-    const timer = this.timers.get(data.retroId)
-    if (!timer) return
-
-    const updated: TimerState = {
-      duration: timer.duration,
-      remaining: timer.duration,
-      running: false,
-      startedAt: null,
     }
-    this.timers.set(data.retroId, updated)
-    this.server.to(`retro:${data.retroId}`).emit('timer:sync', {
-      duration: updated.duration,
-      remaining: updated.duration,
-      running: false,
-    })
+
+    const payload = this.timerService.reset(data.retroId)
+    if (payload) {
+      this.server.to(`retro:${data.retroId}`).emit('timer:sync', payload)
+    }
   }
 
   async handleDisconnect(client: AuthenticatedSocket) {
@@ -181,12 +155,10 @@ export class BoardGateway implements OnGatewayDisconnect {
           userId: client.data?.userId,
         })
 
-        // Clean up timer if room is empty
         const retroId = room.replace('retro:', '')
         const sockets = await this.server.in(room).fetchSockets()
         if (sockets.length === 0) {
-          this.clearTimerInterval(retroId)
-          this.timers.delete(retroId)
+          this.timerService.cleanup(retroId)
         }
       }
     }
@@ -217,22 +189,9 @@ export class BoardGateway implements OnGatewayDisconnect {
       userName: client.data.userName,
     })
 
-    // Send current timer state to the joining client
-    const timer = this.timers.get(data.retroId)
-    if (timer) {
-      const remaining =
-        timer.running && timer.startedAt
-          ? Math.max(
-              0,
-              timer.remaining -
-                Math.floor((Date.now() - timer.startedAt) / 1000),
-            )
-          : timer.remaining
-      client.emit('timer:sync', {
-        duration: timer.duration,
-        remaining,
-        running: timer.running,
-      })
+    const timerState = this.timerService.getState(data.retroId)
+    if (timerState) {
+      client.emit('timer:sync', timerState)
     }
   }
 
@@ -246,47 +205,14 @@ export class BoardGateway implements OnGatewayDisconnect {
     }
 
     const room = `retro:${data.retroId}`
+    if (!client.rooms.has(room)) {
+      return
+    }
+
     client.to(room).emit('board:user-left', {
       userId: client.data.userId,
     })
     client.leave(room)
-  }
-
-  private startTimerInterval(retroId: string) {
-    this.clearTimerInterval(retroId)
-    const interval = setInterval(() => {
-      const timer = this.timers.get(retroId)
-      if (!timer || !timer.running || !timer.startedAt) {
-        this.clearTimerInterval(retroId)
-        return
-      }
-
-      const elapsed = Math.floor((Date.now() - timer.startedAt) / 1000)
-      const remaining = Math.max(0, timer.remaining - elapsed)
-
-      this.server.to(`retro:${retroId}`).emit('timer:tick', { remaining })
-
-      if (remaining <= 0) {
-        this.clearTimerInterval(retroId)
-        const updated: TimerState = {
-          ...timer,
-          remaining: 0,
-          running: false,
-          startedAt: null,
-        }
-        this.timers.set(retroId, updated)
-        this.server.to(`retro:${retroId}`).emit('timer:sync', updated)
-      }
-    }, 1000)
-    this.timerIntervals.set(retroId, interval)
-  }
-
-  private clearTimerInterval(retroId: string) {
-    const interval = this.timerIntervals.get(retroId)
-    if (interval) {
-      clearInterval(interval)
-      this.timerIntervals.delete(retroId)
-    }
   }
 
   private async verifyFacilitator(
@@ -300,30 +226,33 @@ export class BoardGateway implements OnGatewayDisconnect {
     return retro?.createdById === userId
   }
 
-  emitBoardInitialized(retroId: string, columns: any) {
+  emitBoardInitialized(retroId: string, columns: ColumnResponse[]) {
     this.server.to(`retro:${retroId}`).emit('board:initialized', {
       retroId,
       columns,
     })
   }
 
-  emitCardCreated(retroId: string, card: any) {
+  emitCardCreated(retroId: string, card: CardResponse) {
     this.server.to(`retro:${retroId}`).emit('card:created', card)
   }
 
-  emitCardCreatedToAuthor(retroId: string, authorId: string, card: any) {
+  async emitCardCreatedToAuthor(
+    retroId: string,
+    authorId: string,
+    card: CardResponse,
+  ) {
     const room = `retro:${retroId}`
-    const sockets = this.server.in(room).fetchSockets()
-    sockets.then((clients) => {
-      for (const client of clients) {
-        if ((client as any).data?.userId === authorId) {
-          client.emit('card:created', card)
-        }
+    const clients = await this.server.in(room).fetchSockets()
+    for (const client of clients) {
+      const socket = client as unknown as AuthenticatedSocket
+      if (socket.data?.userId === authorId) {
+        client.emit('card:created', card)
       }
-    })
+    }
   }
 
-  emitCardMoved(retroId: string, card: any) {
+  emitCardMoved(retroId: string, card: CardResponse) {
     this.server.to(`retro:${retroId}`).emit('card:moved', card)
   }
 
@@ -349,26 +278,26 @@ export class BoardGateway implements OnGatewayDisconnect {
 
   emitCardsMerged(
     retroId: string,
-    data: { parentCard: any; childCardIds: string[] },
+    data: { parentCard: CardResponse; childCardIds: string[] },
   ) {
     this.server.to(`retro:${retroId}`).emit('cards:merged', data)
   }
 
-  emitCardsUnmerged(retroId: string, parentCard: any) {
+  emitCardsUnmerged(retroId: string, parentCard: CardResponse) {
     this.server.to(`retro:${retroId}`).emit('cards:unmerged', { parentCard })
   }
 
-  emitBoardRevealed(retroId: string, columns: any) {
+  emitBoardRevealed(retroId: string, columns: ColumnResponse[]) {
     this.server
       .to(`retro:${retroId}`)
       .emit('board:revealed', { retroId, columns })
   }
 
-  emitActionItemCreated(retroId: string, item: any) {
+  emitActionItemCreated(retroId: string, item: ActionItemResponse) {
     this.server.to(`retro:${retroId}`).emit('action-item:created', item)
   }
 
-  emitActionItemUpdated(retroId: string, item: any) {
+  emitActionItemUpdated(retroId: string, item: ActionItemResponse) {
     this.server.to(`retro:${retroId}`).emit('action-item:updated', item)
   }
 
@@ -378,7 +307,7 @@ export class BoardGateway implements OnGatewayDisconnect {
       .emit('action-item:deleted', { id: itemId, retroId })
   }
 
-  emitActionItemsReordered(retroId: string, items: any[]) {
+  emitActionItemsReordered(retroId: string, items: ActionItemResponse[]) {
     this.server.to(`retro:${retroId}`).emit('action-item:reordered', items)
   }
 

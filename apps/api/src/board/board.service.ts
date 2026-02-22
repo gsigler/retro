@@ -42,7 +42,9 @@ export class BoardService {
       orderBy: { position: 'asc' },
       include: {
         cards: {
-          where: isRevealed ? undefined : { authorId: userId },
+          where: isRevealed
+            ? { parentCardId: null }
+            : { authorId: userId, parentCardId: null },
           orderBy: { position: 'asc' },
           include: CARD_INCLUDE,
         },
@@ -58,6 +60,7 @@ export class BoardService {
       orderBy: { position: 'asc' },
       include: {
         cards: {
+          where: { parentCardId: null },
           orderBy: { position: 'asc' },
           include: CARD_INCLUDE,
         },
@@ -103,7 +106,7 @@ export class BoardService {
   }
 
   async createCard(userId: string, retroId: string, dto: CreateCardDto) {
-    await this.assertRetroAccess(userId, retroId)
+    const retro = await this.assertRetroAccess(userId, retroId)
 
     const column = await this.prisma.client.column.findFirst({
       where: { id: dto.columnId, retroId },
@@ -128,7 +131,7 @@ export class BoardService {
       include: CARD_INCLUDE,
     })
 
-    return card
+    return { card, phase: retro.phase }
   }
 
   async moveCard(
@@ -190,6 +193,10 @@ export class BoardService {
       throw new BadRequestException('Merging is only allowed during GROUP_VOTE')
     }
 
+    if (childCardIds.includes(parentCardId)) {
+      throw new BadRequestException('Cannot merge a card into itself')
+    }
+
     const parentCard = await this.prisma.client.card.findFirst({
       where: { id: parentCardId, retroId, parentCardId: null },
     })
@@ -198,11 +205,11 @@ export class BoardService {
     }
 
     await this.prisma.client.card.updateMany({
-      where: { id: { in: childCardIds }, retroId },
+      where: { id: { in: childCardIds }, retroId, parentCardId: null },
       data: { parentCardId, columnId: parentCard.columnId },
     })
 
-    return this.prisma.client.card.findUnique({
+    return this.prisma.client.card.findUniqueOrThrow({
       where: { id: parentCardId },
       include: CARD_INCLUDE,
     })
@@ -222,7 +229,7 @@ export class BoardService {
       data: { parentCardId: null },
     })
 
-    return this.prisma.client.card.findUnique({
+    return this.prisma.client.card.findUniqueOrThrow({
       where: { id: cardId },
       include: CARD_INCLUDE,
     })
@@ -242,28 +249,30 @@ export class BoardService {
       throw new NotFoundException('Card not found')
     }
 
-    const userVoteCount = await this.prisma.client.vote.count({
-      where: { retroId, userId },
-    })
-    if (userVoteCount >= retro.maxVotesPerUser) {
-      throw new BadRequestException(
-        `You have used all ${retro.maxVotesPerUser} votes`,
-      )
-    }
+    return this.prisma.client.$transaction(async (tx) => {
+      const userVoteCount = await tx.vote.count({
+        where: { retroId, userId },
+      })
+      if (userVoteCount >= retro.maxVotesPerUser) {
+        throw new BadRequestException(
+          `You have used all ${retro.maxVotesPerUser} votes`,
+        )
+      }
 
-    const vote = await this.prisma.client.vote.create({
-      data: { cardId, userId, retroId },
-    })
+      const vote = await tx.vote.create({
+        data: { cardId, userId, retroId },
+      })
 
-    const voteCount = await this.prisma.client.vote.count({
-      where: { cardId },
-    })
+      const voteCount = await tx.vote.count({
+        where: { cardId },
+      })
 
-    return {
-      vote,
-      voteCount,
-      remainingVotes: retro.maxVotesPerUser - userVoteCount - 1,
-    }
+      return {
+        vote,
+        voteCount,
+        remainingVotes: retro.maxVotesPerUser - userVoteCount - 1,
+      }
+    })
   }
 
   async unvoteCard(userId: string, retroId: string, cardId: string) {
@@ -296,34 +305,18 @@ export class BoardService {
   }
 
   async getUserVotes(userId: string, retroId: string) {
-    await this.assertRetroAccess(userId, retroId)
+    const retro = await this.assertRetroAccess(userId, retroId)
 
     const votes = await this.prisma.client.vote.findMany({
       where: { retroId, userId },
       select: { cardId: true },
     })
 
-    const retro = await this.prisma.client.retro.findUnique({
-      where: { id: retroId },
-      select: { maxVotesPerUser: true },
-    })
-
     return {
       votedCardIds: votes.map((v) => v.cardId),
-      maxVotes: retro!.maxVotesPerUser,
-      remainingVotes: retro!.maxVotesPerUser - votes.length,
+      maxVotes: retro.maxVotesPerUser,
+      remainingVotes: retro.maxVotesPerUser - votes.length,
     }
-  }
-
-  async getRetroPhase(retroId: string): Promise<string> {
-    const retro = await this.prisma.client.retro.findUnique({
-      where: { id: retroId },
-      select: { phase: true },
-    })
-    if (!retro) {
-      throw new NotFoundException('Retro not found')
-    }
-    return retro.phase
   }
 
   private async assertRetroAccess(userId: string, retroId: string) {

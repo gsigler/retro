@@ -35,11 +35,8 @@ export function BoardCard({
     isDragging,
   } = useSortable({ id: card.id })
 
-  const isAnonymousPhase =
-    state.phase === 'GROUP_VOTE' || state.phase === 'DISCUSS_ACTION'
   const isOwnCard = user?.id === card.author.id
-  const showAnonymous =
-    isAnonymousPhase && !isOwnCard && card.author.id === ANONYMOUS_AUTHOR_ID
+  const showAnonymous = !isOwnCard && card.author.id === ANONYMOUS_AUTHOR_ID
 
   const authorDisplay = showAnonymous
     ? 'Anonymous'
@@ -83,9 +80,6 @@ export function BoardCard({
 
   const unmergeMutation = useMutation({
     mutationFn: () => unmergeCard(token, retroId, card.id),
-    onSuccess: (updatedCard) => {
-      dispatch({ type: 'CARDS_UNMERGED', parentCard: updatedCard })
-    },
   })
 
   const style = {
@@ -112,7 +106,7 @@ export function BoardCard({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {/* Merge select checkbox — always visible during GROUP_VOTE */}
+      {/* Merge select checkbox */}
       {canSelectForMerge && (
         <button
           onClick={(e) => {
@@ -142,10 +136,11 @@ export function BoardCard({
         </button>
       )}
 
-      {/* Delete button — top right corner */}
+      {/* Delete button — visible on hover and focus */}
       <button
         onClick={handleDelete}
         aria-label="Delete card"
+        className="card-delete-btn"
         style={{
           position: 'absolute',
           top: 4,
@@ -165,6 +160,14 @@ export function BoardCard({
           e.currentTarget.style.color = theme.red
         }}
         onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '0'
+          e.currentTarget.style.color = theme.textTertiary
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.opacity = '1'
+          e.currentTarget.style.color = theme.red
+        }}
+        onBlur={(e) => {
           e.currentTarget.style.opacity = '0'
           e.currentTarget.style.color = theme.textTertiary
         }}
@@ -281,7 +284,7 @@ export function BoardCard({
             <>
               <button
                 onClick={() => unvoteMutation.mutate()}
-                disabled={!hasVoted}
+                disabled={!hasVoted || unvoteMutation.isPending}
                 aria-label="Remove vote"
                 style={{
                   background: 'transparent',
@@ -310,7 +313,7 @@ export function BoardCard({
               </span>
               <button
                 onClick={() => voteMutation.mutate()}
-                disabled={state.remainingVotes <= 0}
+                disabled={state.remainingVotes <= 0 || voteMutation.isPending}
                 aria-label="Vote"
                 style={{
                   background: 'transparent',

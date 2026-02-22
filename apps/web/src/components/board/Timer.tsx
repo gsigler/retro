@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useBoardContext } from './BoardProvider'
 
@@ -35,8 +36,25 @@ export function Timer({ retroId, isFacilitator }: TimerProps) {
         ? theme.yellow
         : theme.textTertiary
 
+  const btnBase = useMemo(
+    () =>
+      ({
+        background: 'transparent',
+        borderRadius: 2,
+        cursor: 'pointer',
+        fontSize: 10,
+        padding: '1px 6px',
+        fontFamily: 'inherit',
+      }) as const,
+    [],
+  )
+
   function emitTimer(event: string, payload?: Record<string, unknown>) {
     socketRef.current?.emit(event, payload)
+  }
+
+  function timerBtn(color: string) {
+    return { ...btnBase, border: `1px solid ${color}60`, color }
   }
 
   return (
@@ -48,7 +66,6 @@ export function Timer({ retroId, isFacilitator }: TimerProps) {
         fontSize: 12,
       }}
     >
-      {/* Timer display */}
       <span
         style={{
           color: timerColor,
@@ -61,11 +78,9 @@ export function Timer({ retroId, isFacilitator }: TimerProps) {
         {timer ? formatTime(remaining) : '--:--'}
       </span>
 
-      {/* Facilitator controls */}
       {isFacilitator && (
         <>
           {!timer || (!isRunning && remaining === timer.duration) ? (
-            // Show presets when no timer or timer is reset
             PRESETS.map((preset) => (
               <button
                 key={preset.label}
@@ -75,16 +90,7 @@ export function Timer({ retroId, isFacilitator }: TimerProps) {
                     duration: preset.seconds,
                   })
                 }
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.border}60`,
-                  borderRadius: 2,
-                  color: theme.textSecondary,
-                  cursor: 'pointer',
-                  fontSize: 10,
-                  padding: '1px 6px',
-                  fontFamily: 'inherit',
-                }}
+                style={timerBtn(theme.textSecondary)}
               >
                 {preset.label}
               </button>
@@ -93,61 +99,22 @@ export function Timer({ retroId, isFacilitator }: TimerProps) {
             <>
               {isRunning ? (
                 <button
-                  onClick={() =>
-                    emitTimer('timer:pause', {
-                      retroId,
-                    })
-                  }
-                  style={{
-                    background: 'transparent',
-                    border: `1px solid ${theme.yellow}60`,
-                    borderRadius: 2,
-                    color: theme.yellow,
-                    cursor: 'pointer',
-                    fontSize: 10,
-                    padding: '1px 6px',
-                    fontFamily: 'inherit',
-                  }}
+                  onClick={() => emitTimer('timer:pause', { retroId })}
+                  style={timerBtn(theme.yellow)}
                 >
                   pause
                 </button>
               ) : (
                 <button
-                  onClick={() =>
-                    emitTimer('timer:start', {
-                      retroId,
-                    })
-                  }
-                  style={{
-                    background: 'transparent',
-                    border: `1px solid ${theme.green}60`,
-                    borderRadius: 2,
-                    color: theme.green,
-                    cursor: 'pointer',
-                    fontSize: 10,
-                    padding: '1px 6px',
-                    fontFamily: 'inherit',
-                  }}
+                  onClick={() => emitTimer('timer:start', { retroId })}
+                  style={timerBtn(theme.green)}
                 >
                   resume
                 </button>
               )}
               <button
-                onClick={() =>
-                  emitTimer('timer:reset', {
-                    retroId,
-                  })
-                }
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${theme.border}60`,
-                  borderRadius: 2,
-                  color: theme.textTertiary,
-                  cursor: 'pointer',
-                  fontSize: 10,
-                  padding: '1px 6px',
-                  fontFamily: 'inherit',
-                }}
+                onClick={() => emitTimer('timer:reset', { retroId })}
+                style={timerBtn(theme.textTertiary)}
               >
                 reset
               </button>
