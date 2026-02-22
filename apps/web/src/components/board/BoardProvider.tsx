@@ -20,6 +20,9 @@ interface BoardState {
   activeUsers: ActiveUser[]
   initialized: boolean
   phase: RetroPhase
+  votedCardIds: string[]
+  maxVotes: number
+  remainingVotes: number
 }
 
 type BoardAction =
@@ -32,6 +35,35 @@ type BoardAction =
   | { type: 'USER_LEFT'; userId: string }
   | { type: 'PHASE_CHANGED'; phase: RetroPhase }
   | { type: 'BOARD_REVEALED'; columns: Column[] }
+  | { type: 'VOTE_COUNT_UPDATED'; cardId: string; voteCount: number }
+  | {
+      type: 'SET_VOTES'
+      votedCardIds: string[]
+      maxVotes: number
+      remainingVotes: number
+    }
+  | { type: 'LOCAL_VOTE'; cardId: string }
+  | { type: 'LOCAL_UNVOTE'; cardId: string }
+
+function getCardVoteCount(columns: Column[], cardId: string): number {
+  for (const col of columns) {
+    for (const c of col.cards) {
+      if (c.id === cardId) return c.voteCount ?? 0
+    }
+  }
+  return 0
+}
+
+function updateCardVoteCount(
+  columns: Column[],
+  cardId: string,
+  voteCount: number,
+): Column[] {
+  return columns.map((col) => ({
+    ...col,
+    cards: col.cards.map((c) => (c.id === cardId ? { ...c, voteCount } : c)),
+  }))
+}
 
 function boardReducer(state: BoardState, action: BoardAction): BoardState {
   switch (action.type) {
@@ -109,6 +141,54 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
     case 'BOARD_REVEALED':
       return { ...state, columns: action.columns }
 
+    case 'VOTE_COUNT_UPDATED':
+      return {
+        ...state,
+        columns: updateCardVoteCount(
+          state.columns,
+          action.cardId,
+          action.voteCount,
+        ),
+      }
+
+    case 'SET_VOTES':
+      return {
+        ...state,
+        votedCardIds: action.votedCardIds,
+        maxVotes: action.maxVotes,
+        remainingVotes: action.remainingVotes,
+      }
+
+    case 'LOCAL_VOTE':
+      return {
+        ...state,
+        columns: updateCardVoteCount(
+          state.columns,
+          action.cardId,
+          getCardVoteCount(state.columns, action.cardId) + 1,
+        ),
+        votedCardIds: [...state.votedCardIds, action.cardId],
+        remainingVotes: state.remainingVotes - 1,
+      }
+
+    case 'LOCAL_UNVOTE': {
+      const idx = state.votedCardIds.indexOf(action.cardId)
+      if (idx === -1) return state
+      return {
+        ...state,
+        columns: updateCardVoteCount(
+          state.columns,
+          action.cardId,
+          Math.max(0, getCardVoteCount(state.columns, action.cardId) - 1),
+        ),
+        votedCardIds: [
+          ...state.votedCardIds.slice(0, idx),
+          ...state.votedCardIds.slice(idx + 1),
+        ],
+        remainingVotes: state.remainingVotes + 1,
+      }
+    }
+
     default:
       return state
   }
@@ -148,6 +228,9 @@ export function BoardProvider({
     activeUsers: [],
     initialized: (initialBoard?.columns.length ?? 0) > 0,
     phase: initialPhase ?? 'ICEBREAKER',
+    votedCardIds: [],
+    maxVotes: 5,
+    remainingVotes: 5,
   })
 
   const socketRef = useRef<Socket | null>(null)
@@ -199,6 +282,22 @@ export function BoardProvider({
 
     socket.on('board:revealed', (data: { columns: Column[] }) => {
       dispatch({ type: 'BOARD_REVEALED', columns: data.columns })
+    })
+
+    socket.on('card:voted', (data: { cardId: string; voteCount: number }) => {
+      dispatch({
+        type: 'VOTE_COUNT_UPDATED',
+        cardId: data.cardId,
+        voteCount: data.voteCount,
+      })
+    })
+
+    socket.on('card:unvoted', (data: { cardId: string; voteCount: number }) => {
+      dispatch({
+        type: 'VOTE_COUNT_UPDATED',
+        cardId: data.cardId,
+        voteCount: data.voteCount,
+      })
     })
 
     socket.connect()

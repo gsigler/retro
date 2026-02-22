@@ -15,6 +15,8 @@ describe('BoardController', () => {
     emitCardCreatedToAuthor: jest.Mock
     emitCardMoved: jest.Mock
     emitCardDeleted: jest.Mock
+    emitCardVoted: jest.Mock
+    emitCardUnvoted: jest.Mock
   }
   let boardService: {
     getTemplates: jest.Mock
@@ -24,6 +26,9 @@ describe('BoardController', () => {
     moveCard: jest.Mock
     deleteCard: jest.Mock
     getRetroPhase: jest.Mock
+    voteCard: jest.Mock
+    unvoteCard: jest.Mock
+    getUserVotes: jest.Mock
   }
 
   const req = { user: { id: 'user-1' } }
@@ -48,6 +53,7 @@ describe('BoardController', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     author: { id: 'user-1', name: 'Test User' },
+    _count: { votes: 0 },
   }
 
   beforeEach(async () => {
@@ -57,6 +63,8 @@ describe('BoardController', () => {
       emitCardCreatedToAuthor: jest.fn(),
       emitCardMoved: jest.fn(),
       emitCardDeleted: jest.fn(),
+      emitCardVoted: jest.fn(),
+      emitCardUnvoted: jest.fn(),
     }
 
     boardService = {
@@ -67,6 +75,9 @@ describe('BoardController', () => {
       moveCard: jest.fn(),
       deleteCard: jest.fn(),
       getRetroPhase: jest.fn(),
+      voteCard: jest.fn(),
+      unvoteCard: jest.fn(),
+      getUserVotes: jest.fn(),
     }
 
     const module: TestingModule = await Test.createTestingModule({

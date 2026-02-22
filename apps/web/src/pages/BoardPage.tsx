@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import type { UserVotes } from '@/types/api'
 import {
   DndContext,
   DragOverlay,
@@ -19,6 +20,7 @@ import {
   fetchBoard,
   fetchRetro,
   fetchTeams,
+  fetchUserVotes,
   moveCard,
   updateRetroPhase,
 } from '@/lib/api'
@@ -148,6 +150,23 @@ function BoardContent({
     (sum, col) => sum + col.cards.length,
     0,
   )
+
+  const { data: userVotes } = useQuery<UserVotes>({
+    queryKey: ['user-votes', retroId],
+    queryFn: () => fetchUserVotes(token, retroId),
+    enabled: state.phase === 'GROUP_VOTE',
+  })
+
+  useEffect(() => {
+    if (userVotes) {
+      dispatch({
+        type: 'SET_VOTES',
+        votedCardIds: userVotes.votedCardIds,
+        maxVotes: userVotes.maxVotes,
+        remainingVotes: userVotes.remainingVotes,
+      })
+    }
+  }, [userVotes, dispatch])
 
   function handleDragStart(event: DragStartEvent) {
     const cardId = event.active.id as string
@@ -330,6 +349,26 @@ function BoardContent({
         </div>
       )}
 
+      {state.phase === 'GROUP_VOTE' && (
+        <div
+          style={{
+            padding: '8px 16px',
+            fontSize: 12,
+            color: theme.yellow,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <span>
+            Votes: {state.remainingVotes}/{state.maxVotes} remaining
+          </span>
+          <span style={{ color: theme.textTertiary, fontSize: 11 }}>
+            &mdash; use +/- on cards to vote
+          </span>
+        </div>
+      )}
+
       <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
         <DndContext
           sensors={sensors}
@@ -386,6 +425,9 @@ function BoardContent({
           `${state.columns.length} columns`,
           `${totalCards} cards`,
           `${state.activeUsers.length} online`,
+          ...(state.phase === 'GROUP_VOTE'
+            ? [`${state.remainingVotes}/${state.maxVotes} votes left`]
+            : []),
         ]}
       />
     </div>
