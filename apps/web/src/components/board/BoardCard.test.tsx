@@ -27,6 +27,7 @@ vi.mock('@/lib/api', () => ({
   deleteCard: vi.fn(),
   voteCard: vi.fn(),
   unvoteCard: vi.fn(),
+  unmergeCard: vi.fn(),
 }))
 
 const api = await import('@/lib/api')
@@ -42,6 +43,8 @@ const card: Card = {
   updatedAt: '2026-02-20',
   author: { id: 'user-1', name: 'Alice' },
   voteCount: 0,
+  parentCardId: null,
+  children: [],
 }
 
 function renderWithProviders(c: Card) {

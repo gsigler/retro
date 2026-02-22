@@ -177,7 +177,7 @@ This plan implements 8 features that transform the retro board from a basic card
 
 ---
 
-### Task 6: Card combining/merging (#37) [pending]
+### Task 6: Card combining/merging (#37) [in_progress]
 **Size:** L
 **Files:** `apps/api/prisma/schema.prisma`, `apps/api/src/board/board.service.ts`, `apps/api/src/board/board.controller.ts`, `apps/api/src/board/board.gateway.ts`, `apps/api/src/board/dto/merge-cards.dto.ts` (new), `apps/api/src/board/dto/card-response.dto.ts`, `apps/web/src/components/board/BoardCard.tsx`, `apps/web/src/components/board/BoardColumn.tsx`, `apps/web/src/components/board/BoardProvider.tsx`, `apps/web/src/pages/BoardPage.tsx`, `apps/web/src/lib/api.ts`, `apps/web/src/types/api.ts`
 

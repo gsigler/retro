@@ -21,8 +21,10 @@ describe('BoardService', () => {
       }
       card: {
         findFirst: jest.Mock
+        findUnique: jest.Mock
         create: jest.Mock
         update: jest.Mock
+        updateMany: jest.Mock
         delete: jest.Mock
         aggregate: jest.Mock
       }
@@ -81,8 +83,10 @@ describe('BoardService', () => {
         },
         card: {
           findFirst: jest.fn(),
+          findUnique: jest.fn(),
           create: jest.fn(),
           update: jest.fn(),
+          updateMany: jest.fn(),
           delete: jest.fn(),
           aggregate: jest.fn(),
         },
@@ -131,6 +135,13 @@ describe('BoardService', () => {
             include: {
               author: { select: { id: true, name: true } },
               _count: { select: { votes: true } },
+              children: {
+                include: {
+                  author: { select: { id: true, name: true } },
+                  _count: { select: { votes: true } },
+                },
+                orderBy: { createdAt: 'asc' },
+              },
             },
           },
         },
@@ -158,6 +169,13 @@ describe('BoardService', () => {
             include: {
               author: { select: { id: true, name: true } },
               _count: { select: { votes: true } },
+              children: {
+                include: {
+                  author: { select: { id: true, name: true } },
+                  _count: { select: { votes: true } },
+                },
+                orderBy: { createdAt: 'asc' },
+              },
             },
           },
         },
@@ -249,6 +267,13 @@ describe('BoardService', () => {
         include: {
           author: { select: { id: true, name: true } },
           _count: { select: { votes: true } },
+          children: {
+            include: {
+              author: { select: { id: true, name: true } },
+              _count: { select: { votes: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
         },
       })
       expect(result).toEqual(mockCard)
@@ -312,6 +337,13 @@ describe('BoardService', () => {
         include: {
           author: { select: { id: true, name: true } },
           _count: { select: { votes: true } },
+          children: {
+            include: {
+              author: { select: { id: true, name: true } },
+              _count: { select: { votes: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
         },
       })
       expect(result.columnId).toBe('column-2')

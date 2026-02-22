@@ -16,7 +16,8 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
   const { theme } = useTheme()
   const { setNodeRef } = useDroppable({ id: column.id })
 
-  const count = column.cards.length
+  const topLevelCards = column.cards.filter((c) => !c.parentCardId)
+  const count = topLevelCards.length
 
   return (
     <div
@@ -54,10 +55,10 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
           }}
         >
           <SortableContext
-            items={column.cards.map((c) => c.id)}
+            items={topLevelCards.map((c) => c.id)}
             strategy={verticalListSortingStrategy}
           >
-            {column.cards.map((card) => (
+            {topLevelCards.map((card) => (
               <BoardCard
                 key={card.id}
                 card={card}

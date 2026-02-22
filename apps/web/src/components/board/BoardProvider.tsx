@@ -4,11 +4,14 @@ import {
   useReducer,
   useEffect,
   useRef,
+  useState,
+  useCallback,
   type ReactNode,
 } from 'react'
 import type { Socket } from 'socket.io-client'
 import type { Board, Card, Column, RetroPhase } from '@/types/api'
 import { createBoardSocket } from '@/lib/socket'
+import { mergeCards as mergeCardsApi } from '@/lib/api'
 
 interface ActiveUser {
   userId: string
@@ -44,6 +47,8 @@ type BoardAction =
     }
   | { type: 'LOCAL_VOTE'; cardId: string }
   | { type: 'LOCAL_UNVOTE'; cardId: string }
+  | { type: 'CARDS_MERGED'; parentCard: Card; childCardIds: string[] }
+  | { type: 'CARDS_UNMERGED'; parentCard: Card }
 
 function getCardVoteCount(columns: Column[], cardId: string): number {
   for (const col of columns) {
@@ -189,15 +194,69 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
       }
     }
 
+    case 'CARDS_MERGED': {
+      const { parentCard, childCardIds } = action
+      return {
+        ...state,
+        columns: state.columns.map((col) => ({
+          ...col,
+          cards: col.cards
+            .filter((c) => !childCardIds.includes(c.id))
+            .map((c) => (c.id === parentCard.id ? parentCard : c)),
+        })),
+      }
+    }
+
+    case 'CARDS_UNMERGED': {
+      const { parentCard } = action
+      // Get children from current state since the API response already cleared them
+      let formerChildren: Card[] = []
+      for (const col of state.columns) {
+        const existing = col.cards.find((c) => c.id === parentCard.id)
+        if (existing?.children?.length) {
+          formerChildren = existing.children
+          break
+        }
+      }
+      return {
+        ...state,
+        columns: state.columns.map((col) => {
+          const hasParent = col.cards.some((c) => c.id === parentCard.id)
+          if (!hasParent) return col
+          return {
+            ...col,
+            cards: [
+              ...col.cards.map((c) =>
+                c.id === parentCard.id ? { ...parentCard, children: [] } : c,
+              ),
+              ...formerChildren.map((child) => ({
+                ...child,
+                parentCardId: null,
+                children: [],
+              })),
+            ],
+          }
+        }),
+      }
+    }
+
     default:
       return state
   }
+}
+
+interface MergeSelection {
+  selectedIds: string[]
+  toggleSelect: (cardId: string) => void
+  doMerge: () => void
+  clearSelection: () => void
 }
 
 interface BoardContextValue {
   state: BoardState
   dispatch: React.Dispatch<BoardAction>
   socketRef: React.RefObject<Socket | null>
+  mergeSelection: MergeSelection
 }
 
 const BoardContext = createContext<BoardContextValue | null>(null)
@@ -234,6 +293,42 @@ export function BoardProvider({
   })
 
   const socketRef = useRef<Socket | null>(null)
+  const [selectedForMerge, setSelectedForMerge] = useState<string[]>([])
+
+  const toggleSelect = useCallback((cardId: string) => {
+    setSelectedForMerge((prev) =>
+      prev.includes(cardId)
+        ? prev.filter((id) => id !== cardId)
+        : [...prev, cardId],
+    )
+  }, [])
+
+  const clearSelection = useCallback(() => {
+    setSelectedForMerge([])
+  }, [])
+
+  const doMerge = useCallback(async () => {
+    if (selectedForMerge.length < 2) return
+    const [parentId, ...childIds] = selectedForMerge
+    try {
+      const result = await mergeCardsApi(token, retroId, parentId, childIds)
+      dispatch({
+        type: 'CARDS_MERGED',
+        parentCard: result,
+        childCardIds: childIds,
+      })
+      setSelectedForMerge([])
+    } catch (err) {
+      console.error('Merge failed:', err)
+    }
+  }, [selectedForMerge, token, retroId])
+
+  const mergeSelection: MergeSelection = {
+    selectedIds: selectedForMerge,
+    toggleSelect,
+    doMerge,
+    clearSelection,
+  }
 
   useEffect(() => {
     if (initialBoard) {
@@ -300,6 +395,21 @@ export function BoardProvider({
       })
     })
 
+    socket.on(
+      'cards:merged',
+      (data: { parentCard: Card; childCardIds: string[] }) => {
+        dispatch({
+          type: 'CARDS_MERGED',
+          parentCard: data.parentCard,
+          childCardIds: data.childCardIds,
+        })
+      },
+    )
+
+    socket.on('cards:unmerged', (data: { parentCard: Card }) => {
+      dispatch({ type: 'CARDS_UNMERGED', parentCard: data.parentCard })
+    })
+
     socket.connect()
 
     return () => {
@@ -310,7 +420,9 @@ export function BoardProvider({
   }, [token, retroId])
 
   return (
-    <BoardContext.Provider value={{ state, dispatch, socketRef }}>
+    <BoardContext.Provider
+      value={{ state, dispatch, socketRef, mergeSelection }}
+    >
       {children}
     </BoardContext.Provider>
   )

@@ -132,7 +132,7 @@ function BoardContent({
   retroName?: string
   retroCreatedById?: string
 }) {
-  const { state, dispatch } = useBoardContext()
+  const { state, dispatch, mergeSelection } = useBoardContext()
   const { user } = useAuth()
   const { theme } = useTheme()
   const isFacilitator =
@@ -184,17 +184,18 @@ function BoardContent({
     if (!over || active.id === over.id) return
 
     const cardId = active.id as string
+    const overId = over.id as string
 
     let targetColumnId: string | null = null
     let targetPosition = 0
 
     for (const col of state.columns) {
-      if (col.id === over.id) {
+      if (col.id === overId) {
         targetColumnId = col.id
         targetPosition = col.cards.length
         break
       }
-      const overCardIndex = col.cards.findIndex((c) => c.id === over.id)
+      const overCardIndex = col.cards.findIndex((c) => c.id === overId)
       if (overCardIndex !== -1) {
         targetColumnId = col.id
         targetPosition = overCardIndex
@@ -366,6 +367,56 @@ function BoardContent({
           <span style={{ color: theme.textTertiary, fontSize: 11 }}>
             &mdash; use +/- on cards to vote
           </span>
+          <span style={{ color: theme.border }}>|</span>
+          <span style={{ color: theme.textTertiary, fontSize: 11 }}>
+            select [ ] on cards to merge similar items
+          </span>
+        </div>
+      )}
+
+      {mergeSelection.selectedIds.length >= 2 && (
+        <div
+          style={{
+            padding: '6px 16px',
+            fontSize: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            borderBottom: `1px solid ${theme.border}40`,
+          }}
+        >
+          <span style={{ color: theme.cyan }}>
+            {mergeSelection.selectedIds.length} cards selected
+          </span>
+          <button
+            onClick={mergeSelection.doMerge}
+            style={{
+              background: `${theme.cyan}20`,
+              border: `1px solid ${theme.cyan}60`,
+              borderRadius: 2,
+              color: theme.cyan,
+              cursor: 'pointer',
+              fontSize: 11,
+              padding: '2px 8px',
+              fontFamily: 'inherit',
+            }}
+          >
+            [merge]
+          </button>
+          <button
+            onClick={mergeSelection.clearSelection}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: theme.textTertiary,
+              cursor: 'pointer',
+              fontSize: 11,
+              padding: '2px 4px',
+              fontFamily: 'inherit',
+            }}
+          >
+            [cancel]
+          </button>
         </div>
       )}
 
