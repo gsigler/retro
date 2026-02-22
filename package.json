@@ -22,9 +22,9 @@
     "db:migrate:dev": "npm run prisma:migrate:dev -w @retro/api",
     "db:migrate:deploy": "npm run prisma:migrate:deploy -w @retro/api",
     "db:studio": "npm run prisma:studio -w @retro/api",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "docker:build": "docker compose build",
+    "docker:up": "docker compose -p retro up -d",
+    "docker:down": "docker compose -p retro down",
+    "docker:build": "docker compose -p retro build",
     "prepare": "husky"
   },
   "lint-staged": {
