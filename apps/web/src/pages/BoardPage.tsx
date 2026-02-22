@@ -270,7 +270,8 @@ function BoardContent({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 'calc(100vh - 40px)',
+        height: 'calc(100vh - 40px)',
+        overflow: 'hidden',
       }}
     >
       {/* Board header */}
@@ -451,113 +452,105 @@ function BoardContent({
           )
         })()}
 
-      <div
+      <main
         style={{
-          display: 'flex',
           flex: 1,
-          overflow: 'hidden',
-          marginBottom: 24,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          padding: 16,
+          minHeight: 0,
         }}
       >
-        <main style={{ flex: 1, overflowX: 'auto', padding: 16 }}>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={isDragEnabled ? handleDragStart : undefined}
-            onDragEnd={isDragEnabled ? handleDragEnd : undefined}
-          >
-            <div style={{ display: 'flex', gap: 12 }}>
-              {state.columns.map((column) => (
-                <BoardColumn
-                  key={column.id}
-                  column={column}
-                  token={token}
-                  retroId={retroId}
-                />
-              ))}
-            </div>
-            <DragOverlay dropAnimation={null}>
-              {activeCard ? (
-                <div
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={isDragEnabled ? handleDragStart : undefined}
+          onDragEnd={isDragEnabled ? handleDragEnd : undefined}
+        >
+          <div style={{ display: 'flex', gap: 12, height: '100%' }}>
+            {state.columns.map((column) => (
+              <BoardColumn
+                key={column.id}
+                column={column}
+                token={token}
+                retroId={retroId}
+              />
+            ))}
+          </div>
+          <DragOverlay dropAnimation={null}>
+            {activeCard ? (
+              <div
+                style={{
+                  borderLeft: `2px solid ${state.columns.find((c) => c.id === activeCard.columnId)?.color ?? theme.cyan}`,
+                  padding: '6px 10px',
+                  background: theme.bg,
+                  fontSize: 12,
+                  color: theme.textPrimary,
+                  opacity: 0.9,
+                  boxShadow: `0 2px 8px ${theme.border}40`,
+                }}
+              >
+                <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
+                <span
                   style={{
-                    borderLeft: `2px solid ${state.columns.find((c) => c.id === activeCard.columnId)?.color ?? theme.cyan}`,
-                    padding: '6px 10px',
-                    background: theme.bg,
-                    fontSize: 12,
-                    color: theme.textPrimary,
-                    opacity: 0.9,
-                    boxShadow: `0 2px 8px ${theme.border}40`,
+                    fontSize: 11,
+                    color: theme.textTertiary,
+                    opacity: 0.6,
                   }}
                 >
-                  <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: theme.textTertiary,
-                      opacity: 0.6,
-                    }}
-                  >
-                    {activeCard.author.name ?? 'Anonymous'}
-                  </span>
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        </main>
+                  {activeCard.author.name ?? 'Anonymous'}
+                </span>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </main>
 
-        {/* Action items — sticky side panel */}
-        <aside
-          style={{
-            width: actionPanelOpen ? 340 : 0,
-            flexShrink: 0,
-            transition: 'width 0.2s ease',
-            overflow: 'hidden',
-            position: 'sticky',
-            top: 0,
-            alignSelf: 'flex-start',
-            maxHeight: 'calc(100vh - 140px)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <div
-            style={{
-              width: 340,
-              padding: '16px 16px 16px 0',
-              overflowY: 'auto',
-              flex: 1,
-            }}
-          >
-            <ActionItemsPanel token={token} retroId={retroId} />
-          </div>
-        </aside>
-
-        {/* Collapse / expand toggle tab */}
+      {/* Action items — fixed bottom panel */}
+      <div
+        style={{
+          flexShrink: 0,
+          padding: '0 16px 28px',
+          background: theme.bg,
+          borderTop: `1px solid ${theme.border}40`,
+        }}
+      >
         <button
           onClick={toggleActionPanel}
           aria-label={
             actionPanelOpen ? 'Collapse action items' : 'Expand action items'
           }
           style={{
-            position: 'sticky',
-            top: 16,
-            alignSelf: 'flex-start',
-            background: `${theme.bg}`,
+            background: theme.bg,
             border: `1px solid ${theme.border}40`,
-            borderRadius: '4px 0 0 4px',
+            borderBottom: actionPanelOpen
+              ? 'none'
+              : `1px solid ${theme.border}40`,
+            borderRadius: actionPanelOpen ? '4px 4px 0 0' : 4,
             color: theme.textTertiary,
             cursor: 'pointer',
             fontSize: 11,
             fontFamily: 'inherit',
-            padding: '6px 4px',
-            writingMode: 'vertical-rl',
-            letterSpacing: '0.05em',
-            whiteSpace: 'nowrap',
-            marginRight: -1,
+            padding: '4px 12px',
+            width: '100%',
+            textAlign: 'left',
           }}
         >
-          {actionPanelOpen ? 'actions ›' : '‹ actions'}
+          {actionPanelOpen ? '▾ action items' : '▸ action items'}
         </button>
+        {actionPanelOpen && (
+          <div
+            style={{
+              maxHeight: 260,
+              overflowY: 'auto',
+              border: `1px solid ${theme.border}40`,
+              borderTop: 'none',
+              borderRadius: '0 0 4px 4px',
+            }}
+          >
+            <ActionItemsPanel token={token} retroId={retroId} />
+          </div>
+        )}
       </div>
 
       <StatusBar
