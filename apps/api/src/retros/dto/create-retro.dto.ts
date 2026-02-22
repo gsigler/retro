@@ -18,4 +18,8 @@ export class CreateRetroDto {
   @IsEnum(RetroStatus)
   @IsOptional()
   status?: RetroStatus
+
+  @IsString()
+  @IsOptional()
+  templateId?: string
 }

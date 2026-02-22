@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service.js'
+import { BoardService } from '../board/board.service.js'
 import { CreateRetroDto } from './dto/create-retro.dto.js'
 import { UpdateRetroDto } from './dto/update-retro.dto.js'
 
@@ -40,12 +41,15 @@ const PHASE_ORDER: Record<RetroPhase, number> = {
 
 @Injectable()
 export class RetrosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly boardService: BoardService,
+  ) {}
 
   async create(userId: string, teamId: string, dto: CreateRetroDto) {
     await this.assertTeamMember(userId, teamId)
 
-    return this.prisma.client.retro.create({
+    const retro = await this.prisma.client.retro.create({
       data: {
         name: dto.name,
         date: new Date(dto.date),
@@ -55,6 +59,12 @@ export class RetrosService {
       },
       include: { createdBy: { select: { id: true, email: true, name: true } } },
     })
+
+    if (dto.templateId) {
+      await this.boardService.initBoard(userId, retro.id, dto.templateId)
+    }
+
+    return retro
   }
 
   async findAll(userId: string, teamId: string) {

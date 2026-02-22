@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 import { RetrosService } from './retros.service.js'
 import { PrismaService } from '../prisma/prisma.service.js'
+import { BoardService } from '../board/board.service.js'
 
 describe('RetrosService', () => {
   let service: RetrosService
@@ -61,7 +62,14 @@ describe('RetrosService', () => {
     }
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [RetrosService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        RetrosService,
+        { provide: PrismaService, useValue: prisma },
+        {
+          provide: BoardService,
+          useValue: { initBoard: jest.fn() },
+        },
+      ],
     }).compile()
 
     service = module.get<RetrosService>(RetrosService)
