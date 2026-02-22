@@ -14,6 +14,7 @@ import { TimerService } from './timer.service.js'
 import { CardResponse } from './dto/card-response.dto.js'
 import { ColumnResponse } from './dto/column-response.dto.js'
 import { ActionItemResponse } from '../action-items/dto/action-item-response.dto.js'
+import type { RetroPhase } from '../retros/retros.service.js'
 
 interface AuthenticatedSocket extends Socket {
   data: {
@@ -311,7 +312,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     this.server.to(`retro:${retroId}`).emit('action-item:reordered', items)
   }
 
-  emitPhaseChanged(retroId: string, phase: string) {
+  emitPhaseChanged(retroId: string, phase: RetroPhase) {
     this.server
       .to(`retro:${retroId}`)
       .emit('retro:phase-changed', { retroId, phase })
