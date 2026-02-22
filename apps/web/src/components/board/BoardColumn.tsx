@@ -1,7 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useTheme } from '@/contexts/ThemeContext'
-import { TerminalFrame } from '@/components/terminal/TerminalFrame'
 import { BoardCard } from './BoardCard'
 import { AddCardForm } from './AddCardForm'
 import type { Column } from '@/types/api'
@@ -19,6 +18,8 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
   const topLevelCards = column.cards.filter((c) => !c.parentCardId)
   const count = topLevelCards.length
 
+  const lineColor = column.color ?? theme.border
+
   return (
     <div
       style={{
@@ -26,13 +27,41 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
         minWidth: 240,
         display: 'flex',
         flexDirection: 'column',
+        border: `1px solid ${lineColor}40`,
+        borderRadius: 6,
+        position: 'relative',
       }}
     >
-      <TerminalFrame
-        title={`${column.name}${count > 0 ? ` (${count})` : ''}`}
-        color={column.color}
-        right={
-          column.description && (
+      {/* Sticky column header */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 5,
+          background: theme.bg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 14px',
+          borderBottom: `1px solid ${lineColor}40`,
+          borderRadius: '6px 6px 0 0',
+          gap: 12,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            color: column.color ?? theme.textTertiary,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {column.name}
+          {count > 0 ? ` (${count})` : ''}
+        </span>
+        {column.description && (
+          <div style={{ marginLeft: 'auto' }}>
             <span
               style={{
                 fontSize: 11,
@@ -42,37 +71,39 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
             >
               {column.description}
             </span>
-          )
-        }
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable card area */}
+      <div
+        ref={setNodeRef}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '12px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          minHeight: 24,
+        }}
       >
-        <div
-          ref={setNodeRef}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-            minHeight: 24,
-            maxHeight: 'calc(100vh - 280px)',
-            overflowY: 'auto',
-          }}
+        <SortableContext
+          items={topLevelCards.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <SortableContext
-            items={topLevelCards.map((c) => c.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {topLevelCards.map((card) => (
-              <BoardCard
-                key={card.id}
-                card={card}
-                token={token}
-                retroId={retroId}
-                columnColor={column.color}
-              />
-            ))}
-          </SortableContext>
-          <AddCardForm token={token} retroId={retroId} columnId={column.id} />
-        </div>
-      </TerminalFrame>
+          {topLevelCards.map((card) => (
+            <BoardCard
+              key={card.id}
+              card={card}
+              token={token}
+              retroId={retroId}
+              columnColor={column.color}
+            />
+          ))}
+        </SortableContext>
+        <AddCardForm token={token} retroId={retroId} columnId={column.id} />
+      </div>
     </div>
   )
 }
