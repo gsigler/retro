@@ -6,7 +6,7 @@ const webPort = await detect(5173)
 
 console.log(`Starting API on port ${apiPort}, Web on port ${webPort}`)
 
-execSync('docker compose up -d --wait db', { stdio: 'inherit' })
+execSync('docker compose -p retro up -d --wait db', { stdio: 'inherit' })
 execSync('prisma generate --schema apps/api/prisma/schema.prisma', {
   stdio: 'inherit',
 })
