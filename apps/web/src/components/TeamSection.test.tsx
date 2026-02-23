@@ -56,6 +56,7 @@ vi.mock('@/lib/api', () => ({
   joinTeam: vi.fn(),
   addTeamMember: vi.fn(),
   removeTeamMember: vi.fn(),
+  regenerateInviteCode: vi.fn(),
 }))
 
 const api = await import('@/lib/api')
@@ -107,7 +108,7 @@ describe('TeamSection', () => {
     expect(screen.getByText(/retros/i)).toBeDefined()
   })
 
-  it('shows invite code and edit button for owner', async () => {
+  it('shows invite URL, copy, regenerate, and edit button for owner', async () => {
     mockFetchTeams.mockResolvedValue([mockTeamWithCounts])
     mockFetchTeam.mockResolvedValue(mockTeamDetail)
 
@@ -116,10 +117,13 @@ describe('TeamSection', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('abc1234567')).toBeDefined()
+      expect(
+        screen.getByText((content) => content.includes('abc1234567')),
+      ).toBeDefined()
     })
     expect(screen.getByText('[edit]')).toBeDefined()
     expect(screen.getByText(/copy/i)).toBeDefined()
+    expect(screen.getByText('[regenerate]')).toBeDefined()
   })
 
   it('shows add member button and remove buttons for owner', async () => {
@@ -153,7 +157,7 @@ describe('TeamSection', () => {
       expect(screen.getByText('Test Team')).toBeDefined()
     })
     expect(screen.queryByText('[edit]')).toBeNull()
-    expect(screen.queryByText('abc1234567')).toBeNull()
+    expect(screen.queryByText('[regenerate]')).toBeNull()
   })
 
   it('shows member list with names', async () => {

@@ -86,6 +86,15 @@ export class TeamsController {
     return this.teamsService.remove(req.user.id, id)
   }
 
+  @Post(':id/invite/regenerate')
+  async regenerateInviteCode(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ): Promise<TeamResponse> {
+    const team = await this.teamsService.regenerateInviteCode(req.user.id, id)
+    return TeamResponse.from(team)
+  }
+
   @Post(':id/members')
   async addMember(
     @Request() req: { user: { id: string } },

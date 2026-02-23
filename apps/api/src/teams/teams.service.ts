@@ -196,6 +196,16 @@ export class TeamsService {
     })
   }
 
+  async regenerateInviteCode(userId: string, teamId: string) {
+    const team = await this.findTeamOrThrow(teamId)
+    this.assertOwner(userId, team.ownerId)
+
+    return this.prisma.client.team.update({
+      where: { id: teamId },
+      data: { inviteCode: this.nanoid(10) },
+    })
+  }
+
   private async findTeamOrThrow(teamId: string) {
     const team = await this.prisma.client.team.findUnique({
       where: { id: teamId },
