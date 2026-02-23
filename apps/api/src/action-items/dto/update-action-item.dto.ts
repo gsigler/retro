@@ -15,6 +15,7 @@ export class UpdateActionItemDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(2000)
   description?: string
 
   @IsEnum(ActionItemStatus)
