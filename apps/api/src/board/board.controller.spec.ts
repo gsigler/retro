@@ -13,6 +13,7 @@ describe('BoardController', () => {
     emitBoardInitialized: jest.Mock
     emitCardCreated: jest.Mock
     emitCardCreatedToAuthor: jest.Mock
+    emitCardCreatedHidden: jest.Mock
     emitCardMoved: jest.Mock
     emitCardDeleted: jest.Mock
     emitCardVoted: jest.Mock
@@ -66,6 +67,7 @@ describe('BoardController', () => {
       emitBoardInitialized: jest.fn(),
       emitCardCreated: jest.fn(),
       emitCardCreatedToAuthor: jest.fn(),
+      emitCardCreatedHidden: jest.fn(),
       emitCardMoved: jest.fn(),
       emitCardDeleted: jest.fn(),
       emitCardVoted: jest.fn(),
@@ -177,7 +179,7 @@ describe('BoardController', () => {
       expect(boardGateway.emitCardCreated).toHaveBeenCalledWith(retroId, result)
     })
 
-    it('should emit only to author when phase is RETROSPECT', async () => {
+    it('should emit hidden card to others when phase is RETROSPECT', async () => {
       boardService.createCard.mockResolvedValue({
         card: mockCard,
         phase: 'RETROSPECT',
@@ -189,11 +191,31 @@ describe('BoardController', () => {
       })
 
       expect(result).toBeInstanceOf(CardResponse)
-      expect(boardGateway.emitCardCreatedToAuthor).toHaveBeenCalledWith(
+      expect(boardGateway.emitCardCreatedHidden).toHaveBeenCalledWith(
         retroId,
         'user-1',
         result,
+        expect.objectContaining({
+          id: 'card-1',
+          content: '',
+          author: expect.objectContaining({ id: 'anonymous', name: null }),
+        }),
       )
+      expect(boardGateway.emitCardCreated).not.toHaveBeenCalled()
+    })
+
+    it('should emit hidden card to others when phase is ICEBREAKER', async () => {
+      boardService.createCard.mockResolvedValue({
+        card: mockCard,
+        phase: 'ICEBREAKER',
+      })
+
+      await controller.createCard(req, retroId, {
+        columnId: 'column-1',
+        content: 'Test card',
+      })
+
+      expect(boardGateway.emitCardCreatedHidden).toHaveBeenCalled()
       expect(boardGateway.emitCardCreated).not.toHaveBeenCalled()
     })
   })

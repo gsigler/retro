@@ -39,4 +39,20 @@ export class CardResponse {
       (card.children ?? []).map(CardResponse.from),
     )
   }
+
+  static hidden(card: any): CardResponse {
+    return new CardResponse(
+      card.id,
+      card.columnId,
+      card.retroId,
+      '',
+      card.position,
+      card.createdAt,
+      card.updatedAt,
+      new CardAuthorSummary('anonymous', null),
+      0,
+      card.parentCardId ?? null,
+      [],
+    )
+  }
 }

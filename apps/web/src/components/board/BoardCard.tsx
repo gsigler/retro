@@ -30,6 +30,37 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
     isDragging,
   } = useSortable({ id: card.id })
 
+  const isHidden = card.author.id === ANONYMOUS_AUTHOR_ID && card.content === ''
+
+  if (isHidden) {
+    return (
+      <div
+        ref={setNodeRef}
+        data-testid="hidden-card-placeholder"
+        style={{
+          padding: '8px 10px',
+          borderRadius: 2,
+          background: theme.bgSecondary,
+          opacity: 0.4,
+          minHeight: 48,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            color: theme.textTertiary,
+            fontStyle: 'italic',
+          }}
+        >
+          hidden card
+        </span>
+      </div>
+    )
+  }
+
   const isOwnCard = user?.id === card.author.id
   const showAnonymous = !isOwnCard && card.author.id === ANONYMOUS_AUTHOR_ID
 

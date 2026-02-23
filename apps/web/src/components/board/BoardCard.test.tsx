@@ -107,4 +107,19 @@ describe('BoardCard', () => {
       expect(mockDeleteCard).toHaveBeenCalledWith('tok', 'retro-1', 'card-1')
     })
   })
+
+  it('renders a placeholder for hidden cards', () => {
+    const hiddenCard: Card = {
+      ...card,
+      id: 'card-hidden',
+      content: '',
+      author: { id: 'anonymous', name: null },
+    }
+
+    renderWithProviders(hiddenCard)
+
+    expect(screen.getByTestId('hidden-card-placeholder')).toBeDefined()
+    expect(screen.getByText('hidden card')).toBeDefined()
+    expect(screen.queryByLabelText('Delete card')).toBeNull()
+  })
 })

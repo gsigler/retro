@@ -253,6 +253,24 @@ export class BoardGateway implements OnGatewayDisconnect {
     }
   }
 
+  async emitCardCreatedHidden(
+    retroId: string,
+    authorId: string,
+    fullCard: CardResponse,
+    hiddenCard: CardResponse,
+  ) {
+    const room = `retro:${retroId}`
+    const clients = await this.server.in(room).fetchSockets()
+    for (const client of clients) {
+      const socket = client as unknown as AuthenticatedSocket
+      if (socket.data?.userId === authorId) {
+        client.emit('card:created', fullCard)
+      } else {
+        client.emit('card:created', hiddenCard)
+      }
+    }
+  }
+
   emitCardMoved(retroId: string, card: CardResponse) {
     this.server.to(`retro:${retroId}`).emit('card:moved', card)
   }

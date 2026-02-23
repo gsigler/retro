@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js'
 import { RETRO_TEMPLATES } from './templates.js'
 import { CreateCardDto } from './dto/create-card.dto.js'
 import { MoveCardDto } from './dto/move-card.dto.js'
+import { CardResponse } from './dto/card-response.dto.js'
 
 const AUTHOR_SELECT = { id: true, name: true }
 
@@ -34,22 +35,29 @@ export class BoardService {
   async getBoard(userId: string, retroId: string) {
     const retro = await this.assertRetroAccess(userId, retroId)
 
-    const isRevealed =
-      retro.phase === 'GROUP_VOTE' || retro.phase === 'DISCUSS_ACTION'
+    const isHidden =
+      retro.phase === 'ICEBREAKER' || retro.phase === 'RETROSPECT'
 
-    return this.prisma.client.column.findMany({
+    const columns = await this.prisma.client.column.findMany({
       where: { retroId },
       orderBy: { position: 'asc' },
       include: {
         cards: {
-          where: isRevealed
-            ? { parentCardId: null }
-            : { authorId: userId, parentCardId: null },
+          where: { parentCardId: null },
           orderBy: { position: 'asc' },
           include: CARD_INCLUDE,
         },
       },
     })
+
+    if (!isHidden) return columns
+
+    return columns.map((col) => ({
+      ...col,
+      cards: col.cards.map((card: any) =>
+        card.authorId === userId ? card : CardResponse.hidden(card),
+      ),
+    }))
   }
 
   async getAllCards(userId: string, retroId: string) {
