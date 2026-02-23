@@ -8,7 +8,7 @@ import { AppModule } from './app.module.js'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   const configService = app.get(ConfigService)
-  app.setGlobalPrefix('api')
+  app.setGlobalPrefix('api', { exclude: ['/'] })
   app.use(helmet())
   app.use(cookieParser())
   app.enableCors({
