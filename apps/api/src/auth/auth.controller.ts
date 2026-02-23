@@ -1,4 +1,4 @@
-import { Controller, Get, Request, Res, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Request, Res, UseGuards } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { Response } from 'express'
 import { AuthService } from './auth.service.js'
@@ -32,19 +32,39 @@ export class AuthController {
     },
     @Res() res: Response,
   ) {
-    const { accessToken } = await this.authService.findOrCreateGoogleUser(
-      req.user,
-    )
+    const { accessToken, expiresInMs } =
+      await this.authService.findOrCreateGoogleUser(req.user)
     const appUrl = this.configService.get<string>(
       'APP_URL',
       'http://localhost:5173',
     )
-    res.redirect(`${appUrl}/auth/callback?token=${accessToken}`)
+    const isProduction = this.configService.get('NODE_ENV') === 'production'
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: expiresInMs,
+    })
+
+    res.redirect(`${appUrl}/auth/callback`)
   }
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Request() req: { user: { id: string; email: string } }) {
     return this.authService.getProfile(req.user.id)
+  }
+
+  @Post('logout')
+  logout(@Res() res: Response) {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: this.configService.get('NODE_ENV') === 'production',
+      sameSite: 'lax',
+      path: '/',
+    })
+    res.json({ message: 'Logged out' })
   }
 }

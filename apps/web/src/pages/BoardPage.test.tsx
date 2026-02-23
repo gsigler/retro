@@ -5,7 +5,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import BoardPage from './BoardPage'
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ token: 'test-token', user: { id: 'user-1' } }),
+  useAuth: () => ({
+    user: { id: 'user-1' },
+    isLoading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
 }))
 
 vi.mock('@/lib/socket', () => ({

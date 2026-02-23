@@ -39,7 +39,7 @@ import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 
 export default function BoardPage() {
   const { retroId } = useParams<{ retroId: string }>()
-  const { token, user } = useAuth()
+  const { user } = useAuth()
   const { theme } = useTheme()
 
   const {
@@ -48,20 +48,19 @@ export default function BoardPage() {
     error,
   } = useQuery({
     queryKey: ['board', retroId],
-    queryFn: () => fetchBoard(token!, retroId!),
-    enabled: !!token && !!retroId,
+    queryFn: () => fetchBoard(retroId!),
+    enabled: !!retroId,
   })
 
   const { data: retro } = useQuery({
     queryKey: ['retro', retroId],
-    queryFn: () => fetchRetro(token!, retroId!),
-    enabled: !!token && !!retroId,
+    queryFn: () => fetchRetro(retroId!),
+    enabled: !!retroId,
   })
 
   const { data: teams } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => fetchTeams(token!),
-    enabled: !!token,
+    queryFn: () => fetchTeams(),
   })
 
   const teamName = teams?.find((t) => t.id === retro?.teamId)?.name
@@ -167,12 +166,11 @@ export default function BoardPage() {
     )
   }
 
-  if (!token || !retroId) return null
+  if (!retroId) return null
 
   return (
     <div className="fade-in">
       <BoardProvider
-        token={token}
         retroId={retroId}
         userId={user!.id}
         userName={user!.name ?? undefined}
@@ -180,7 +178,6 @@ export default function BoardPage() {
         initialPhase={retro?.phase}
       >
         <BoardContent
-          token={token}
           retroId={retroId}
           teamName={teamName}
           retroName={retro?.name}
@@ -192,13 +189,11 @@ export default function BoardPage() {
 }
 
 function BoardContent({
-  token,
   retroId,
   teamName,
   retroName,
   retroCreatedById,
 }: {
-  token: string
   retroId: string
   teamName?: string
   retroName?: string
@@ -235,7 +230,7 @@ function BoardContent({
 
   const { data: userVotes } = useQuery<UserVotes>({
     queryKey: ['user-votes', retroId],
-    queryFn: () => fetchUserVotes(token, retroId),
+    queryFn: () => fetchUserVotes(retroId),
     enabled: state.phase === 'GROUP_VOTE',
   })
 
@@ -309,7 +304,7 @@ function BoardContent({
     setActiveCard(null)
 
     try {
-      await moveCard(token, retroId, cardId, {
+      await moveCard(retroId, cardId, {
         columnId: targetColumnId,
         position: targetPosition,
       })
@@ -363,7 +358,7 @@ function BoardContent({
         onPhaseChange={async (phase) => {
           dispatch({ type: 'PHASE_CHANGED', phase })
           try {
-            await updateRetroPhase(token, retroId, phase)
+            await updateRetroPhase(retroId, phase)
           } catch {
             // Server broadcast will reconcile
           }
@@ -475,7 +470,6 @@ function BoardContent({
                 <BoardColumn
                   key={column.id}
                   column={column}
-                  token={token}
                   retroId={retroId}
                 />
               ))}
@@ -576,7 +570,7 @@ function BoardContent({
               borderTop: `1px solid ${theme.border}40`,
             }}
           >
-            <ActionItemsPanel token={token} retroId={retroId} />
+            <ActionItemsPanel retroId={retroId} />
           </div>
         )}
       </div>

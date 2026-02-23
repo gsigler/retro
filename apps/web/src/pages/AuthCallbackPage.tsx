@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { BlinkingCursor } from '@/components/board/TypingEffect'
@@ -9,23 +9,13 @@ import { consumePendingInvite } from '@/pages/JoinPage'
 type Status = 'loading' | 'error'
 
 export default function AuthCallbackPage() {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { login } = useAuth()
   const { theme } = useTheme()
   const [status, setStatus] = useState<Status>('loading')
 
   useEffect(() => {
-    const token = searchParams.get('token')
-
-    if (!token) {
-      setStatus('error')
-      return
-    }
-
-    window.history.replaceState({}, '', window.location.pathname)
-
-    login(token)
+    login()
       .then(() => {
         const pendingCode = consumePendingInvite()
         if (pendingCode) {
@@ -37,7 +27,7 @@ export default function AuthCallbackPage() {
         }
       })
       .catch(() => setStatus('error'))
-  }, [searchParams, login, navigate])
+  }, [login, navigate])
 
   if (status === 'error') {
     return (

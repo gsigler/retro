@@ -28,7 +28,6 @@ function renderWithProviders() {
   return render(
     <QueryClientProvider client={queryClient}>
       <BoardProvider
-        token="tok"
         retroId="retro-1"
         userId="user-1"
         userName="Test User"
@@ -48,7 +47,7 @@ function renderWithProviders() {
           ],
         }}
       >
-        <AddCardForm token="tok" retroId="retro-1" columnId="col-1" />
+        <AddCardForm retroId="retro-1" columnId="col-1" />
       </BoardProvider>
     </QueryClientProvider>,
   )
@@ -96,7 +95,7 @@ describe('AddCardForm', () => {
       'My new card{Enter}',
     )
 
-    expect(mockCreateCard).toHaveBeenCalledWith('tok', 'retro-1', {
+    expect(mockCreateCard).toHaveBeenCalledWith('retro-1', {
       columnId: 'col-1',
       content: 'My new card',
     })

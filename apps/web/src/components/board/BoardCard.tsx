@@ -12,11 +12,10 @@ import { ANONYMOUS_AUTHOR_ID } from '@/types/api'
 
 interface BoardCardProps {
   card: Card
-  token: string
   retroId: string
 }
 
-export function BoardCard({ card, token, retroId }: BoardCardProps) {
+export function BoardCard({ card, retroId }: BoardCardProps) {
   const { theme } = useTheme()
   const { user } = useAuth()
   const { state, dispatch, mergeSelection } = useBoardContext()
@@ -57,7 +56,7 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
     (card.children ?? []).reduce((sum, c) => sum + (c.voteCount ?? 0), 0)
 
   const voteMutation = useMutation({
-    mutationFn: () => voteCard(token, retroId, card.id),
+    mutationFn: () => voteCard(retroId, card.id),
     onMutate: () => {
       dispatch({ type: 'LOCAL_VOTE', cardId: card.id })
     },
@@ -67,7 +66,7 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
   })
 
   const unvoteMutation = useMutation({
-    mutationFn: () => unvoteCard(token, retroId, card.id),
+    mutationFn: () => unvoteCard(retroId, card.id),
     onMutate: () => {
       dispatch({ type: 'LOCAL_UNVOTE', cardId: card.id })
     },
@@ -77,7 +76,7 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
   })
 
   const unmergeMutation = useMutation({
-    mutationFn: () => unmergeCard(token, retroId, card.id),
+    mutationFn: () => unmergeCard(retroId, card.id),
   })
 
   if (isHidden) {
@@ -124,7 +123,7 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
   async function handleDelete() {
     try {
       dispatch({ type: 'CARD_DELETED', id: card.id })
-      await deleteCard(token, retroId, card.id)
+      await deleteCard(retroId, card.id)
     } catch {
       // Socket broadcast will reconcile
     }

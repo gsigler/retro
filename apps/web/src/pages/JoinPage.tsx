@@ -23,7 +23,7 @@ type Status = 'loading' | 'joining' | 'error' | 'redirect'
 export default function JoinPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { token } = useAuth()
+  const { user } = useAuth()
   const { theme } = useTheme()
   const [status, setStatus] = useState<Status>('loading')
   const [errorMsg, setErrorMsg] = useState('Something went wrong')
@@ -37,7 +37,7 @@ export default function JoinPage() {
       return
     }
 
-    if (!token) {
+    if (!user) {
       setPendingInvite(code)
       setStatus('redirect')
       navigate('/login', { replace: true })
@@ -45,13 +45,13 @@ export default function JoinPage() {
     }
 
     setStatus('joining')
-    joinTeam(token, code)
+    joinTeam(code)
       .then(() => navigate('/dashboard', { replace: true }))
       .catch(() => {
         setErrorMsg('Invalid or expired invite link')
         setStatus('error')
       })
-  }, [code, token, navigate])
+  }, [code, user, navigate])
 
   if (status === 'error') {
     return (

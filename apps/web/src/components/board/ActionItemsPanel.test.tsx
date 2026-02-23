@@ -35,7 +35,6 @@ function renderPanel() {
   return render(
     <QueryClientProvider client={queryClient}>
       <BoardProvider
-        token="tok"
         retroId="retro-1"
         userId="user-1"
         userName="Test User"
@@ -44,7 +43,7 @@ function renderPanel() {
           columns: [],
         }}
       >
-        <ActionItemsPanel token="tok" retroId="retro-1" />
+        <ActionItemsPanel retroId="retro-1" />
       </BoardProvider>
     </QueryClientProvider>,
   )
@@ -119,7 +118,7 @@ describe('ActionItemsPanel', () => {
     )
 
     await waitFor(() => {
-      expect(mockCreateActionItem).toHaveBeenCalledWith('tok', 'retro-1', {
+      expect(mockCreateActionItem).toHaveBeenCalledWith('retro-1', {
         title: 'New task',
         assigneeId: undefined,
         dueDate: undefined,

@@ -21,6 +21,7 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const { headers, ...rest } = options ?? {}
   const res = await fetch(`${API_URL}${path}`, {
     ...rest,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...headers,
@@ -34,156 +35,115 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-function authHeaders(token: string): HeadersInit {
-  return { Authorization: `Bearer ${token}` }
-}
-
 // Dashboard
 
-export function fetchDashboardSummary(token: string) {
-  return api<DashboardSummary>('/dashboard/summary', {
-    headers: authHeaders(token),
-  })
+export function fetchDashboardSummary() {
+  return api<DashboardSummary>('/dashboard/summary')
 }
 
 // Teams
 
-export function fetchTeams(token: string) {
-  return api<TeamWithCounts[]>('/teams', {
-    headers: authHeaders(token),
-  })
+export function fetchTeams() {
+  return api<TeamWithCounts[]>('/teams')
 }
 
-export function fetchTeam(token: string, id: string) {
-  return api<TeamDetail>(`/teams/${id}`, {
-    headers: authHeaders(token),
-  })
+export function fetchTeam(id: string) {
+  return api<TeamDetail>(`/teams/${id}`)
 }
 
-export function createTeam(
-  token: string,
-  data: { name: string; description?: string },
-) {
+export function createTeam(data: { name: string; description?: string }) {
   return api<Team>('/teams', {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
 export function updateTeam(
-  token: string,
   id: string,
   data: { name?: string; description?: string },
 ) {
   return api<Team>(`/teams/${id}`, {
     method: 'PATCH',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
-export function joinTeam(token: string, inviteCode: string) {
+export function joinTeam(inviteCode: string) {
   return api<TeamMember>('/teams/join', {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify({ inviteCode }),
   })
 }
 
-export function regenerateInviteCode(token: string, teamId: string) {
+export function regenerateInviteCode(teamId: string) {
   return api<Team>(`/teams/${teamId}/invite/regenerate`, {
     method: 'POST',
-    headers: authHeaders(token),
   })
 }
 
-export function addTeamMember(token: string, teamId: string, email: string) {
+export function addTeamMember(teamId: string, email: string) {
   return api<TeamMember>(`/teams/${teamId}/members`, {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify({ email }),
   })
 }
 
-export function removeTeamMember(
-  token: string,
-  teamId: string,
-  userId: string,
-) {
+export function removeTeamMember(teamId: string, userId: string) {
   return api<void>(`/teams/${teamId}/members/${userId}`, {
     method: 'DELETE',
-    headers: authHeaders(token),
   })
 }
 
 // Retros
 
-export function fetchRetros(token: string, teamId: string) {
-  return api<RetroWithCounts[]>(`/teams/${teamId}/retros`, {
-    headers: authHeaders(token),
-  })
+export function fetchRetros(teamId: string) {
+  return api<RetroWithCounts[]>(`/teams/${teamId}/retros`)
 }
 
-export function fetchRetro(token: string, id: string) {
-  return api<RetroWithCounts>(`/retros/${id}`, {
-    headers: authHeaders(token),
-  })
+export function fetchRetro(id: string) {
+  return api<RetroWithCounts>(`/retros/${id}`)
 }
 
 export function createRetro(
-  token: string,
   teamId: string,
   data: { name: string; date: string; status?: string; templateId?: string },
 ) {
   return api<RetroWithCounts>(`/teams/${teamId}/retros`, {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
 export function updateRetro(
-  token: string,
   id: string,
   data: { name?: string; date?: string; status?: string },
 ) {
   return api<RetroWithCounts>(`/retros/${id}`, {
     method: 'PATCH',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
-export function updateRetroPhase(
-  token: string,
-  retroId: string,
-  phase: RetroPhase,
-) {
+export function updateRetroPhase(retroId: string, phase: RetroPhase) {
   return api<RetroWithCounts>(`/retros/${retroId}/phase`, {
     method: 'PATCH',
-    headers: authHeaders(token),
     body: JSON.stringify({ phase }),
   })
 }
 
-export function deleteRetro(token: string, id: string) {
+export function deleteRetro(id: string) {
   return api<void>(`/retros/${id}`, {
     method: 'DELETE',
-    headers: authHeaders(token),
   })
 }
 
 // Action Items
 
-export function fetchActionItems(token: string, retroId: string) {
-  return api<ActionItem[]>(`/retros/${retroId}/action-items`, {
-    headers: authHeaders(token),
-  })
+export function fetchActionItems(retroId: string) {
+  return api<ActionItem[]>(`/retros/${retroId}/action-items`)
 }
 
 export function createActionItem(
-  token: string,
   retroId: string,
   data: {
     title: string
@@ -194,13 +154,11 @@ export function createActionItem(
 ) {
   return api<ActionItem>(`/retros/${retroId}/action-items`, {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
 export function updateActionItem(
-  token: string,
   id: string,
   data: {
     title?: string
@@ -212,126 +170,100 @@ export function updateActionItem(
 ) {
   return api<ActionItem>(`/action-items/${id}`, {
     method: 'PATCH',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
-export function reorderActionItems(
-  token: string,
-  retroId: string,
-  orderedIds: string[],
-) {
+export function reorderActionItems(retroId: string, orderedIds: string[]) {
   return api<ActionItem[]>(`/retros/${retroId}/action-items/reorder`, {
     method: 'PATCH',
-    headers: authHeaders(token),
     body: JSON.stringify({ orderedIds }),
   })
 }
 
-export function fetchRetroMembers(token: string, retroId: string) {
-  return api<ActionItemUserSummary[]>(`/retros/${retroId}/members`, {
-    headers: authHeaders(token),
-  })
+export function fetchRetroMembers(retroId: string) {
+  return api<ActionItemUserSummary[]>(`/retros/${retroId}/members`)
 }
 
-export function deleteActionItem(token: string, id: string) {
+export function deleteActionItem(id: string) {
   return api<void>(`/action-items/${id}`, {
     method: 'DELETE',
-    headers: authHeaders(token),
   })
 }
 
 // Board
 
-export function fetchTemplates(token: string) {
-  return api<RetroTemplate[]>('/board/templates', {
-    headers: authHeaders(token),
-  })
+export function fetchTemplates() {
+  return api<RetroTemplate[]>('/board/templates')
 }
 
-export function fetchBoard(token: string, retroId: string) {
-  return api<Board>(`/retros/${retroId}/board`, {
-    headers: authHeaders(token),
-  })
+export function fetchBoard(retroId: string) {
+  return api<Board>(`/retros/${retroId}/board`)
 }
 
-export function initBoard(token: string, retroId: string, templateId: string) {
+export function initBoard(retroId: string, templateId: string) {
   return api<Board>(`/retros/${retroId}/board/init`, {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify({ templateId }),
   })
 }
 
 export function createCard(
-  token: string,
   retroId: string,
   data: { columnId: string; content: string },
 ) {
   return api<Card>(`/retros/${retroId}/board/cards`, {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
 export function moveCard(
-  token: string,
   retroId: string,
   cardId: string,
   data: { columnId: string; position: number },
 ) {
   return api<Card>(`/retros/${retroId}/board/cards/${cardId}/move`, {
     method: 'PATCH',
-    headers: authHeaders(token),
     body: JSON.stringify(data),
   })
 }
 
-export function deleteCard(token: string, retroId: string, cardId: string) {
+export function deleteCard(retroId: string, cardId: string) {
   return api<void>(`/retros/${retroId}/board/cards/${cardId}`, {
     method: 'DELETE',
-    headers: authHeaders(token),
   })
 }
 
-export function voteCard(token: string, retroId: string, cardId: string) {
+export function voteCard(retroId: string, cardId: string) {
   return api<VoteResult>(`/retros/${retroId}/board/cards/${cardId}/vote`, {
     method: 'POST',
-    headers: authHeaders(token),
   })
 }
 
-export function unvoteCard(token: string, retroId: string, cardId: string) {
+export function unvoteCard(retroId: string, cardId: string) {
   return api<VoteResult>(`/retros/${retroId}/board/cards/${cardId}/vote`, {
     method: 'DELETE',
-    headers: authHeaders(token),
   })
 }
 
-export function fetchUserVotes(token: string, retroId: string) {
-  return api<UserVotes>(`/retros/${retroId}/board/votes`, {
-    headers: authHeaders(token),
-  })
+export function fetchUserVotes(retroId: string) {
+  return api<UserVotes>(`/retros/${retroId}/board/votes`)
 }
 
 export function mergeCards(
-  token: string,
   retroId: string,
   parentCardId: string,
   childCardIds: string[],
 ) {
   return api<Card>(`/retros/${retroId}/board/cards/merge`, {
     method: 'POST',
-    headers: authHeaders(token),
     body: JSON.stringify({ parentCardId, childCardIds }),
   })
 }
 
-export function unmergeCard(token: string, retroId: string, cardId: string) {
+export function unmergeCard(retroId: string, cardId: string) {
   return api<Card>(`/retros/${retroId}/board/cards/${cardId}/unmerge`, {
     method: 'POST',
-    headers: authHeaders(token),
   })
 }

@@ -17,7 +17,8 @@ vi.mock('@/lib/socket', () => ({
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'user-1', email: 'test@test.com', name: 'Test User' },
-    token: 'tok',
+    isLoading: false,
+    login: vi.fn(),
     logout: vi.fn(),
   }),
 }))
@@ -30,7 +31,6 @@ function Wrapper({ children }: { children: React.ReactNode }) {
     <MemoryRouter>
       <QueryClientProvider client={queryClient}>
         <BoardProvider
-          token="tok"
           retroId="retro-1"
           userId="user-1"
           userName="Test User"

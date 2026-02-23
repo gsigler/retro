@@ -7,11 +7,10 @@ import type { Column } from '@/types/api'
 
 interface BoardColumnProps {
   column: Column
-  token: string
   retroId: string
 }
 
-export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
+export function BoardColumn({ column, retroId }: BoardColumnProps) {
   const { theme } = useTheme()
   const { setNodeRef } = useDroppable({ id: column.id })
 
@@ -93,15 +92,10 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
           strategy={verticalListSortingStrategy}
         >
           {topLevelCards.map((card) => (
-            <BoardCard
-              key={card.id}
-              card={card}
-              token={token}
-              retroId={retroId}
-            />
+            <BoardCard key={card.id} card={card} retroId={retroId} />
           ))}
         </SortableContext>
-        <AddCardForm token={token} retroId={retroId} columnId={column.id} />
+        <AddCardForm retroId={retroId} columnId={column.id} />
       </div>
     </div>
   )

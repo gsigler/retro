@@ -18,7 +18,9 @@ vi.mock('@/lib/socket', () => ({
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'user-1', email: 'alice@test.com', name: 'Alice' },
-    token: 'tok',
+    isLoading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
   }),
 }))
 
@@ -55,7 +57,6 @@ function renderWithProviders(col: Column) {
   return render(
     <QueryClientProvider client={queryClient}>
       <BoardProvider
-        token="tok"
         retroId="retro-1"
         userId="user-1"
         userName="Test User"
@@ -63,7 +64,7 @@ function renderWithProviders(col: Column) {
         initialPhase="RETROSPECT"
       >
         <DndContext>
-          <BoardColumn column={col} token="tok" retroId="retro-1" />
+          <BoardColumn column={col} retroId="retro-1" />
         </DndContext>
       </BoardProvider>
     </QueryClientProvider>,

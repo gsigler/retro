@@ -14,7 +14,7 @@ import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 import { fetchDashboardSummary, fetchTeams } from '@/lib/api'
 
 export default function DashboardPage() {
-  const { user, token, logout } = useAuth()
+  const { user, logout } = useAuth()
   const { theme } = useTheme()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -22,8 +22,7 @@ export default function DashboardPage() {
 
   const { data: teams, isLoading: isLoadingTeams } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => fetchTeams(token!),
-    enabled: !!token,
+    queryFn: () => fetchTeams(),
     refetchInterval: 10_000,
   })
 
@@ -35,8 +34,7 @@ export default function DashboardPage() {
     error,
   } = useQuery({
     queryKey: ['dashboard-summary'],
-    queryFn: () => fetchDashboardSummary(token!),
-    enabled: !!token,
+    queryFn: () => fetchDashboardSummary(),
     refetchInterval: 10_000,
   })
 
@@ -46,8 +44,8 @@ export default function DashboardPage() {
     queryClient.invalidateQueries({ queryKey: ['retros'] })
   }
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout()
     navigate('/')
   }
 
@@ -138,20 +136,15 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {!isLoading && token && user && (
+        {!isLoading && user && (
           <div className="fade-in">
-            <RetrosSection
-              token={token}
-              userId={user.id}
-              onMutation={handleMutation}
-            />
+            <RetrosSection userId={user.id} onMutation={handleMutation} />
           </div>
         )}
 
-        {!isLoading && token && summary && (
+        {!isLoading && summary && (
           <div className="fade-in">
             <ActionItemsSection
-              token={token}
               items={summary.recentActionItems}
               onMutation={handleMutation}
             />
@@ -159,7 +152,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {token && user && (
+      {user && (
         <TerminalDialog
           open={showTeamPanel || hasNoTeams}
           onClose={() => setShowTeamPanel(false)}
@@ -168,11 +161,7 @@ export default function DashboardPage() {
           }
           dismissable={!hasNoTeams}
         >
-          <TeamSection
-            token={token}
-            userId={user.id}
-            onMutation={handleMutation}
-          />
+          <TeamSection userId={user.id} onMutation={handleMutation} />
         </TerminalDialog>
       )}
 

@@ -334,7 +334,6 @@ export function useBoardContext() {
 }
 
 interface BoardProviderProps {
-  token: string
   retroId: string
   userId: string
   userName?: string
@@ -344,7 +343,6 @@ interface BoardProviderProps {
 }
 
 export function BoardProvider({
-  token,
   retroId,
   userId,
   userName,
@@ -389,13 +387,13 @@ export function BoardProvider({
     if (selectedForMerge.length < 2) return
     const [parentId, ...childIds] = selectedForMerge
     try {
-      await mergeCardsApi(token, retroId, parentId, childIds)
+      await mergeCardsApi(retroId, parentId, childIds)
       // Let the WebSocket broadcast handle the state update
       setSelectedForMerge([])
     } catch (err) {
       console.error('Merge failed:', err)
     }
-  }, [selectedForMerge, token, retroId])
+  }, [selectedForMerge, retroId])
 
   const mergeSelection = useMemo<MergeSelection>(
     () => ({
@@ -414,7 +412,7 @@ export function BoardProvider({
   }, [initialBoard])
 
   useEffect(() => {
-    const socket = createBoardSocket(token)
+    const socket = createBoardSocket()
     socketRef.current = socket
 
     socket.on('connect', () => {
@@ -512,7 +510,7 @@ export function BoardProvider({
       socket.disconnect()
       socketRef.current = null
     }
-  }, [token, retroId])
+  }, [retroId])
 
   const value = useMemo(
     () => ({ state, dispatch, socketRef, mergeSelection }),

@@ -19,12 +19,11 @@ import {
 } from '@/lib/api'
 
 interface TeamSectionProps {
-  token: string
   userId: string
   onMutation: () => void
 }
 
-export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
+export function TeamSection({ userId, onMutation }: TeamSectionProps) {
   const { theme } = useTheme()
   const queryClient = useQueryClient()
 
@@ -40,14 +39,14 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
 
   const { data: teams, isLoading: isLoadingTeams } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => fetchTeams(token),
+    queryFn: () => fetchTeams(),
   })
 
   const primaryTeam = teams?.[0]
 
   const { data: teamDetail } = useQuery({
     queryKey: ['team-detail', primaryTeam?.id],
-    queryFn: () => fetchTeam(token, primaryTeam!.id),
+    queryFn: () => fetchTeam(primaryTeam!.id),
     enabled: !!primaryTeam,
   })
 
@@ -63,13 +62,13 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
     name: string
     description?: string
   }) {
-    await createTeam(token, data)
+    await createTeam(data)
     await refresh()
   }
 
   async function handleEditTeam(data: { name: string; description?: string }) {
     if (!teamDetail) return
-    await updateTeam(token, teamDetail.id, data)
+    await updateTeam(teamDetail.id, data)
     await refresh()
   }
 
@@ -79,7 +78,7 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
     setIsJoining(true)
     setJoinError(null)
     try {
-      await joinTeam(token, inviteCode.trim())
+      await joinTeam(inviteCode.trim())
       setInviteCode('')
       await refresh()
     } catch {
@@ -91,13 +90,13 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
 
   async function handleAddMember(email: string) {
     if (!teamDetail) return
-    await addTeamMember(token, teamDetail.id, email)
+    await addTeamMember(teamDetail.id, email)
     await refresh()
   }
 
   async function handleRemoveMember(memberUserId: string) {
     if (!teamDetail) return
-    await removeTeamMember(token, teamDetail.id, memberUserId)
+    await removeTeamMember(teamDetail.id, memberUserId)
     await refresh()
   }
 
@@ -113,7 +112,7 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
     if (!teamDetail) return
     setIsRegenerating(true)
     try {
-      await regenerateInviteCode(token, teamDetail.id)
+      await regenerateInviteCode(teamDetail.id)
       await refresh()
     } finally {
       setIsRegenerating(false)

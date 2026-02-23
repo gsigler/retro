@@ -22,7 +22,13 @@ describe('AuthController', () => {
         { provide: AuthService, useValue: authService },
         {
           provide: ConfigService,
-          useValue: { get: jest.fn().mockReturnValue('http://localhost:5173') },
+          useValue: {
+            get: jest.fn().mockImplementation((key: string) => {
+              if (key === 'APP_URL') return 'http://localhost:5173'
+              if (key === 'NODE_ENV') return 'test'
+              return undefined
+            }),
+          },
         },
       ],
     }).compile()
@@ -37,11 +43,12 @@ describe('AuthController', () => {
   })
 
   describe('googleCallback', () => {
-    it('should create user and redirect with token', async () => {
+    it('should create user and set cookie then redirect', async () => {
       authService.findOrCreateGoogleUser.mockResolvedValue({
         accessToken: 'jwt-token',
+        expiresInMs: 86400000,
       })
-      const res = { redirect: jest.fn() }
+      const res = { cookie: jest.fn(), redirect: jest.fn() }
 
       await controller.googleCallback(
         {
@@ -59,8 +66,15 @@ describe('AuthController', () => {
         email: 'test@example.com',
         name: 'Test User',
       })
+      expect(res.cookie).toHaveBeenCalledWith('access_token', 'jwt-token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 86400000,
+      })
       expect(res.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth/callback?token=jwt-token',
+        'http://localhost:5173/auth/callback',
       )
     })
   })
@@ -82,6 +96,22 @@ describe('AuthController', () => {
 
       expect(authService.getProfile).toHaveBeenCalledWith('user-1')
       expect(result).toEqual(mockUser)
+    })
+  })
+
+  describe('logout', () => {
+    it('should clear the access_token cookie', () => {
+      const res = { clearCookie: jest.fn(), json: jest.fn() }
+
+      controller.logout(res as any)
+
+      expect(res.clearCookie).toHaveBeenCalledWith('access_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+      })
+      expect(res.json).toHaveBeenCalledWith({ message: 'Logged out' })
     })
   })
 })

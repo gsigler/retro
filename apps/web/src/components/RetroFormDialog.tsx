@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { fetchTemplates } from '@/lib/api'
 import { TerminalDialog } from '@/components/terminal/TerminalDialog'
@@ -27,7 +26,6 @@ export function RetroFormDialog({
   initialValues,
   mode,
 }: RetroFormDialogProps) {
-  const { token } = useAuth()
   const { theme } = useTheme()
   const [name, setName] = useState(initialValues?.name ?? '')
   const [date, setDate] = useState(initialValues?.date ?? '')
@@ -37,8 +35,8 @@ export function RetroFormDialog({
 
   const { data: templates } = useQuery({
     queryKey: ['board-templates'],
-    queryFn: () => fetchTemplates(token!),
-    enabled: !!token && mode === 'create',
+    queryFn: () => fetchTemplates(),
+    enabled: mode === 'create',
   })
 
   const templateOptions =

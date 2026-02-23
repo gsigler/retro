@@ -29,6 +29,7 @@ interface AuthenticatedSocket extends Socket {
   namespace: '/board',
   cors: {
     origin: process.env.APP_URL ?? 'http://localhost:5173',
+    credentials: true,
   },
 })
 export class BoardGateway implements OnGatewayDisconnect {
@@ -41,10 +42,24 @@ export class BoardGateway implements OnGatewayDisconnect {
     private readonly timerService: TimerService,
   ) {}
 
+  private parseCookies(cookieHeader?: string): Record<string, string> {
+    if (!cookieHeader) return {}
+    const cookies: Record<string, string> = {}
+    for (const pair of cookieHeader.split(';')) {
+      const [name, ...rest] = pair.trim().split('=')
+      if (name) cookies[name] = rest.join('=')
+    }
+    return cookies
+  }
+
   afterInit(server: Server) {
     server.use(async (socket: AuthenticatedSocket, next) => {
       try {
+        const cookies = this.parseCookies(
+          socket.handshake.headers?.cookie as string | undefined,
+        )
         const token =
+          cookies['access_token'] ||
           socket.handshake.auth?.token ||
           socket.handshake.headers?.authorization?.replace('Bearer ', '')
 
