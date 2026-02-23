@@ -59,9 +59,10 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res() res: Response) {
+    const isProduction = this.configService.get('NODE_ENV') === 'production'
     res.clearCookie('access_token', {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
+      secure: isProduction,
       sameSite: 'lax',
       path: '/',
     })

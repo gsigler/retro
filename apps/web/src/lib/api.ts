@@ -15,7 +15,7 @@ import type {
   VoteResult,
 } from '../types/api'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL ?? '/api'
 
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const { headers, ...rest } = options ?? {}

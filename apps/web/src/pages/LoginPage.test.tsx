@@ -41,7 +41,7 @@ describe('LoginPage', () => {
       ).toBeDefined()
     })
     const link = screen.getByRole('link', { name: /sign in with google/i })
-    expect(link.getAttribute('href')).toBe('http://localhost:3000/auth/google')
+    expect(link.getAttribute('href')).toBe('/api/auth/google')
   })
 
   it('has a link back to home', async () => {
