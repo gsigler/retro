@@ -18,7 +18,7 @@ export function IceBreaker({ retroId, isFacilitator }: IceBreakerProps) {
 
   return (
     <TerminalFrame
-      title="$ icebreaker --random"
+      title="icebreaker"
       color={theme.purple}
       right={
         isFacilitator ? (
@@ -40,15 +40,6 @@ export function IceBreaker({ retroId, isFacilitator }: IceBreakerProps) {
       >
         <span style={{ color: theme.purple, marginRight: 8 }}>?</span>
         {question}
-      </p>
-      <p
-        style={{
-          fontSize: 11,
-          color: theme.textTertiary,
-          marginTop: 8,
-        }}
-      >
-        Discuss this with your team before moving to the next phase.
       </p>
     </TerminalFrame>
   )

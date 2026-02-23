@@ -19,11 +19,14 @@ vi.mock('@/lib/socket', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchBoard: vi.fn(),
+  fetchRetro: vi.fn(),
+  fetchTeams: vi.fn().mockResolvedValue([]),
   fetchActionItems: vi.fn(),
 }))
 
 const api = await import('@/lib/api')
 const mockFetchBoard = api.fetchBoard as ReturnType<typeof vi.fn>
+const mockFetchRetro = api.fetchRetro as ReturnType<typeof vi.fn>
 
 function renderWithProviders() {
   const queryClient = new QueryClient({
@@ -63,6 +66,12 @@ describe('BoardPage', () => {
   })
 
   it('shows board columns when board is initialized', async () => {
+    mockFetchRetro.mockResolvedValue({
+      id: 'retro-1',
+      name: 'Test Retro',
+      phase: 'RETROSPECT',
+      createdBy: { id: 'user-1' },
+    })
     mockFetchBoard.mockResolvedValue({
       retroId: 'retro-1',
       columns: [

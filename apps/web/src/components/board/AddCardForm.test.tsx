@@ -30,6 +30,8 @@ function renderWithProviders() {
       <BoardProvider
         token="tok"
         retroId="retro-1"
+        userId="user-1"
+        userName="Test User"
         initialPhase="RETROSPECT"
         initialBoard={{
           retroId: 'retro-1',

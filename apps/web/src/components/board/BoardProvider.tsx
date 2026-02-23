@@ -325,6 +325,8 @@ export function useBoardContext() {
 interface BoardProviderProps {
   token: string
   retroId: string
+  userId: string
+  userName?: string
   initialBoard: Board | null
   initialPhase?: RetroPhase
   children: ReactNode
@@ -333,13 +335,15 @@ interface BoardProviderProps {
 export function BoardProvider({
   token,
   retroId,
+  userId,
+  userName,
   initialBoard,
   initialPhase,
   children,
 }: BoardProviderProps) {
   const [state, dispatch] = useReducer(boardReducer, {
     columns: initialBoard?.columns ?? [],
-    activeUsers: [],
+    activeUsers: [{ userId, userName }],
     initialized: (initialBoard?.columns.length ?? 0) > 0,
     phase: initialPhase ?? 'ICEBREAKER',
     votedCardIds: [],

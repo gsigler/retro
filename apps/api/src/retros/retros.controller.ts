@@ -86,7 +86,7 @@ export class RetrosController {
 
     if (dto.phase === 'GROUP_VOTE') {
       const columns = await this.boardService.getAllCards(req.user.id, id)
-      const boardResponse = BoardResponse.fromAnonymous(id, columns)
+      const boardResponse = BoardResponse.from(id, columns)
       this.boardGateway.emitBoardRevealed(id, boardResponse.columns)
     }
 

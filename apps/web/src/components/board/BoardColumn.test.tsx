@@ -57,6 +57,8 @@ function renderWithProviders(col: Column) {
       <BoardProvider
         token="tok"
         retroId="retro-1"
+        userId="user-1"
+        userName="Test User"
         initialBoard={{ retroId: 'retro-1', columns: [col] }}
         initialPhase="RETROSPECT"
       >
