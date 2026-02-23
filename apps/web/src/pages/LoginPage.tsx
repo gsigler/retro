@@ -6,7 +6,7 @@ import { AsciiLogo } from '@/components/AsciiLogo'
 
 export default function LoginPage() {
   const { theme } = useTheme()
-  const apiUrl = import.meta.env.VITE_API_URL ?? '/api'
+  const apiUrl = import.meta.env.VITE_API_URL || '/api'
 
   return (
     <div
