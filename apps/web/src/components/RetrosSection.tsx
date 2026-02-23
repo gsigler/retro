@@ -45,6 +45,7 @@ export function RetrosSection({
     queryKey: ['retros', team?.id],
     queryFn: () => fetchRetros(token, team!.id),
     enabled: !!team,
+    refetchInterval: 10_000,
   })
 
   async function refresh() {

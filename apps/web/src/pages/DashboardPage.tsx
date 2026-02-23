@@ -24,6 +24,7 @@ export default function DashboardPage() {
     queryKey: ['teams'],
     queryFn: () => fetchTeams(token!),
     enabled: !!token,
+    refetchInterval: 10_000,
   })
 
   const hasNoTeams = !isLoadingTeams && !!teams && teams.length === 0
@@ -36,6 +37,7 @@ export default function DashboardPage() {
     queryKey: ['dashboard-summary'],
     queryFn: () => fetchDashboardSummary(token!),
     enabled: !!token,
+    refetchInterval: 10_000,
   })
 
   function handleMutation() {
