@@ -62,6 +62,7 @@ type BoardAction =
       timer: { duration: number; remaining: number; running: boolean }
     }
   | { type: 'TIMER_TICK'; remaining: number }
+  | { type: 'ROSTER_SYNC'; users: ActiveUser[] }
 
 function findCardVoteCount(columns: Column[], cardId: string): number {
   for (const col of columns) {
@@ -161,6 +162,16 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
           cards: col.cards.filter((c) => c.id !== action.id),
         })),
       }
+
+    case 'ROSTER_SYNC': {
+      const known = new Set(state.activeUsers.map((u) => u.userId))
+      const newUsers = action.users.filter((u) => !known.has(u.userId))
+      if (newUsers.length === 0) return state
+      return {
+        ...state,
+        activeUsers: [...state.activeUsers, ...newUsers],
+      }
+    }
 
     case 'USER_JOINED':
       if (state.activeUsers.some((u) => u.userId === action.user.userId)) {
@@ -425,6 +436,13 @@ export function BoardProvider({
     socket.on('card:deleted', (data: { id: string }) => {
       dispatch({ type: 'CARD_DELETED', id: data.id })
     })
+
+    socket.on(
+      'board:roster',
+      (users: { userId: string; userName?: string }[]) => {
+        dispatch({ type: 'ROSTER_SYNC', users })
+      },
+    )
 
     socket.on(
       'board:user-joined',

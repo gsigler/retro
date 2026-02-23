@@ -21,6 +21,9 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
   const { user } = useAuth()
   const { state, dispatch, mergeSelection } = useBoardContext()
   const [expanded, setExpanded] = useState(false)
+
+  const isHidden = card.author.id === ANONYMOUS_AUTHOR_ID && card.content === ''
+
   const {
     attributes,
     listeners,
@@ -28,38 +31,7 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: card.id })
-
-  const isHidden = card.author.id === ANONYMOUS_AUTHOR_ID && card.content === ''
-
-  if (isHidden) {
-    return (
-      <div
-        ref={setNodeRef}
-        data-testid="hidden-card-placeholder"
-        style={{
-          padding: '8px 10px',
-          borderRadius: 2,
-          background: theme.bgSecondary,
-          opacity: 0.4,
-          minHeight: 48,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 11,
-            color: theme.textTertiary,
-            fontStyle: 'italic',
-          }}
-        >
-          hidden card
-        </span>
-      </div>
-    )
-  }
+  } = useSortable({ id: card.id, disabled: isHidden })
 
   const isOwnCard = user?.id === card.author.id
   const showAnonymous = !isOwnCard && card.author.id === ANONYMOUS_AUTHOR_ID
@@ -107,6 +79,35 @@ export function BoardCard({ card, token, retroId }: BoardCardProps) {
   const unmergeMutation = useMutation({
     mutationFn: () => unmergeCard(token, retroId, card.id),
   })
+
+  if (isHidden) {
+    return (
+      <div
+        ref={setNodeRef}
+        data-testid="hidden-card-placeholder"
+        style={{
+          padding: '8px 10px',
+          borderRadius: 2,
+          background: theme.bgSecondary,
+          opacity: 0.4,
+          minHeight: 48,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            color: theme.textTertiary,
+            fontStyle: 'italic',
+          }}
+        >
+          hidden card
+        </span>
+      </div>
+    )
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { IceBreaker } from './IceBreaker'
 import { ICEBREAKER_QUESTIONS } from '@/lib/icebreakers'
 
@@ -21,7 +21,40 @@ vi.mock('@/contexts/ThemeContext', () => ({
   }),
 }))
 
+const mockSocket = {
+  on: vi.fn(),
+  off: vi.fn(),
+  emit: vi.fn(),
+}
+
+vi.mock('./BoardProvider', () => ({
+  useBoardContext: () => ({
+    socketRef: { current: mockSocket },
+    state: {
+      columns: [],
+      activeUsers: [],
+      initialized: false,
+      phase: 'ICEBREAKER',
+      votedCardIds: [],
+      maxVotes: 5,
+      remainingVotes: 5,
+      timer: null,
+    },
+    dispatch: vi.fn(),
+    mergeSelection: {
+      selectedIds: [],
+      toggleSelect: vi.fn(),
+      doMerge: vi.fn(),
+      clearSelection: vi.fn(),
+    },
+  }),
+}))
+
 describe('IceBreaker', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('displays a question from the list', () => {
     render(<IceBreaker retroId="retro-1" isFacilitator={false} />)
 
@@ -71,7 +104,26 @@ describe('IceBreaker', () => {
     fireEvent.click(screen.getByRole('button', { name: /shuffle/i }))
     const second = getQuestion()
 
-    // Very unlikely to be the same after shuffle (40 questions)
     expect(first).not.toBe(second)
+  })
+
+  it('emits shuffle event to socket when facilitator shuffles', () => {
+    render(<IceBreaker retroId="retro-1" isFacilitator={true} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /shuffle/i }))
+
+    expect(mockSocket.emit).toHaveBeenCalledWith('icebreaker:shuffle', {
+      retroId: 'retro-1',
+      shuffleCount: 1,
+    })
+  })
+
+  it('listens for icebreaker:shuffled socket event', () => {
+    render(<IceBreaker retroId="retro-1" isFacilitator={false} />)
+
+    expect(mockSocket.on).toHaveBeenCalledWith(
+      'icebreaker:shuffled',
+      expect.any(Function),
+    )
   })
 })
