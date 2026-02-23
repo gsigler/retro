@@ -8,7 +8,6 @@ import {
 } from '@nestjs/websockets'
 import { UsePipes, ValidationPipe } from '@nestjs/common'
 import { Server, Socket } from 'socket.io'
-import { SkipThrottle } from '@nestjs/throttler'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service.js'
 import { TimerService } from './timer.service.js'
@@ -31,7 +30,6 @@ interface AuthenticatedSocket extends Socket {
   }
 }
 
-@SkipThrottle()
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @WebSocketGateway({
   namespace: '/board',
@@ -44,11 +42,28 @@ export class BoardGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server
 
+  private readonly rateLimits = new Map<string, number[]>()
+  private readonly RATE_LIMIT_WINDOW_MS = 60_000
+  private readonly RATE_LIMIT_MAX = 30
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly timerService: TimerService,
   ) {}
+
+  private checkRateLimit(socketId: string): boolean {
+    const now = Date.now()
+    const timestamps = this.rateLimits.get(socketId) ?? []
+    const recent = timestamps.filter((t) => now - t < this.RATE_LIMIT_WINDOW_MS)
+    if (recent.length >= this.RATE_LIMIT_MAX) {
+      this.rateLimits.set(socketId, recent)
+      return false
+    }
+    recent.push(now)
+    this.rateLimits.set(socketId, recent)
+    return true
+  }
 
   private parseCookies(cookieHeader?: string): Record<string, string> {
     if (!cookieHeader) return {}
@@ -104,6 +119,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: TimerStartDto,
   ) {
+    if (!this.checkRateLimit(client.id)) return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('timer:error', {
         message: 'Only the facilitator can control the timer',
@@ -138,6 +154,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: RetroIdDto,
   ) {
+    if (!this.checkRateLimit(client.id)) return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('timer:error', {
         message: 'Only the facilitator can control the timer',
@@ -156,6 +173,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: RetroIdDto,
   ) {
+    if (!this.checkRateLimit(client.id)) return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('timer:error', {
         message: 'Only the facilitator can control the timer',
@@ -170,6 +188,7 @@ export class BoardGateway implements OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: AuthenticatedSocket) {
+    this.rateLimits.delete(client.id)
     for (const room of client.rooms) {
       if (room.startsWith('retro:')) {
         client.to(room).emit('board:user-left', {
@@ -190,6 +209,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: BoardJoinDto,
   ) {
+    if (!this.checkRateLimit(client.id)) return
     const hasAccess = await this.verifyRetroAccess(
       client.data.userId,
       data.retroId,
@@ -232,6 +252,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: IcebreakerShuffleDto,
   ) {
+    if (!this.checkRateLimit(client.id)) return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('board:error', {
         message: 'Only the facilitator can shuffle the icebreaker',
@@ -250,6 +271,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: BoardLeaveDto,
   ) {
+    if (!this.checkRateLimit(client.id)) return
     const room = `retro:${data.retroId}`
     if (!client.rooms.has(room)) {
       return
