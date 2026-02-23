@@ -16,7 +16,7 @@ describe('LandingPage', () => {
     renderLanding()
     expect(
       screen.getByRole('heading', {
-        name: /run better retros with ai-powered insights/i,
+        name: /retros your engineering team will actually enjoy/i,
       }),
     ).toBeDefined()
   })
@@ -28,10 +28,18 @@ describe('LandingPage', () => {
     expect(cta.getAttribute('href')).toBe('/login')
   })
 
-  it('renders all three feature cards', () => {
+  it('renders all four feature cards', () => {
     renderLanding()
-    expect(screen.getByText('AI-Powered Insights')).toBeDefined()
-    expect(screen.getByText('Zero-Friction Joining')).toBeDefined()
     expect(screen.getByText('Real-Time Collaboration')).toBeDefined()
+    expect(screen.getByText('Team-Based Access')).toBeDefined()
+    expect(screen.getByText('Track Action Items')).toBeDefined()
+    expect(screen.getByText('Built for Dev Teams')).toBeDefined()
+  })
+
+  it('has a login link in the header', () => {
+    renderLanding()
+    const loginLink = screen.getByRole('link', { name: /login/i })
+    expect(loginLink).toBeDefined()
+    expect(loginLink.getAttribute('href')).toBe('/login')
   })
 })

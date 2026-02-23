@@ -7,25 +7,32 @@ import { AsciiLogo } from '@/components/AsciiLogo'
 
 const features = [
   {
-    cmd: 'insights',
-    flag: '--ai',
-    title: 'AI-Powered Insights',
-    description:
-      'Automatically surface themes, sentiment trends, and actionable takeaways from your retro feedback.',
-  },
-  {
-    cmd: 'join',
-    flag: '--link',
-    title: 'Zero-Friction Joining',
-    description:
-      'Participants join via a simple link — no account required. Start collaborating in seconds.',
-  },
-  {
     cmd: 'sync',
     flag: '--realtime',
     title: 'Real-Time Collaboration',
     description:
       'Add cards, vote, and discuss together in real time. Everyone stays in sync, no refresh needed.',
+  },
+  {
+    cmd: 'team',
+    flag: '--invite',
+    title: 'Team-Based Access',
+    description:
+      'Create a team, invite members, and start retros together. Everyone joins with one click via Google sign-in.',
+  },
+  {
+    cmd: 'track',
+    flag: '--actions',
+    title: 'Track Action Items',
+    description:
+      'Capture action items during discussion and track them across retros so your team actually improves each cycle.',
+  },
+  {
+    cmd: 'init',
+    flag: '--dev',
+    title: 'Built for Dev Teams',
+    description:
+      'A retro tool that feels at home in your workflow. No bloated UI, just the tools your team needs.',
   },
 ]
 
@@ -81,10 +88,22 @@ export default function LandingPage() {
             />
           </div>
           <span style={{ color: theme.textTertiary, fontSize: 12 }}>
-            retro — welcome
+            retroation — welcome
           </span>
         </div>
-        <ThemePicker />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link
+            to="/login"
+            style={{
+              color: theme.textTertiary,
+              fontSize: 12,
+              textDecoration: 'none',
+            }}
+          >
+            Login
+          </Link>
+          <ThemePicker />
+        </div>
       </div>
 
       {/* Hero */}
@@ -113,7 +132,7 @@ export default function LandingPage() {
             </p>
             <div style={{ marginTop: 16 }}>
               <span style={{ color: theme.green }}>$</span>{' '}
-              <span style={{ color: theme.textTertiary }}>retro</span>{' '}
+              <span style={{ color: theme.textTertiary }}>retroation</span>{' '}
               <span style={{ color: theme.cyan }}>--version</span>
             </div>
             <p
@@ -136,8 +155,8 @@ export default function LandingPage() {
               marginBottom: 16,
             }}
           >
-            Run better retros with{' '}
-            <span style={{ color: theme.purple }}>AI-powered insights</span>
+            Retros your engineering team will{' '}
+            <span style={{ color: theme.purple }}>actually enjoy</span>
           </h1>
 
           <p
@@ -149,9 +168,8 @@ export default function LandingPage() {
               maxWidth: 520,
             }}
           >
-            AI-powered team retrospectives with zero-friction participation.
-            Share a link and start collaborating — no sign-up required for
-            participants.
+            Real-time retrospectives built for engineering teams. Collaborate,
+            vote, and track action items together — all in one place.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -177,7 +195,7 @@ export default function LandingPage() {
           <p
             style={{ color: theme.textTertiary, fontSize: 12, marginBottom: 8 }}
           >
-            <span style={{ color: theme.green }}>$</span> retro{' '}
+            <span style={{ color: theme.green }}>$</span> retroation{' '}
             <span style={{ color: theme.cyan }}>--help</span>
           </p>
           <p
@@ -251,7 +269,7 @@ export default function LandingPage() {
         }}
       >
         <span>
-          &copy; {new Date().getFullYear()} Retro. All rights reserved.
+          &copy; {new Date().getFullYear()} Retroation. All rights reserved.
         </span>
         <span style={{ color: theme.green }}>exit 0</span>
       </footer>

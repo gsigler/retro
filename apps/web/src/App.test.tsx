@@ -31,7 +31,7 @@ describe('App', () => {
     renderApp('/')
     expect(
       screen.getByRole('heading', {
-        name: /run better retros with ai-powered insights/i,
+        name: /retros your engineering team will actually enjoy/i,
       }),
     ).toBeDefined()
   })
