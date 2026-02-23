@@ -190,10 +190,44 @@ export class BoardGateway implements OnGatewayDisconnect {
       userName: client.data.userName,
     })
 
+    // Send the joining user the list of everyone already in the room
+    const sockets = await this.server.in(room).fetchSockets()
+    const roster = sockets
+      .map((s) => {
+        const sock = s as unknown as AuthenticatedSocket
+        return {
+          userId: sock.data?.userId,
+          userName: sock.data?.userName,
+        }
+      })
+      .filter((u) => u.userId && u.userId !== client.data.userId)
+    if (roster.length > 0) {
+      client.emit('board:roster', roster)
+    }
+
     const timerState = this.timerService.getState(data.retroId)
     if (timerState) {
       client.emit('timer:sync', timerState)
     }
+  }
+
+  @SubscribeMessage('icebreaker:shuffle')
+  async handleIcebreakerShuffle(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { retroId: string; shuffleCount: number },
+  ) {
+    if (!data?.retroId || typeof data.retroId !== 'string') return
+    if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
+      client.emit('board:error', {
+        message: 'Only the facilitator can shuffle the icebreaker',
+      })
+      return
+    }
+
+    const room = `retro:${data.retroId}`
+    client.to(room).emit('icebreaker:shuffled', {
+      shuffleCount: data.shuffleCount,
+    })
   }
 
   @SubscribeMessage('board:leave')

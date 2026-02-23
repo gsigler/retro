@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTheme, themes } from '@/contexts/ThemeContext'
 
-export function ThemePicker() {
+export function ThemePicker({ dropUp = true }: { dropUp?: boolean } = {}) {
   const { theme, themeKey, setThemeKey } = useTheme()
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -40,9 +40,10 @@ export function ThemePicker() {
         <div
           style={{
             position: 'absolute',
-            bottom: '100%',
+            ...(dropUp
+              ? { bottom: '100%', marginBottom: 4 }
+              : { top: '100%', marginTop: 4 }),
             left: 0,
-            marginBottom: 4,
             background: theme.surface,
             border: `1px solid ${theme.border}`,
             borderRadius: 4,

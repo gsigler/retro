@@ -102,7 +102,7 @@ export default function LandingPage() {
           >
             Login
           </Link>
-          <ThemePicker />
+          <ThemePicker dropUp={false} />
         </div>
       </div>
 
