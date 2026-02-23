@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App from './App'
@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 
 vi.mock('@/lib/api', () => ({
-  api: vi.fn(),
+  api: vi.fn().mockRejectedValue(new Error('Unauthorized')),
 }))
 
 function renderApp(route: string) {
@@ -41,8 +41,10 @@ describe('App', () => {
     expect(screen.getByText(/sign in to retro/i)).toBeDefined()
   })
 
-  it('redirects /dashboard to /login when not authenticated', () => {
+  it('redirects /dashboard to /login when not authenticated', async () => {
     renderApp('/dashboard')
-    expect(screen.getByText(/sign in to retro/i)).toBeDefined()
+    await waitFor(() => {
+      expect(screen.getByText(/sign in to retro/i)).toBeDefined()
+    })
   })
 })

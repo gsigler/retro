@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import cookieParser from 'cookie-parser'
 import helmet from 'helmet'
 import { AppModule } from './app.module.js'
 
@@ -8,8 +9,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   const configService = app.get(ConfigService)
   app.use(helmet())
+  app.use(cookieParser())
   app.enableCors({
     origin: configService.get<string>('APP_URL', 'http://localhost:5173'),
+    credentials: true,
   })
   app.useGlobalPipes(
     new ValidationPipe({

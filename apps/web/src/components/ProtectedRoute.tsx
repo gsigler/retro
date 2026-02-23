@@ -7,13 +7,13 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode
 }) {
-  const { token, isLoading } = useAuth()
+  const { user, isLoading } = useAuth()
 
   if (isLoading) {
     return <TerminalLoader command="retro session --verify" />
   }
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" replace />
   }
 

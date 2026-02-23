@@ -4,12 +4,11 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useBoardContext } from './BoardProvider'
 
 interface AddCardFormProps {
-  token: string
   retroId: string
   columnId: string
 }
 
-export function AddCardForm({ token, retroId, columnId }: AddCardFormProps) {
+export function AddCardForm({ retroId, columnId }: AddCardFormProps) {
   const { theme } = useTheme()
   const { state, dispatch } = useBoardContext()
   const [isOpen, setIsOpen] = useState(false)
@@ -22,7 +21,7 @@ export function AddCardForm({ token, retroId, columnId }: AddCardFormProps) {
     if (!trimmed) return
 
     try {
-      const card = await createCard(token, retroId, {
+      const card = await createCard(retroId, {
         columnId,
         content: trimmed,
       })

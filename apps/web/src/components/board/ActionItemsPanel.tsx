@@ -31,11 +31,10 @@ import { useBoardContext } from './BoardProvider'
 import type { ActionItem } from '@/types/api'
 
 interface ActionItemsPanelProps {
-  token: string
   retroId: string
 }
 
-export function ActionItemsPanel({ token, retroId }: ActionItemsPanelProps) {
+export function ActionItemsPanel({ retroId }: ActionItemsPanelProps) {
   const { theme } = useTheme()
   const queryClient = useQueryClient()
   const { socketRef } = useBoardContext()
@@ -43,14 +42,12 @@ export function ActionItemsPanel({ token, retroId }: ActionItemsPanelProps) {
 
   const { data: items } = useQuery({
     queryKey: ['action-items', retroId],
-    queryFn: () => fetchActionItems(token, retroId),
-    enabled: !!token,
+    queryFn: () => fetchActionItems(retroId),
   })
 
   const { data: members } = useQuery({
     queryKey: ['retro-members', retroId],
-    queryFn: () => fetchRetroMembers(token, retroId),
-    enabled: !!token,
+    queryFn: () => fetchRetroMembers(retroId),
   })
 
   // WebSocket sync
@@ -94,7 +91,6 @@ export function ActionItemsPanel({ token, retroId }: ActionItemsPanelProps) {
 
     try {
       await reorderActionItems(
-        token,
         retroId,
         reordered.map((i) => i.id),
       )
@@ -112,12 +108,12 @@ export function ActionItemsPanel({ token, retroId }: ActionItemsPanelProps) {
       dueDate?: string | null
     },
   ) {
-    await updateActionItem(token, id, data)
+    await updateActionItem(id, data)
     queryClient.invalidateQueries({ queryKey: ['action-items', retroId] })
   }
 
   async function handleDelete(id: string) {
-    await deleteActionItem(token, id)
+    await deleteActionItem(id)
     queryClient.invalidateQueries({ queryKey: ['action-items', retroId] })
   }
 
@@ -126,7 +122,7 @@ export function ActionItemsPanel({ token, retroId }: ActionItemsPanelProps) {
     assigneeId?: string
     dueDate?: string
   }) {
-    await createActionItem(token, retroId, data)
+    await createActionItem(retroId, data)
     queryClient.invalidateQueries({ queryKey: ['action-items', retroId] })
   }
 

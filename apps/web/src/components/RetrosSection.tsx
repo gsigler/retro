@@ -17,16 +17,11 @@ import {
 import type { RetroWithCounts } from '@/types/api'
 
 interface RetrosSectionProps {
-  token: string
   userId: string
   onMutation: () => void
 }
 
-export function RetrosSection({
-  token,
-  userId,
-  onMutation,
-}: RetrosSectionProps) {
+export function RetrosSection({ userId, onMutation }: RetrosSectionProps) {
   const { theme } = useTheme()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -36,14 +31,14 @@ export function RetrosSection({
 
   const { data: teams } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => fetchTeams(token),
+    queryFn: () => fetchTeams(),
   })
 
   const team = teams?.find((t) => t.ownerId === userId) ?? teams?.[0]
 
   const { data: retros, isLoading } = useQuery({
     queryKey: ['retros', team?.id],
-    queryFn: () => fetchRetros(token, team!.id),
+    queryFn: () => fetchRetros(team!.id),
     enabled: !!team,
     refetchInterval: 10_000,
   })
@@ -59,19 +54,19 @@ export function RetrosSection({
     templateId?: string
   }) {
     if (!team) return
-    const retro = await createRetro(token, team.id, data)
+    const retro = await createRetro(team.id, data)
     navigate(`/retros/${retro.id}/board`)
   }
 
   async function handleEditRetro(data: { name: string; date: string }) {
     if (!editingRetro) return
-    await updateRetro(token, editingRetro.id, data)
+    await updateRetro(editingRetro.id, data)
     setEditingRetro(null)
     await refresh()
   }
 
   async function handleDeleteRetro(retroId: string) {
-    await deleteRetro(token, retroId)
+    await deleteRetro(retroId)
     await refresh()
   }
 

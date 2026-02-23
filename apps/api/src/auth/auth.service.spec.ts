@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { AuthService } from './auth.service.js'
 import { PrismaService } from '../prisma/prisma.service.js'
@@ -23,6 +24,16 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest
+              .fn()
+              .mockImplementation((_key: string, defaultVal: string) => {
+                return defaultVal ?? '24h'
+              }),
+          },
+        },
       ],
     }).compile()
 
@@ -47,7 +58,7 @@ describe('AuthService', () => {
       updatedAt: new Date(),
     }
 
-    it('should upsert user by email and return JWT', async () => {
+    it('should upsert user by email and return JWT with expiry', async () => {
       prisma.client.user.upsert.mockResolvedValue(mockUser)
       jwtService.sign.mockReturnValue('jwt-token')
 
@@ -71,7 +82,10 @@ describe('AuthService', () => {
         sub: 'user-1',
         email: 'test@example.com',
       })
-      expect(result).toEqual({ accessToken: 'jwt-token' })
+      expect(result).toEqual({
+        accessToken: 'jwt-token',
+        expiresInMs: 86400000,
+      })
     })
   })
 

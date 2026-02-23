@@ -52,7 +52,12 @@ describe('JoinPage', () => {
   })
 
   it('shows error when no invite code is provided', async () => {
-    mockUseAuth.mockReturnValue({ token: 'tok', user: { id: 'u1' } })
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1' },
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    })
 
     renderWithRoute('/teams/join')
 
@@ -62,7 +67,12 @@ describe('JoinPage', () => {
   })
 
   it('redirects unauthenticated users to login and stores pending invite', async () => {
-    mockUseAuth.mockReturnValue({ token: null, user: null })
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    })
 
     renderWithRoute('/teams/join?code=abc123')
 
@@ -73,13 +83,18 @@ describe('JoinPage', () => {
   })
 
   it('auto-joins team and redirects to dashboard when authenticated', async () => {
-    mockUseAuth.mockReturnValue({ token: 'tok', user: { id: 'u1' } })
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1' },
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    })
     mockJoinTeam.mockResolvedValue({})
 
     renderWithRoute('/teams/join?code=abc123')
 
     await waitFor(() => {
-      expect(mockJoinTeam).toHaveBeenCalledWith('tok', 'abc123')
+      expect(mockJoinTeam).toHaveBeenCalledWith('abc123')
     })
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard', {
@@ -89,7 +104,12 @@ describe('JoinPage', () => {
   })
 
   it('shows error when join fails', async () => {
-    mockUseAuth.mockReturnValue({ token: 'tok', user: { id: 'u1' } })
+    mockUseAuth.mockReturnValue({
+      user: { id: 'u1' },
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+    })
     mockJoinTeam.mockRejectedValue(new Error('fail'))
 
     renderWithRoute('/teams/join?code=badcode')

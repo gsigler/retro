@@ -35,8 +35,8 @@ export function RetroStepper({
 
   const currentIndex = PHASES.findIndex((p) => p.key === phase)
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout()
     navigate('/')
   }
 

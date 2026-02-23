@@ -6,13 +6,11 @@ import { updateActionItem, fetchTeams, fetchTeam } from '@/lib/api'
 import type { ActionItem, TeamMember } from '@/types/api'
 
 interface ActionItemsSectionProps {
-  token: string
   items: ActionItem[]
   onMutation: () => void
 }
 
 export function ActionItemsSection({
-  token,
   items,
   onMutation,
 }: ActionItemsSectionProps) {
@@ -20,16 +18,13 @@ export function ActionItemsSection({
 
   const { data: teams } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => fetchTeams(token),
-    enabled: !!token,
+    queryFn: () => fetchTeams(),
   })
 
   const { data: allMembers } = useQuery({
     queryKey: ['all-team-members', teams?.map((t) => t.id)],
     queryFn: async () => {
-      const details = await Promise.all(
-        teams!.map((t) => fetchTeam(token, t.id)),
-      )
+      const details = await Promise.all(teams!.map((t) => fetchTeam(t.id)))
       const memberMap = new Map<string, TeamMember>()
       for (const team of details) {
         for (const member of team.members) {
@@ -51,7 +46,7 @@ export function ActionItemsSection({
     },
   ) {
     try {
-      await updateActionItem(token, itemId, data)
+      await updateActionItem(itemId, data)
       onMutation()
     } catch {
       // silently fail

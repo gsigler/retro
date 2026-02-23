@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import DashboardPage from './DashboardPage'
 
-const mockLogout = vi.fn()
+const mockLogout = vi.fn().mockResolvedValue(undefined)
 const mockNavigate = vi.fn()
 
 vi.mock('@/contexts/AuthContext', () => ({
@@ -16,7 +16,6 @@ vi.mock('@/contexts/AuthContext', () => ({
       avatarUrl: null,
       createdAt: '',
     },
-    token: 'test-token',
     isLoading: false,
     login: vi.fn(),
     logout: mockLogout,
@@ -118,7 +117,9 @@ describe('DashboardPage', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /logout/i }))
     expect(mockLogout).toHaveBeenCalled()
-    expect(mockNavigate).toHaveBeenCalledWith('/')
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/')
+    })
   })
 
   it('shows user email in header', async () => {
