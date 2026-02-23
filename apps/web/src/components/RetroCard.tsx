@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
 import type { RetroWithCounts } from '@/types/api'
 
 interface RetroCardProps {
@@ -16,17 +17,6 @@ export function RetroCard({
   onDelete,
 }: RetroCardProps) {
   const { theme } = useTheme()
-
-  const linkStyle = {
-    color: theme.cyan,
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer' as const,
-    fontFamily: 'inherit',
-    fontSize: 12,
-    padding: 0,
-    textDecoration: 'none',
-  }
 
   return (
     <div
@@ -68,20 +58,21 @@ export function RetroCard({
           flexShrink: 0,
         }}
       >
-        <Link to={`/retros/${retro.id}/board`} style={linkStyle}>
-          [open]
-        </Link>
+        <TerminalButton size="sm" asChild href={`/retros/${retro.id}/board`}>
+          open
+        </TerminalButton>
         {canManage && (
           <>
-            <button style={linkStyle} onClick={onEdit}>
-              [edit]
-            </button>
-            <button
-              style={{ ...linkStyle, color: theme.red }}
+            <TerminalButton size="sm" onClick={onEdit}>
+              edit
+            </TerminalButton>
+            <TerminalButton
+              size="sm"
+              style={{ color: theme.red }}
               onClick={onDelete}
             >
-              [rm]
-            </button>
+              rm
+            </TerminalButton>
           </>
         )}
       </div>

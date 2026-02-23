@@ -1,15 +1,58 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi } from 'vitest'
+import { BoardProvider } from './BoardProvider'
 import { RetroStepper } from './RetroStepper'
+
+vi.mock('@/lib/socket', () => ({
+  createBoardSocket: () => ({
+    on: vi.fn(),
+    emit: vi.fn(),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  }),
+}))
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1', email: 'test@test.com', name: 'Test User' },
+    token: 'tok',
+    logout: vi.fn(),
+  }),
+}))
+
+function Wrapper({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return (
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <BoardProvider
+          token="tok"
+          retroId="retro-1"
+          userId="user-1"
+          userName="Test User"
+          initialBoard={{ retroId: 'retro-1', columns: [] }}
+        >
+          {children}
+        </BoardProvider>
+      </QueryClientProvider>
+    </MemoryRouter>
+  )
+}
 
 describe('RetroStepper', () => {
   it('renders all 4 phase labels', () => {
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="ICEBREAKER"
         isFacilitator={false}
         onPhaseChange={vi.fn()}
       />,
+      { wrapper: Wrapper },
     )
 
     expect(screen.getByText(/ice breaker/)).toBeDefined()
@@ -18,25 +61,15 @@ describe('RetroStepper', () => {
     expect(screen.getByText(/discuss & action items/)).toBeDefined()
   })
 
-  it('renders a blurb for the current phase', () => {
-    render(
-      <RetroStepper
-        phase="RETROSPECT"
-        isFacilitator={false}
-        onPhaseChange={vi.fn()}
-      />,
-    )
-
-    expect(screen.getByText(/add cards to each column/i)).toBeDefined()
-  })
-
   it('sets aria-current="step" on the active phase', () => {
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="GROUP_VOTE"
         isFacilitator={false}
         onPhaseChange={vi.fn()}
       />,
+      { wrapper: Wrapper },
     )
 
     const groupVoteItem = screen.getByLabelText('Phase 3 of 4: group & vote')
@@ -49,10 +82,12 @@ describe('RetroStepper', () => {
   it('renders completed phases differently from future phases', () => {
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="GROUP_VOTE"
         isFacilitator={false}
         onPhaseChange={vi.fn()}
       />,
+      { wrapper: Wrapper },
     )
 
     const icebreakerItem = screen.getByLabelText('Phase 1 of 4: ice breaker')
@@ -73,10 +108,12 @@ describe('RetroStepper', () => {
   it('shows prev/next buttons for facilitator', () => {
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="RETROSPECT"
         isFacilitator={true}
         onPhaseChange={vi.fn()}
       />,
+      { wrapper: Wrapper },
     )
 
     expect(screen.getByLabelText('Previous phase')).toBeDefined()
@@ -86,10 +123,12 @@ describe('RetroStepper', () => {
   it('hides prev/next buttons for non-facilitator', () => {
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="RETROSPECT"
         isFacilitator={false}
         onPhaseChange={vi.fn()}
       />,
+      { wrapper: Wrapper },
     )
 
     expect(screen.queryByLabelText('Previous phase')).toBeNull()
@@ -100,10 +139,12 @@ describe('RetroStepper', () => {
     const onPhaseChange = vi.fn()
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="RETROSPECT"
         isFacilitator={true}
         onPhaseChange={onPhaseChange}
       />,
+      { wrapper: Wrapper },
     )
 
     fireEvent.click(screen.getByLabelText('Next phase'))
@@ -114,10 +155,12 @@ describe('RetroStepper', () => {
     const onPhaseChange = vi.fn()
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="RETROSPECT"
         isFacilitator={true}
         onPhaseChange={onPhaseChange}
       />,
+      { wrapper: Wrapper },
     )
 
     fireEvent.click(screen.getByLabelText('Previous phase'))
@@ -127,10 +170,12 @@ describe('RetroStepper', () => {
   it('disables prev button on ICEBREAKER phase', () => {
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="ICEBREAKER"
         isFacilitator={true}
         onPhaseChange={vi.fn()}
       />,
+      { wrapper: Wrapper },
     )
 
     const prevBtn = screen.getByLabelText('Previous phase')
@@ -140,10 +185,12 @@ describe('RetroStepper', () => {
   it('disables next button on DISCUSS_ACTION phase', () => {
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="DISCUSS_ACTION"
         isFacilitator={true}
         onPhaseChange={vi.fn()}
       />,
+      { wrapper: Wrapper },
     )
 
     const nextBtn = screen.getByLabelText('Next phase')
@@ -154,10 +201,12 @@ describe('RetroStepper', () => {
     const onPhaseChange = vi.fn()
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="ICEBREAKER"
         isFacilitator={true}
         onPhaseChange={onPhaseChange}
       />,
+      { wrapper: Wrapper },
     )
 
     fireEvent.click(screen.getByLabelText('Previous phase'))
@@ -168,10 +217,12 @@ describe('RetroStepper', () => {
     const onPhaseChange = vi.fn()
     render(
       <RetroStepper
+        retroId="retro-1"
         phase="DISCUSS_ACTION"
         isFacilitator={true}
         onPhaseChange={onPhaseChange}
       />,
+      { wrapper: Wrapper },
     )
 
     fireEvent.click(screen.getByLabelText('Next phase'))

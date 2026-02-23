@@ -7,10 +7,6 @@ export class CardAuthorSummary {
   static from(user: any): CardAuthorSummary {
     return new CardAuthorSummary(user.id, user.name)
   }
-
-  static anonymous(): CardAuthorSummary {
-    return new CardAuthorSummary('anonymous', 'Anonymous')
-  }
 }
 
 export class CardResponse {
@@ -41,22 +37,6 @@ export class CardResponse {
       card._count?.votes ?? 0,
       card.parentCardId ?? null,
       (card.children ?? []).map(CardResponse.from),
-    )
-  }
-
-  static fromAnonymous(card: any): CardResponse {
-    return new CardResponse(
-      card.id,
-      card.columnId,
-      card.retroId,
-      card.content,
-      card.position,
-      card.createdAt,
-      card.updatedAt,
-      CardAuthorSummary.anonymous(),
-      card._count?.votes ?? 0,
-      card.parentCardId ?? null,
-      (card.children ?? []).map(CardResponse.fromAnonymous),
     )
   }
 }

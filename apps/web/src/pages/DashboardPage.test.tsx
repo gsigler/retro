@@ -97,8 +97,6 @@ describe('DashboardPage', () => {
       expect(screen.getByText(/members:/)).toBeDefined()
     })
     expect(screen.getByText(/retros:/)).toBeDefined()
-    expect(screen.getByText(/open:/)).toBeDefined()
-    expect(screen.getByText(/completed:/)).toBeDefined()
   })
 
   it('shows error state on fetch failure', async () => {

@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { deleteCard, voteCard, unvoteCard, unmergeCard } from '@/lib/api'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
 import { useBoardContext } from './BoardProvider'
 import type { Card } from '@/types/api'
 import { ANONYMOUS_AUTHOR_ID } from '@/types/api'
@@ -13,15 +14,9 @@ interface BoardCardProps {
   card: Card
   token: string
   retroId: string
-  columnColor?: string
 }
 
-export function BoardCard({
-  card,
-  token,
-  retroId,
-  columnColor,
-}: BoardCardProps) {
+export function BoardCard({ card, token, retroId }: BoardCardProps) {
   const { theme } = useTheme()
   const { user } = useAuth()
   const { state, dispatch, mergeSelection } = useBoardContext()
@@ -85,14 +80,13 @@ export function BoardCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    borderLeft: `2px solid ${isSelectedForMerge ? theme.cyan : (columnColor ?? theme.border)}`,
-    borderRadius: 0,
-    padding: canSelectForMerge ? '6px 10px 6px 36px' : '6px 10px',
+    borderLeft: isSelectedForMerge ? `2px solid ${theme.cyan}` : 'none',
+    borderRadius: 2,
+    padding: canSelectForMerge ? '8px 10px 8px 36px' : '8px 10px',
     opacity: isDragging ? 0.5 : 1,
     cursor: 'grab',
     position: 'relative' as const,
-    borderBottom: `1px solid ${theme.border}22`,
-    background: isSelectedForMerge ? `${theme.cyan}10` : 'transparent',
+    background: isSelectedForMerge ? `${theme.cyan}10` : theme.bgSecondary,
   }
 
   async function handleDelete() {
@@ -137,21 +131,17 @@ export function BoardCard({
       )}
 
       {/* Delete button — visible on hover and focus */}
-      <button
+      <TerminalButton
         onClick={handleDelete}
         aria-label="Delete card"
         className="card-delete-btn"
+        size="sm"
         style={{
           position: 'absolute',
           top: 4,
           right: 4,
-          background: 'transparent',
-          border: 'none',
           color: theme.textTertiary,
-          cursor: 'pointer',
           fontSize: 10,
-          padding: '0 2px',
-          fontFamily: 'inherit',
           opacity: 0,
           lineHeight: 1,
         }}
@@ -172,8 +162,8 @@ export function BoardCard({
           e.currentTarget.style.color = theme.textTertiary
         }}
       >
-        [rm]
-      </button>
+        rm
+      </TerminalButton>
 
       <p
         style={{
@@ -248,22 +238,19 @@ export function BoardCard({
             </div>
           ))}
           {state.phase === 'GROUP_VOTE' && (
-            <button
+            <TerminalButton
               onClick={() => unmergeMutation.mutate()}
               disabled={unmergeMutation.isPending}
+              size="sm"
               style={{
-                background: 'transparent',
-                border: 'none',
                 color: theme.yellow,
-                cursor: 'pointer',
                 fontSize: 10,
                 padding: '4px 0',
-                fontFamily: 'inherit',
                 opacity: 0.8,
               }}
             >
-              [unmerge]
-            </button>
+              unmerge
+            </TerminalButton>
           )}
         </div>
       )}

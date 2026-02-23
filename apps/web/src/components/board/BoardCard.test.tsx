@@ -56,6 +56,8 @@ function renderWithProviders(c: Card) {
       <BoardProvider
         token="tok"
         retroId="retro-1"
+        userId="user-1"
+        userName="Test User"
         initialBoard={{
           retroId: 'retro-1',
           columns: [

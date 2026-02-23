@@ -1,4 +1,5 @@
 import { useTheme } from '@/contexts/ThemeContext'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
 import type { TeamMember } from '@/types/api'
 
 interface MemberListProps {
@@ -78,21 +79,14 @@ export function MemberList({
               </span>
             )}
             {isOwner && !isTeamOwner && (
-              <button
+              <TerminalButton
                 onClick={() => onRemove(member.user.id)}
                 aria-label={`Remove ${displayName}`}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: theme.red,
-                  cursor: 'pointer',
-                  padding: '0 4px',
-                  fontFamily: 'inherit',
-                  fontSize: 12,
-                }}
+                size="sm"
+                style={{ color: theme.red }}
               >
-                [&times;]
-              </button>
+                &times;
+              </TerminalButton>
             )}
           </div>
         )

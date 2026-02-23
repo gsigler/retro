@@ -63,7 +63,7 @@ export function ActionItemsSection({
 
   return (
     <TerminalFrame
-      title="$ retro actions --all"
+      title="Action Items"
       right={
         <span style={{ fontSize: 11, color: theme.textTertiary }}>
           <span style={{ color: theme.yellow }}>{openCount}</span> open{' '}

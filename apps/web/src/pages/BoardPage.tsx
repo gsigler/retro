@@ -29,18 +29,17 @@ import {
   useBoardContext,
 } from '@/components/board/BoardProvider'
 import { BoardColumn } from '@/components/board/BoardColumn'
-import { ActiveUsers } from '@/components/board/ActiveUsers'
 import { ActionItemsPanel } from '@/components/board/ActionItemsPanel'
 import { RetroStepper } from '@/components/board/RetroStepper'
 import { IceBreaker } from '@/components/board/IceBreaker'
-import { Timer } from '@/components/board/Timer'
-import { StatusBar } from '@/components/board/StatusBar'
+import { ThemePicker } from '@/components/ThemePicker'
+import { TerminalButton } from '@/components/terminal/TerminalButton'
 import { TerminalLoader } from '@/components/terminal/TerminalLoader'
 import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 
 export default function BoardPage() {
   const { retroId } = useParams<{ retroId: string }>()
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const { theme } = useTheme()
 
   const {
@@ -73,7 +72,7 @@ export default function BoardPage() {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          minHeight: 'calc(100vh - 40px)',
+          minHeight: '100vh',
           background: theme.bg,
         }}
       >
@@ -175,6 +174,8 @@ export default function BoardPage() {
       <BoardProvider
         token={token}
         retroId={retroId}
+        userId={user!.id}
+        userName={user!.name ?? undefined}
         initialBoard={board ?? null}
         initialPhase={retro?.phase}
       >
@@ -209,8 +210,16 @@ function BoardContent({
   const isFacilitator =
     !!user && !!retroCreatedById && user.id === retroCreatedById
   const [activeCard, setActiveCard] = useState<Card | null>(null)
-  const [actionPanelOpen, setActionPanelOpen] = useState(true)
+  const [actionPanelOpen, setActionPanelOpen] = useState(
+    state.phase === 'DISCUSS_ACTION',
+  )
   const toggleActionPanel = useCallback(() => setActionPanelOpen((v) => !v), [])
+
+  useEffect(() => {
+    if (state.phase === 'DISCUSS_ACTION') {
+      setActionPanelOpen(true)
+    }
+  }, [state.phase])
 
   const isDragEnabled =
     state.phase === 'RETROSPECT' || state.phase === 'GROUP_VOTE'
@@ -340,65 +349,17 @@ function BoardContent({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100vh - 40px)',
+        height: '100vh',
         overflow: 'hidden',
       }}
     >
-      {/* Board header */}
-      <div
-        style={{
-          padding: '6px 16px',
-          fontSize: 12,
-          color: theme.textTertiary,
-          borderBottom: `1px solid ${theme.border}40`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <Link
-          to="/dashboard"
-          style={{
-            color: theme.cyan,
-            textDecoration: 'none',
-            fontFamily: 'inherit',
-            fontSize: 12,
-          }}
-        >
-          [&larr; dashboard]
-        </Link>
-        <span style={{ color: theme.border }}>|</span>
-        {teamName && <span style={{ color: theme.cyan }}>{teamName}</span>}
-        {teamName && retroName && (
-          <span style={{ color: theme.border }}>|</span>
-        )}
-        {retroName && <span>{retroName}</span>}
-        {(teamName || retroName) && (
-          <span style={{ color: theme.border }}>|</span>
-        )}
-        <span style={{ color: theme.green }}>session active</span>
-        <span style={{ color: theme.border }}>|</span>
-        <span>{totalCards} items</span>
-        <span style={{ color: theme.border }}>|</span>
-        <span>{new Date().toLocaleDateString()}</span>
-        <div
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
-          <Timer retroId={retroId} isFacilitator={isFacilitator} />
-          <span style={{ color: theme.border }}>|</span>
-          <ActiveUsers />
-        </div>
-      </div>
-
       {/* Phase stepper */}
       <RetroStepper
         phase={state.phase}
         isFacilitator={isFacilitator}
+        retroId={retroId}
+        teamName={teamName}
+        retroName={retroName}
         onPhaseChange={async (phase) => {
           dispatch({ type: 'PHASE_CHANGED', phase })
           try {
@@ -409,230 +370,216 @@ function BoardContent({
         }}
       />
 
-      {/* Columns */}
+      {/* Phase extras — only render when there's contextual info */}
+      {(state.phase === 'RETROSPECT' ||
+        state.phase === 'GROUP_VOTE' ||
+        mergeSelection.selectedIds.length >= 2) && (
+        <div
+          style={{
+            padding: '6px 16px',
+            fontSize: 12,
+            color: theme.textTertiary,
+            borderBottom: `1px solid ${theme.border}40`,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
+        >
+          {state.phase === 'RETROSPECT' && (
+            <span style={{ color: theme.yellow }}>
+              Cards are anonymous &mdash; only you can see yours
+            </span>
+          )}
+
+          {state.phase === 'GROUP_VOTE' && (
+            <>
+              <span style={{ color: theme.yellow }}>
+                Votes: {state.remainingVotes}/{state.maxVotes} remaining
+              </span>
+              <span style={{ color: theme.border }}>|</span>
+              <span>use +/- to vote, [ ] to select for merge</span>
+            </>
+          )}
+
+          {mergeSelection.selectedIds.length >= 2 &&
+            (() => {
+              const selectedColumns = new Set(
+                mergeSelection.selectedIds.map((id) => {
+                  for (const col of state.columns) {
+                    if (col.cards.some((c) => c.id === id)) return col.id
+                  }
+                  return null
+                }),
+              )
+              const sameColumn = selectedColumns.size === 1
+              return (
+                <>
+                  {state.phase === 'GROUP_VOTE' && (
+                    <span style={{ color: theme.border }}>|</span>
+                  )}
+                  <span style={{ color: theme.cyan }}>
+                    {mergeSelection.selectedIds.length} cards selected
+                  </span>
+                  {!sameColumn && (
+                    <span style={{ color: theme.yellow, fontSize: 11 }}>
+                      (must be from same column)
+                    </span>
+                  )}
+                  <TerminalButton
+                    onClick={mergeSelection.doMerge}
+                    disabled={!sameColumn}
+                    size="sm"
+                  >
+                    merge
+                  </TerminalButton>
+                  <TerminalButton
+                    onClick={mergeSelection.clearSelection}
+                    size="sm"
+                    style={{ color: theme.textTertiary }}
+                  >
+                    cancel
+                  </TerminalButton>
+                </>
+              )
+            })()}
+        </div>
+      )}
+
+      {/* Icebreaker content */}
       {state.phase === 'ICEBREAKER' && (
-        <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ flex: 1, padding: '16px 16px 0', minHeight: 0 }}>
           <IceBreaker retroId={retroId} isFacilitator={isFacilitator} />
         </div>
       )}
 
-      {state.phase === 'RETROSPECT' && (
-        <div
+      {state.phase !== 'ICEBREAKER' && (
+        <main
           style={{
-            padding: '8px 16px',
-            fontSize: 12,
-            color: theme.yellow,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
+            flex: 1,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            padding: 16,
+            minHeight: 0,
           }}
         >
-          <span style={{ opacity: 0.8 }}>&#128274;</span>
-          Cards are anonymous &mdash; only you can see yours. They will be
-          revealed in the next phase.
-        </div>
-      )}
-
-      {state.phase === 'GROUP_VOTE' && (
-        <div
-          style={{
-            padding: '8px 16px',
-            fontSize: 12,
-            color: theme.yellow,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <span>
-            Votes: {state.remainingVotes}/{state.maxVotes} remaining
-          </span>
-          <span style={{ color: theme.textTertiary, fontSize: 11 }}>
-            &mdash; use +/- on cards to vote
-          </span>
-          <span style={{ color: theme.border }}>|</span>
-          <span style={{ color: theme.textTertiary, fontSize: 11 }}>
-            select [ ] on cards to merge similar items
-          </span>
-        </div>
-      )}
-
-      {mergeSelection.selectedIds.length >= 2 &&
-        (() => {
-          const selectedColumns = new Set(
-            mergeSelection.selectedIds.map((id) => {
-              for (const col of state.columns) {
-                if (col.cards.some((c) => c.id === id)) return col.id
-              }
-              return null
-            }),
-          )
-          const sameColumn = selectedColumns.size === 1
-          return (
-            <div
-              style={{
-                padding: '6px 16px',
-                fontSize: 12,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                borderBottom: `1px solid ${theme.border}40`,
-              }}
-            >
-              <span style={{ color: theme.cyan }}>
-                {mergeSelection.selectedIds.length} cards selected
-              </span>
-              {!sameColumn && (
-                <span style={{ color: theme.yellow, fontSize: 11 }}>
-                  (must be from same column)
-                </span>
-              )}
-              <button
-                onClick={mergeSelection.doMerge}
-                disabled={!sameColumn}
-                style={{
-                  background: sameColumn ? `${theme.cyan}20` : 'transparent',
-                  border: `1px solid ${sameColumn ? theme.cyan : theme.textTertiary}60`,
-                  borderRadius: 2,
-                  color: sameColumn ? theme.cyan : theme.textTertiary,
-                  cursor: sameColumn ? 'pointer' : 'default',
-                  fontSize: 11,
-                  padding: '2px 8px',
-                  fontFamily: 'inherit',
-                  opacity: sameColumn ? 1 : 0.5,
-                }}
-              >
-                [merge]
-              </button>
-              <button
-                onClick={mergeSelection.clearSelection}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: theme.textTertiary,
-                  cursor: 'pointer',
-                  fontSize: 11,
-                  padding: '2px 4px',
-                  fontFamily: 'inherit',
-                }}
-              >
-                [cancel]
-              </button>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={isDragEnabled ? handleDragStart : undefined}
+            onDragEnd={isDragEnabled ? handleDragEnd : undefined}
+          >
+            <div style={{ display: 'flex', gap: 12, height: '100%' }}>
+              {state.columns.map((column) => (
+                <BoardColumn
+                  key={column.id}
+                  column={column}
+                  token={token}
+                  retroId={retroId}
+                />
+              ))}
             </div>
-          )
-        })()}
-
-      <main
-        style={{
-          flex: 1,
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          padding: 16,
-          minHeight: 0,
-        }}
-      >
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={isDragEnabled ? handleDragStart : undefined}
-          onDragEnd={isDragEnabled ? handleDragEnd : undefined}
-        >
-          <div style={{ display: 'flex', gap: 12, height: '100%' }}>
-            {state.columns.map((column) => (
-              <BoardColumn
-                key={column.id}
-                column={column}
-                token={token}
-                retroId={retroId}
-              />
-            ))}
-          </div>
-          <DragOverlay dropAnimation={null}>
-            {activeCard ? (
-              <div
-                style={{
-                  borderLeft: `2px solid ${state.columns.find((c) => c.id === activeCard.columnId)?.color ?? theme.cyan}`,
-                  padding: '6px 10px',
-                  background: theme.bg,
-                  fontSize: 12,
-                  color: theme.textPrimary,
-                  opacity: 0.9,
-                  boxShadow: `0 2px 8px ${theme.border}40`,
-                }}
-              >
-                <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
-                <span
+            <DragOverlay dropAnimation={null}>
+              {activeCard ? (
+                <div
                   style={{
-                    fontSize: 11,
-                    color: theme.textTertiary,
-                    opacity: 0.6,
+                    borderLeft: `2px solid ${state.columns.find((c) => c.id === activeCard.columnId)?.color ?? theme.cyan}`,
+                    padding: '6px 10px',
+                    background: theme.bg,
+                    fontSize: 12,
+                    color: theme.textPrimary,
+                    opacity: 0.9,
+                    boxShadow: `0 2px 8px ${theme.border}40`,
                   }}
                 >
-                  {activeCard.author.name ?? 'Anonymous'}
-                </span>
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      </main>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: theme.textTertiary,
+                      opacity: 0.6,
+                    }}
+                  >
+                    {activeCard.author.name ?? 'Anonymous'}
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </main>
+      )}
 
-      {/* Action items — fixed bottom panel */}
+      {/* Bottom bar: status + action items */}
       <div
         style={{
           flexShrink: 0,
-          padding: '0 16px 28px',
-          background: theme.bg,
-          borderTop: `1px solid ${theme.border}40`,
+          background: theme.bgSecondary,
+          borderTop: `1px solid ${theme.border}`,
         }}
       >
-        <button
-          onClick={toggleActionPanel}
-          aria-label={
-            actionPanelOpen ? 'Collapse action items' : 'Expand action items'
-          }
+        <div
           style={{
-            background: theme.bg,
-            border: `1px solid ${theme.border}40`,
-            borderBottom: actionPanelOpen
-              ? 'none'
-              : `1px solid ${theme.border}40`,
-            borderRadius: actionPanelOpen ? '4px 4px 0 0' : 4,
-            color: theme.textTertiary,
-            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '4px 16px',
             fontSize: 11,
-            fontFamily: 'inherit',
-            padding: '4px 12px',
-            width: '100%',
-            textAlign: 'left',
+            color: theme.textTertiary,
+            gap: 16,
           }}
         >
-          {actionPanelOpen ? '▾ action items' : '▸ action items'}
-        </button>
+          <ThemePicker />
+          <span style={{ color: theme.border }}>│</span>
+          <span>
+            <span className="box-drawing" style={{ color: theme.green }}>
+              █
+            </span>{' '}
+            connected
+          </span>
+          <span>
+            <span style={{ color: theme.border }}>│</span> {totalCards} cards
+          </span>
+          <span>
+            <span style={{ color: theme.border }}>│</span>{' '}
+            {state.activeUsers.length} online
+          </span>
+          {state.phase === 'GROUP_VOTE' && (
+            <span>
+              <span style={{ color: theme.border }}>│</span>{' '}
+              {state.remainingVotes}/{state.maxVotes} votes left
+            </span>
+          )}
+          <button
+            onClick={toggleActionPanel}
+            aria-label={
+              actionPanelOpen ? 'Collapse action items' : 'Expand action items'
+            }
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: 'none',
+              color: theme.textTertiary,
+              cursor: 'pointer',
+              fontSize: 11,
+              fontFamily: 'inherit',
+              padding: 0,
+            }}
+          >
+            {actionPanelOpen ? '▾ action items' : '▸ action items'}
+          </button>
+        </div>
         {actionPanelOpen && (
           <div
             style={{
               maxHeight: 260,
               overflowY: 'auto',
-              border: `1px solid ${theme.border}40`,
-              borderTop: 'none',
-              borderRadius: '0 0 4px 4px',
+              borderTop: `1px solid ${theme.border}40`,
             }}
           >
             <ActionItemsPanel token={token} retroId={retroId} />
           </div>
         )}
       </div>
-
-      <StatusBar
-        items={[
-          `${state.columns.length} columns`,
-          `${totalCards} cards`,
-          `${state.activeUsers.length} online`,
-          ...(state.phase === 'GROUP_VOTE'
-            ? [`${state.remainingVotes}/${state.maxVotes} votes left`]
-            : []),
-        ]}
-      />
     </div>
   )
 }

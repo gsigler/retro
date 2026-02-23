@@ -51,29 +51,44 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Subheader bar */}
+      {/* Navigation bar */}
       <div
         style={{
           padding: '6px 24px',
           borderBottom: `1px solid ${theme.border}`,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           fontSize: 12,
           color: theme.textTertiary,
+          background: theme.bgSecondary,
+          position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: theme.green }}>~</span>
-          <span>{user?.email}</span>
+        <span>{user?.email}</span>
+        <span
+          style={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: 12,
+            fontWeight: 600,
+            color: theme.textTertiary,
+          }}
+        >
+          Retroation
+        </span>
+        <div
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
           {teams && teams.length > 0 && (
-            <>
-              <span style={{ color: theme.border }}>|</span>
-              <span style={{ color: theme.cyan }}>{teams[0].name}</span>
-            </>
+            <span style={{ color: theme.cyan }}>{teams[0].name}</span>
           )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: theme.border }}>|</span>
           <TerminalButton size="sm" onClick={() => setShowTeamPanel(true)}>
             team
           </TerminalButton>
@@ -96,10 +111,10 @@ export default function DashboardPage() {
         {isLoading && (
           <>
             <TerminalLoader command="retro dashboard --fetch" inline />
-            <TerminalFrame title="$ retro list --all">
+            <TerminalFrame title="Retros">
               <TerminalSkeleton lines={3} widths={[90, 75, 60]} />
             </TerminalFrame>
-            <TerminalFrame title="$ retro actions --all">
+            <TerminalFrame title="Action Items">
               <TerminalSkeleton lines={2} widths={[80, 55]} />
             </TerminalFrame>
           </>
@@ -188,20 +203,6 @@ export default function DashboardPage() {
             retros:{' '}
             <span style={{ color: theme.purple, fontWeight: 600 }}>
               {summary.retroCount}
-            </span>
-          </span>
-          <span style={{ color: theme.border }}>│</span>
-          <span>
-            open:{' '}
-            <span style={{ color: theme.yellow, fontWeight: 600 }}>
-              {summary.openActionItemCount}
-            </span>
-          </span>
-          <span style={{ color: theme.border }}>│</span>
-          <span>
-            completed:{' '}
-            <span style={{ color: theme.green, fontWeight: 600 }}>
-              {summary.completedActionItemCount}
             </span>
           </span>
         </div>

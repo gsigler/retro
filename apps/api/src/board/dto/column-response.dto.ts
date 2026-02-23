@@ -22,16 +22,4 @@ export class ColumnResponse {
       (column.cards ?? []).map(CardResponse.from),
     )
   }
-
-  static fromAnonymous(column: any): ColumnResponse {
-    return new ColumnResponse(
-      column.id,
-      column.retroId,
-      column.name,
-      column.description,
-      column.color,
-      column.position,
-      (column.cards ?? []).map(CardResponse.fromAnonymous),
-    )
-  }
 }

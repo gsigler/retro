@@ -80,7 +80,7 @@ export function RetrosSection({
 
   if (isLoading) {
     return (
-      <TerminalFrame title="$ retro list --all">
+      <TerminalFrame title="Retros">
         <TerminalSkeleton lines={3} widths={[90, 75, 60]} />
       </TerminalFrame>
     )
@@ -90,7 +90,7 @@ export function RetrosSection({
 
   return (
     <TerminalFrame
-      title="$ retro list --all"
+      title="Retros"
       right={
         <TerminalButton size="sm" onClick={() => setShowCreateDialog(true)}>
           + new retro

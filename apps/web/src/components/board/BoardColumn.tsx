@@ -38,7 +38,7 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
           position: 'sticky',
           top: 0,
           zIndex: 5,
-          background: theme.bg,
+          background: theme.bgSecondary,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -81,10 +81,10 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '12px 16px',
+          padding: '8px 10px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
+          gap: 6,
           minHeight: 24,
         }}
       >
@@ -98,7 +98,6 @@ export function BoardColumn({ column, token, retroId }: BoardColumnProps) {
               card={card}
               token={token}
               retroId={retroId}
-              columnColor={column.color}
             />
           ))}
         </SortableContext>
