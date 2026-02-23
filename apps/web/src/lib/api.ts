@@ -91,6 +91,13 @@ export function joinTeam(token: string, inviteCode: string) {
   })
 }
 
+export function regenerateInviteCode(token: string, teamId: string) {
+  return api<Team>(`/teams/${teamId}/invite/regenerate`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}
+
 export function addTeamMember(token: string, teamId: string, email: string) {
   return api<TeamMember>(`/teams/${teamId}/members`, {
     method: 'POST',

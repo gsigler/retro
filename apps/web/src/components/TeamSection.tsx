@@ -15,6 +15,7 @@ import {
   joinTeam,
   addTeamMember,
   removeTeamMember,
+  regenerateInviteCode,
 } from '@/lib/api'
 
 interface TeamSectionProps {
@@ -35,6 +36,7 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
   const [joinError, setJoinError] = useState<string | null>(null)
   const [isJoining, setIsJoining] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   const { data: teams, isLoading: isLoadingTeams } = useQuery({
     queryKey: ['teams'],
@@ -101,9 +103,21 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
 
   function handleCopyInviteCode() {
     if (!teamDetail) return
-    navigator.clipboard.writeText(teamDetail.inviteCode)
+    const url = `${window.location.origin}/teams/join?code=${teamDetail.inviteCode}`
+    navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleRegenerateInviteCode() {
+    if (!teamDetail) return
+    setIsRegenerating(true)
+    try {
+      await regenerateInviteCode(token, teamDetail.id)
+      await refresh()
+    } finally {
+      setIsRegenerating(false)
+    }
   }
 
   if (isLoadingTeams) {
@@ -235,7 +249,7 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
         )}
       </div>
 
-      {/* Invite code */}
+      {/* Invite link */}
       {isOwner && teamDetail && (
         <div
           style={{
@@ -245,6 +259,7 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
             marginTop: 8,
             fontSize: 11,
             color: theme.textTertiary,
+            flexWrap: 'wrap',
           }}
         >
           invite:
@@ -257,15 +272,29 @@ export function TeamSection({ token, userId, onMutation }: TeamSectionProps) {
               fontSize: 11,
               color: theme.yellow,
               letterSpacing: '0.05em',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: 320,
             }}
           >
-            {teamDetail.inviteCode}
+            {`${window.location.origin}/teams/join?code=${teamDetail.inviteCode}`}
           </code>
           <span
             onClick={handleCopyInviteCode}
             style={{ color: theme.cyan, cursor: 'pointer' }}
           >
             {copied ? 'copied!' : '[copy]'}
+          </span>
+          <span
+            onClick={handleRegenerateInviteCode}
+            style={{
+              color: theme.red,
+              cursor: isRegenerating ? 'default' : 'pointer',
+              opacity: isRegenerating ? 0.5 : 1,
+            }}
+          >
+            {isRegenerating ? 'regenerating...' : '[regenerate]'}
           </span>
         </div>
       )}

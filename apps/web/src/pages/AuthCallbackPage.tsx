@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { BlinkingCursor } from '@/components/board/TypingEffect'
 import { TerminalLoader } from '@/components/terminal/TerminalLoader'
+import { consumePendingInvite } from '@/pages/JoinPage'
 
 type Status = 'loading' | 'error'
 
@@ -25,7 +26,16 @@ export default function AuthCallbackPage() {
     window.history.replaceState({}, '', window.location.pathname)
 
     login(token)
-      .then(() => navigate('/dashboard', { replace: true }))
+      .then(() => {
+        const pendingCode = consumePendingInvite()
+        if (pendingCode) {
+          navigate(`/teams/join?code=${encodeURIComponent(pendingCode)}`, {
+            replace: true,
+          })
+        } else {
+          navigate('/dashboard', { replace: true })
+        }
+      })
       .catch(() => setStatus('error'))
   }, [searchParams, login, navigate])
 

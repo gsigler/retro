@@ -415,6 +415,40 @@ describe('TeamsService', () => {
     })
   })
 
+  describe('regenerateInviteCode', () => {
+    it('should regenerate invite code when user is owner', async () => {
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+      prisma.client.team.update.mockResolvedValue({
+        ...mockTeam,
+        inviteCode: 'abc1234567',
+      })
+
+      const result = await service.regenerateInviteCode(userId, teamId)
+
+      expect(prisma.client.team.update).toHaveBeenCalledWith({
+        where: { id: teamId },
+        data: { inviteCode: 'abc1234567' },
+      })
+      expect(result.inviteCode).toBe('abc1234567')
+    })
+
+    it('should throw ForbiddenException when user is not owner', async () => {
+      prisma.client.team.findUnique.mockResolvedValue(mockTeam)
+
+      await expect(
+        service.regenerateInviteCode(otherUserId, teamId),
+      ).rejects.toThrow(ForbiddenException)
+    })
+
+    it('should throw NotFoundException when team does not exist', async () => {
+      prisma.client.team.findUnique.mockResolvedValue(null)
+
+      await expect(
+        service.regenerateInviteCode(userId, 'nonexistent'),
+      ).rejects.toThrow(NotFoundException)
+    })
+  })
+
   describe('removeMember', () => {
     const membership = {
       id: 'membership-1',
