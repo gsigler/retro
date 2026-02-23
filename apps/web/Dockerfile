@@ -31,4 +31,4 @@ COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 ENV PORT=80
 EXPOSE 80
 
-CMD ["/bin/sh", "-c", "envsubst '$PORT $API_URL' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "export RESOLVER=$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf) && envsubst '$PORT $API_URL $RESOLVER' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
