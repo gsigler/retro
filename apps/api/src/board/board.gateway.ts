@@ -6,6 +6,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets'
+import { UsePipes, ValidationPipe } from '@nestjs/common'
 import { Server, Socket } from 'socket.io'
 import { SkipThrottle } from '@nestjs/throttler'
 import { JwtService } from '@nestjs/jwt'
@@ -14,6 +15,12 @@ import { TimerService } from './timer.service.js'
 import { CardResponse } from './dto/card-response.dto.js'
 import { ColumnResponse } from './dto/column-response.dto.js'
 import { ActionItemResponse } from '../action-items/dto/action-item-response.dto.js'
+import { TimerStartDto, RetroIdDto } from './dto/ws-timer.dto.js'
+import {
+  BoardJoinDto,
+  BoardLeaveDto,
+  IcebreakerShuffleDto,
+} from './dto/ws-board.dto.js'
 import type { RetroPhase } from '../retros/retros.service.js'
 
 interface AuthenticatedSocket extends Socket {
@@ -25,6 +32,7 @@ interface AuthenticatedSocket extends Socket {
 }
 
 @SkipThrottle()
+@UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @WebSocketGateway({
   namespace: '/board',
   cors: {
@@ -94,9 +102,8 @@ export class BoardGateway implements OnGatewayDisconnect {
   @SubscribeMessage('timer:start')
   async handleTimerStart(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { retroId: string; duration?: number },
+    @MessageBody() data: TimerStartDto,
   ) {
-    if (!data?.retroId) return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('timer:error', {
         message: 'Only the facilitator can control the timer',
@@ -129,9 +136,8 @@ export class BoardGateway implements OnGatewayDisconnect {
   @SubscribeMessage('timer:pause')
   async handleTimerPause(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { retroId: string },
+    @MessageBody() data: RetroIdDto,
   ) {
-    if (!data?.retroId) return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('timer:error', {
         message: 'Only the facilitator can control the timer',
@@ -148,9 +154,8 @@ export class BoardGateway implements OnGatewayDisconnect {
   @SubscribeMessage('timer:reset')
   async handleTimerReset(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { retroId: string },
+    @MessageBody() data: RetroIdDto,
   ) {
-    if (!data?.retroId) return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('timer:error', {
         message: 'Only the facilitator can control the timer',
@@ -183,12 +188,8 @@ export class BoardGateway implements OnGatewayDisconnect {
   @SubscribeMessage('board:join')
   async handleJoin(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { retroId: string },
+    @MessageBody() data: BoardJoinDto,
   ) {
-    if (!data?.retroId || typeof data.retroId !== 'string') {
-      return
-    }
-
     const hasAccess = await this.verifyRetroAccess(
       client.data.userId,
       data.retroId,
@@ -229,9 +230,8 @@ export class BoardGateway implements OnGatewayDisconnect {
   @SubscribeMessage('icebreaker:shuffle')
   async handleIcebreakerShuffle(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { retroId: string; shuffleCount: number },
+    @MessageBody() data: IcebreakerShuffleDto,
   ) {
-    if (!data?.retroId || typeof data.retroId !== 'string') return
     if (!(await this.verifyFacilitator(client.data.userId, data.retroId))) {
       client.emit('board:error', {
         message: 'Only the facilitator can shuffle the icebreaker',
@@ -248,12 +248,8 @@ export class BoardGateway implements OnGatewayDisconnect {
   @SubscribeMessage('board:leave')
   handleLeave(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { retroId: string },
+    @MessageBody() data: BoardLeaveDto,
   ) {
-    if (!data?.retroId || typeof data.retroId !== 'string') {
-      return
-    }
-
     const room = `retro:${data.retroId}`
     if (!client.rooms.has(room)) {
       return
