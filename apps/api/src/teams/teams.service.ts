@@ -125,9 +125,13 @@ export class TeamsService {
     const team = await this.findTeamOrThrow(teamId)
     this.assertOwner(userId, team.ownerId)
 
+    const data: Record<string, string> = {}
+    if (dto.name !== undefined) data.name = dto.name
+    if (dto.description !== undefined) data.description = dto.description
+
     return this.prisma.client.team.update({
       where: { id: teamId },
-      data: dto,
+      data,
     })
   }
 
