@@ -32,7 +32,8 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(`API error: ${res.status} ${res.statusText}`)
   }
 
-  return res.json() as Promise<T>
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
 }
 
 // Dashboard
