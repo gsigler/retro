@@ -75,7 +75,13 @@ export class BoardController {
     const response = CardResponse.from(card)
 
     if (phase === 'RETROSPECT' || phase === 'ICEBREAKER') {
-      this.boardGateway.emitCardCreatedToAuthor(retroId, req.user.id, response)
+      const hiddenResponse = CardResponse.hidden(card)
+      this.boardGateway.emitCardCreatedHidden(
+        retroId,
+        req.user.id,
+        response,
+        hiddenResponse,
+      )
     } else {
       this.boardGateway.emitCardCreated(retroId, response)
     }

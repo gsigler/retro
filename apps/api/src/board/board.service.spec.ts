@@ -128,46 +128,12 @@ describe('BoardService', () => {
   })
 
   describe('getBoard', () => {
-    it('should filter cards to author during ICEBREAKER phase', async () => {
+    it('should always fetch all cards (no authorId filter)', async () => {
       prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
       prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
       prisma.client.column.findMany.mockResolvedValue([mockColumn])
 
-      const result = await service.getBoard(userId, retroId)
-
-      expect(prisma.client.column.findMany).toHaveBeenCalledWith({
-        where: { retroId },
-        orderBy: { position: 'asc' },
-        include: {
-          cards: {
-            where: { authorId: userId, parentCardId: null },
-            orderBy: { position: 'asc' },
-            include: {
-              author: { select: { id: true, name: true } },
-              _count: { select: { votes: true } },
-              children: {
-                include: {
-                  author: { select: { id: true, name: true } },
-                  _count: { select: { votes: true } },
-                },
-                orderBy: { createdAt: 'asc' },
-              },
-            },
-          },
-        },
-      })
-      expect(result).toEqual([mockColumn])
-    })
-
-    it('should return all cards during GROUP_VOTE phase', async () => {
-      prisma.client.retro.findUnique.mockResolvedValue({
-        ...mockRetro,
-        phase: 'GROUP_VOTE',
-      })
-      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
-      prisma.client.column.findMany.mockResolvedValue([mockColumn])
-
-      const result = await service.getBoard(userId, retroId)
+      await service.getBoard(userId, retroId)
 
       expect(prisma.client.column.findMany).toHaveBeenCalledWith({
         where: { retroId },
@@ -190,7 +156,87 @@ describe('BoardService', () => {
           },
         },
       })
-      expect(result).toEqual([mockColumn])
+    })
+
+    it('should mask non-owned cards during ICEBREAKER phase', async () => {
+      const otherCard = {
+        ...mockCard,
+        id: 'card-other',
+        authorId: otherUserId,
+        content: 'Secret content',
+        author: { id: otherUserId, name: 'Other User' },
+        _count: { votes: 3 },
+        children: [],
+      }
+      const ownCard = {
+        ...mockCard,
+        authorId: userId,
+      }
+      prisma.client.retro.findUnique.mockResolvedValue(mockRetro)
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findMany.mockResolvedValue([
+        { ...mockColumn, cards: [ownCard, otherCard] },
+      ])
+
+      const result = await service.getBoard(userId, retroId)
+
+      // Own card is untouched
+      expect(result[0].cards[0]).toEqual(ownCard)
+      // Other user's card is masked
+      expect(result[0].cards[1].id).toBe('card-other')
+      expect(result[0].cards[1].content).toBe('')
+      expect(result[0].cards[1].author).toEqual({ id: 'anonymous', name: null })
+      expect(result[0].cards[1].voteCount).toBe(0)
+    })
+
+    it('should mask non-owned cards during RETROSPECT phase', async () => {
+      const otherCard = {
+        ...mockCard,
+        id: 'card-other',
+        authorId: otherUserId,
+        content: 'Secret',
+        author: { id: otherUserId, name: 'Other' },
+        _count: { votes: 0 },
+        children: [],
+      }
+      prisma.client.retro.findUnique.mockResolvedValue({
+        ...mockRetro,
+        phase: 'RETROSPECT',
+      })
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findMany.mockResolvedValue([
+        { ...mockColumn, cards: [otherCard] },
+      ])
+
+      const result = await service.getBoard(userId, retroId)
+
+      expect(result[0].cards[0].content).toBe('')
+      expect(result[0].cards[0].author.id).toBe('anonymous')
+    })
+
+    it('should return all cards unmasked during GROUP_VOTE phase', async () => {
+      const otherCard = {
+        ...mockCard,
+        id: 'card-other',
+        authorId: otherUserId,
+        content: 'Visible content',
+        author: { id: otherUserId, name: 'Other User' },
+        _count: { votes: 0 },
+        children: [],
+      }
+      prisma.client.retro.findUnique.mockResolvedValue({
+        ...mockRetro,
+        phase: 'GROUP_VOTE',
+      })
+      prisma.client.teamMember.findUnique.mockResolvedValue(mockMembership)
+      prisma.client.column.findMany.mockResolvedValue([
+        { ...mockColumn, cards: [otherCard] },
+      ])
+
+      const result = await service.getBoard(userId, retroId)
+
+      expect(result[0].cards[0].content).toBe('Visible content')
+      expect(result[0].cards[0].author.name).toBe('Other User')
     })
 
     it('should throw NotFoundException when retro does not exist', async () => {
