@@ -7,6 +7,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets'
 import { UsePipes, ValidationPipe } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Server, Socket } from 'socket.io'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service.js'
@@ -31,13 +32,7 @@ interface AuthenticatedSocket extends Socket {
 }
 
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-@WebSocketGateway({
-  namespace: '/board',
-  cors: {
-    origin: process.env.APP_URL ?? 'http://localhost:5173',
-    credentials: true,
-  },
-})
+@WebSocketGateway({ namespace: '/board' })
 export class BoardGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server
@@ -50,6 +45,7 @@ export class BoardGateway implements OnGatewayDisconnect {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly timerService: TimerService,
+    private readonly configService: ConfigService,
   ) {}
 
   private checkRateLimit(socketId: string): boolean {
@@ -76,6 +72,12 @@ export class BoardGateway implements OnGatewayDisconnect {
   }
 
   afterInit(server: Server) {
+    const origin = this.configService.get<string>(
+      'APP_URL',
+      'http://localhost:5173',
+    )
+    server.engine.opts.cors = { origin, credentials: true }
+
     server.use(async (socket: AuthenticatedSocket, next) => {
       try {
         const cookies = this.parseCookies(
