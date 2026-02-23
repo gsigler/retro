@@ -66,7 +66,7 @@ export default function LoginPage() {
             />
           </div>
           <span style={{ color: theme.textTertiary, fontSize: 12 }}>
-            retro — login
+            retroation — login
           </span>
         </div>
 
@@ -79,7 +79,7 @@ export default function LoginPage() {
           <p
             style={{ color: theme.textTertiary, fontSize: 12, marginBottom: 4 }}
           >
-            <span style={{ color: theme.green }}>$</span> retro auth
+            <span style={{ color: theme.green }}>$</span> retroation auth
           </p>
           <h1
             style={{
@@ -89,7 +89,7 @@ export default function LoginPage() {
               marginBottom: 4,
             }}
           >
-            Sign in to Retro
+            Sign in to Retroation
           </h1>
           <p
             style={{
