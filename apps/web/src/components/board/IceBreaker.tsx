@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { TerminalFrame } from '@/components/terminal/TerminalFrame'
 import { TerminalButton } from '@/components/terminal/TerminalButton'
@@ -12,26 +11,12 @@ interface IceBreakerProps {
 
 export function IceBreaker({ retroId, isFacilitator }: IceBreakerProps) {
   const { theme } = useTheme()
-  const { socketRef } = useBoardContext()
-  const [shuffleCount, setShuffleCount] = useState(0)
-
-  useEffect(() => {
-    const socket = socketRef.current
-    if (!socket) return
-
-    const handleShuffled = (data: { shuffleCount: number }) => {
-      setShuffleCount(data.shuffleCount)
-    }
-
-    socket.on('icebreaker:shuffled', handleShuffled)
-    return () => {
-      socket.off('icebreaker:shuffled', handleShuffled)
-    }
-  }, [socketRef])
+  const { state, dispatch, socketRef } = useBoardContext()
+  const shuffleCount = state.icebreakerShuffleCount
 
   function handleShuffle() {
     const next = shuffleCount + 1
-    setShuffleCount(next)
+    dispatch({ type: 'ICEBREAKER_SHUFFLED', shuffleCount: next })
     socketRef.current?.emit('icebreaker:shuffle', {
       retroId,
       shuffleCount: next,

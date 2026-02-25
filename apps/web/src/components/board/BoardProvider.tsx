@@ -34,6 +34,7 @@ interface BoardState {
   maxVotes: number
   remainingVotes: number
   timer: TimerState | null
+  icebreakerShuffleCount: number
 }
 
 type BoardAction =
@@ -63,6 +64,7 @@ type BoardAction =
     }
   | { type: 'TIMER_TICK'; remaining: number }
   | { type: 'ROSTER_SYNC'; users: ActiveUser[] }
+  | { type: 'ICEBREAKER_SHUFFLED'; shuffleCount: number }
 
 function findCardVoteCount(columns: Column[], cardId: string): number {
   for (const col of columns) {
@@ -306,6 +308,9 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
           }
         : state
 
+    case 'ICEBREAKER_SHUFFLED':
+      return { ...state, icebreakerShuffleCount: action.shuffleCount }
+
     default:
       return state
   }
@@ -359,6 +364,7 @@ export function BoardProvider({
     maxVotes: 5,
     remainingVotes: 5,
     timer: null,
+    icebreakerShuffleCount: 0,
   })
 
   const socketRef = useRef<Socket | null>(null)
@@ -501,6 +507,10 @@ export function BoardProvider({
 
     socket.on('timer:tick', (data: { remaining: number }) => {
       dispatch({ type: 'TIMER_TICK', remaining: data.remaining })
+    })
+
+    socket.on('icebreaker:shuffled', (data: { shuffleCount: number }) => {
+      dispatch({ type: 'ICEBREAKER_SHUFFLED', shuffleCount: data.shuffleCount })
     })
 
     socket.connect()
