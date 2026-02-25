@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import type { ActionItem, TeamMember } from '@/types/api'
 
@@ -31,7 +31,19 @@ export function ActionItemCard({
 
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(item.title)
+  const [isExiting, setIsExiting] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const checkRef = useRef<HTMLButtonElement>(null)
+
+  const triggerCheckPop = useCallback(() => {
+    const el = checkRef.current
+    if (el) {
+      el.style.animation = 'none'
+      void el.offsetHeight
+      el.style.animation = 'check-pop 200ms ease-out'
+    }
+  }, [])
 
   useEffect(() => {
     setTitle(item.title)
@@ -65,24 +77,47 @@ export function ActionItemCard({
     }
   }
 
+  function handleDelete() {
+    if (!onDelete) return
+    setIsExiting(true)
+    setTimeout(() => {
+      onDelete()
+    }, 200)
+  }
+
   const dueDateValue = item.dueDate
     ? new Date(item.dueDate).toISOString().slice(0, 10)
     : ''
 
   return (
     <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 10,
         padding: '4px 8px',
         fontSize: 12,
-        opacity: 1,
+        opacity: isExiting ? 0 : 1,
+        transform: isExiting ? 'translateX(-8px)' : 'translateX(0)',
+        transition:
+          'opacity 200ms ease-out, transform 200ms ease-out, background 150ms ease',
         borderBottom: `1px solid ${theme.border}22`,
+        background: isHovered ? `${theme.bgHover}` : 'transparent',
+        animation: 'slide-in 0.2s ease-out',
       }}
     >
       <button
-        onClick={isDone ? onMarkOpen : onMarkDone}
+        ref={checkRef}
+        onClick={() => {
+          triggerCheckPop()
+          if (isDone) {
+            onMarkOpen()
+          } else {
+            onMarkDone()
+          }
+        }}
         style={{
           background: 'transparent',
           border: 'none',
@@ -94,6 +129,7 @@ export function ActionItemCard({
           fontFamily: 'inherit',
           fontSize: 13,
           lineHeight: 1,
+          transition: 'color 150ms ease',
         }}
         aria-label={isDone ? 'Mark as open' : 'Mark as done'}
       >
@@ -132,6 +168,7 @@ export function ActionItemCard({
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
             cursor: editable ? 'text' : 'default',
+            transition: 'color 150ms ease',
           }}
         >
           {item.title}
@@ -206,7 +243,7 @@ export function ActionItemCard({
 
       {onDelete && (
         <button
-          onClick={onDelete}
+          onClick={handleDelete}
           aria-label="Delete action item"
           style={{
             background: 'transparent',
@@ -216,15 +253,16 @@ export function ActionItemCard({
             fontSize: 11,
             padding: 0,
             fontFamily: 'inherit',
-            opacity: 0,
+            opacity: isHovered ? 0.6 : 0,
             flexShrink: 0,
+            transition: 'opacity 150ms ease, color 150ms ease',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.opacity = '1'
             e.currentTarget.style.color = theme.red
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '0'
+            e.currentTarget.style.opacity = isHovered ? '0.6' : '0'
             e.currentTarget.style.color = theme.textTertiary
           }}
         >

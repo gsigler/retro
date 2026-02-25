@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useMutation } from '@tanstack/react-query'
@@ -13,13 +13,17 @@ import { ANONYMOUS_AUTHOR_ID } from '@/types/api'
 interface BoardCardProps {
   card: Card
   retroId: string
+  index?: number
 }
 
-export function BoardCard({ card, retroId }: BoardCardProps) {
+export function BoardCard({ card, retroId, index = 0 }: BoardCardProps) {
   const { theme } = useTheme()
   const { user } = useAuth()
   const { state, dispatch, mergeSelection } = useBoardContext()
   const [expanded, setExpanded] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const voteCountRef = useRef<HTMLSpanElement>(null)
 
   const isHidden = card.author.id === ANONYMOUS_AUTHOR_ID && card.content === ''
 
@@ -30,7 +34,7 @@ export function BoardCard({ card, retroId }: BoardCardProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: card.id, disabled: isHidden })
+  } = useSortable({ id: card.id, disabled: isHidden || isExiting })
 
   const isOwnCard = user?.id === card.author.id
   const showAnonymous = !isOwnCard && card.author.id === ANONYMOUS_AUTHOR_ID
@@ -55,10 +59,20 @@ export function BoardCard({ card, retroId }: BoardCardProps) {
     (card.voteCount ?? 0) +
     (card.children ?? []).reduce((sum, c) => sum + (c.voteCount ?? 0), 0)
 
+  const triggerVoteBump = useCallback(() => {
+    const el = voteCountRef.current
+    if (el) {
+      el.style.animation = 'none'
+      void el.offsetHeight // force reflow
+      el.style.animation = 'vote-bump 200ms ease-out'
+    }
+  }, [])
+
   const voteMutation = useMutation({
     mutationFn: () => voteCard(retroId, card.id),
     onMutate: () => {
       dispatch({ type: 'LOCAL_VOTE', cardId: card.id })
+      triggerVoteBump()
     },
     onError: () => {
       dispatch({ type: 'LOCAL_UNVOTE', cardId: card.id })
@@ -69,6 +83,7 @@ export function BoardCard({ card, retroId }: BoardCardProps) {
     mutationFn: () => unvoteCard(retroId, card.id),
     onMutate: () => {
       dispatch({ type: 'LOCAL_UNVOTE', cardId: card.id })
+      triggerVoteBump()
     },
     onError: () => {
       dispatch({ type: 'LOCAL_VOTE', cardId: card.id })
@@ -110,259 +125,293 @@ export function BoardCard({ card, retroId }: BoardCardProps) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isExiting
+      ? 'opacity 200ms ease-out, transform 200ms ease-out'
+      : transition,
     borderLeft: isSelectedForMerge ? `2px solid ${theme.cyan}` : 'none',
     borderRadius: 2,
     padding: canSelectForMerge ? '8px 10px 8px 36px' : '8px 10px',
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isExiting ? 0 : isDragging ? 0.5 : 1,
     cursor: 'grab',
     position: 'relative' as const,
-    background: isSelectedForMerge ? `${theme.cyan}10` : theme.bgSecondary,
+    background: isSelectedForMerge
+      ? `${theme.cyan}10`
+      : isHovered && !isDragging
+        ? theme.bgHover
+        : theme.bgSecondary,
   }
 
-  async function handleDelete() {
-    try {
+  function handleDelete() {
+    setIsExiting(true)
+    setTimeout(() => {
       dispatch({ type: 'CARD_DELETED', id: card.id })
-      await deleteCard(retroId, card.id)
-    } catch {
-      // Socket broadcast will reconcile
-    }
+      deleteCard(retroId, card.id).catch(() => {
+        // Socket broadcast will reconcile
+      })
+    }, 200)
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {/* Merge select checkbox */}
-      {canSelectForMerge && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            mergeSelection.toggleSelect(card.id)
-          }}
-          aria-label={
-            isSelectedForMerge ? 'Deselect for merge' : 'Select for merge'
-          }
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Inner wrapper for entrance animation */}
+      <div
+        style={{
+          animation: 'card-enter 0.2s ease-out backwards',
+          animationDelay: `${index * 30}ms`,
+        }}
+      >
+        {/* Merge select checkbox */}
+        {canSelectForMerge && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              mergeSelection.toggleSelect(card.id)
+            }}
+            aria-label={
+              isSelectedForMerge ? 'Deselect for merge' : 'Select for merge'
+            }
+            style={{
+              position: 'absolute',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              left: 6,
+              background: 'transparent',
+              border: 'none',
+              color: isSelectedForMerge ? theme.cyan : theme.textTertiary,
+              cursor: 'pointer',
+              fontSize: 11,
+              padding: 0,
+              fontFamily: 'inherit',
+              lineHeight: 1,
+              opacity: isSelectedForMerge ? 1 : 0.4,
+              transition: 'opacity 150ms ease, color 150ms ease',
+            }}
+          >
+            {isSelectedForMerge ? '[x]' : '[ ]'}
+          </button>
+        )}
+
+        {/* Delete button — visible on hover and focus */}
+        <TerminalButton
+          onClick={handleDelete}
+          aria-label="Delete card"
+          className="card-delete-btn"
+          size="sm"
           style={{
             position: 'absolute',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            left: 6,
-            background: 'transparent',
-            border: 'none',
-            color: isSelectedForMerge ? theme.cyan : theme.textTertiary,
-            cursor: 'pointer',
-            fontSize: 11,
-            padding: 0,
-            fontFamily: 'inherit',
+            top: 4,
+            right: 4,
+            color: theme.textTertiary,
+            fontSize: 10,
+            opacity: isHovered ? 0.6 : 0,
             lineHeight: 1,
-            opacity: isSelectedForMerge ? 1 : 0.4,
+            transition: 'opacity 150ms ease, color 150ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '1'
+            e.currentTarget.style.color = theme.red
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = isHovered ? '0.6' : '0'
+            e.currentTarget.style.color = theme.textTertiary
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.opacity = '1'
+            e.currentTarget.style.color = theme.red
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.opacity = '0'
+            e.currentTarget.style.color = theme.textTertiary
           }}
         >
-          {isSelectedForMerge ? '[x]' : '[ ]'}
-        </button>
-      )}
+          rm
+        </TerminalButton>
 
-      {/* Delete button — visible on hover and focus */}
-      <TerminalButton
-        onClick={handleDelete}
-        aria-label="Delete card"
-        className="card-delete-btn"
-        size="sm"
-        style={{
-          position: 'absolute',
-          top: 4,
-          right: 4,
-          color: theme.textTertiary,
-          fontSize: 10,
-          opacity: 0,
-          lineHeight: 1,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = '1'
-          e.currentTarget.style.color = theme.red
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = '0'
-          e.currentTarget.style.color = theme.textTertiary
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.opacity = '1'
-          e.currentTarget.style.color = theme.red
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.opacity = '0'
-          e.currentTarget.style.color = theme.textTertiary
-        }}
-      >
-        rm
-      </TerminalButton>
-
-      <p
-        style={{
-          whiteSpace: 'pre-wrap',
-          fontSize: 12,
-          color: theme.textPrimary,
-          paddingRight: 24,
-        }}
-      >
-        {card.content}
-      </p>
-
-      {/* Group badge */}
-      {hasChildren && (
-        <button
-          onClick={() => setExpanded(!expanded)}
+        <p
           style={{
-            background: `${theme.cyan}18`,
-            border: `1px solid ${theme.cyan}40`,
-            borderRadius: 2,
-            color: theme.cyan,
-            cursor: 'pointer',
-            fontSize: 10,
-            padding: '1px 6px',
-            fontFamily: 'inherit',
+            whiteSpace: 'pre-wrap',
+            fontSize: 12,
+            color: theme.textPrimary,
+            paddingRight: 24,
+          }}
+        >
+          {card.content}
+        </p>
+
+        {/* Group badge */}
+        {hasChildren && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              background: `${theme.cyan}18`,
+              border: `1px solid ${theme.cyan}40`,
+              borderRadius: 2,
+              color: theme.cyan,
+              cursor: 'pointer',
+              fontSize: 10,
+              padding: '1px 6px',
+              fontFamily: 'inherit',
+              marginTop: 4,
+              transition: 'background 150ms ease',
+            }}
+          >
+            {expanded ? '[-]' : '[+]'} {childCount} merged card
+            {childCount > 1 ? 's' : ''}
+          </button>
+        )}
+
+        {/* Expanded children */}
+        {hasChildren && expanded && (
+          <div
+            style={{
+              marginTop: 6,
+              paddingLeft: 8,
+              borderLeft: `1px solid ${theme.border}40`,
+              animation: 'expand-in 0.25s ease-out',
+              overflow: 'hidden',
+            }}
+          >
+            {card.children.map((child) => (
+              <div
+                key={child.id}
+                style={{
+                  padding: '4px 0',
+                  borderBottom: `1px solid ${theme.border}18`,
+                  animation: 'card-enter 0.2s ease-out backwards',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: theme.textSecondary,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {child.content}
+                </p>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: theme.textTertiary,
+                    opacity: 0.5,
+                  }}
+                >
+                  {child.author.id === ANONYMOUS_AUTHOR_ID
+                    ? 'Anonymous'
+                    : (child.author.name ?? 'Anonymous')}
+                  {(child.voteCount ?? 0) > 0 && ` | ${child.voteCount} votes`}
+                </span>
+              </div>
+            ))}
+            {state.phase === 'GROUP_VOTE' && (
+              <TerminalButton
+                onClick={() => unmergeMutation.mutate()}
+                disabled={unmergeMutation.isPending}
+                size="sm"
+                style={{
+                  color: theme.yellow,
+                  fontSize: 10,
+                  padding: '4px 0',
+                  opacity: 0.8,
+                }}
+              >
+                unmerge
+              </TerminalButton>
+            )}
+          </div>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             marginTop: 4,
           }}
         >
-          {expanded ? '[-]' : '[+]'} {childCount} merged card
-          {childCount > 1 ? 's' : ''}
-        </button>
-      )}
-
-      {/* Expanded children */}
-      {hasChildren && expanded && (
-        <div
-          style={{
-            marginTop: 6,
-            paddingLeft: 8,
-            borderLeft: `1px solid ${theme.border}40`,
-          }}
-        >
-          {card.children.map((child) => (
-            <div
-              key={child.id}
-              style={{
-                padding: '4px 0',
-                borderBottom: `1px solid ${theme.border}18`,
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 11,
-                  color: theme.textSecondary,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {child.content}
-              </p>
+          <span
+            style={{ fontSize: 11, color: theme.textTertiary, opacity: 0.6 }}
+          >
+            {authorDisplay}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {canVote && (
+              <>
+                <button
+                  onClick={() => unvoteMutation.mutate()}
+                  disabled={!hasVoted || unvoteMutation.isPending}
+                  aria-label="Remove vote"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: hasVoted ? theme.yellow : theme.textTertiary,
+                    cursor: hasVoted ? 'pointer' : 'default',
+                    fontSize: 12,
+                    padding: '0 3px',
+                    fontFamily: 'inherit',
+                    opacity: hasVoted ? 1 : 0.3,
+                    fontWeight: 600,
+                    transition: 'color 150ms ease, opacity 150ms ease',
+                  }}
+                >
+                  -
+                </button>
+                <span
+                  ref={voteCountRef}
+                  style={{
+                    color: hasVoted ? theme.yellow : theme.textTertiary,
+                    fontWeight: hasVoted ? 600 : 400,
+                    fontSize: 11,
+                    minWidth: 14,
+                    textAlign: 'center',
+                    transition: 'color 150ms ease',
+                  }}
+                >
+                  {hasChildren ? totalVoteCount : (card.voteCount ?? 0)}
+                </span>
+                <button
+                  onClick={() => voteMutation.mutate()}
+                  disabled={state.remainingVotes <= 0 || voteMutation.isPending}
+                  aria-label="Vote"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color:
+                      state.remainingVotes > 0
+                        ? theme.yellow
+                        : theme.textTertiary,
+                    cursor: state.remainingVotes > 0 ? 'pointer' : 'default',
+                    fontSize: 12,
+                    padding: '0 3px',
+                    fontFamily: 'inherit',
+                    opacity: state.remainingVotes > 0 ? 1 : 0.3,
+                    fontWeight: 600,
+                    transition: 'color 150ms ease, opacity 150ms ease',
+                  }}
+                >
+                  +
+                </button>
+              </>
+            )}
+            {!canVote && totalVoteCount > 0 && (
               <span
                 style={{
-                  fontSize: 10,
-                  color: theme.textTertiary,
-                  opacity: 0.5,
-                }}
-              >
-                {child.author.id === ANONYMOUS_AUTHOR_ID
-                  ? 'Anonymous'
-                  : (child.author.name ?? 'Anonymous')}
-                {(child.voteCount ?? 0) > 0 && ` | ${child.voteCount} votes`}
-              </span>
-            </div>
-          ))}
-          {state.phase === 'GROUP_VOTE' && (
-            <TerminalButton
-              onClick={() => unmergeMutation.mutate()}
-              disabled={unmergeMutation.isPending}
-              size="sm"
-              style={{
-                color: theme.yellow,
-                fontSize: 10,
-                padding: '4px 0',
-                opacity: 0.8,
-              }}
-            >
-              unmerge
-            </TerminalButton>
-          )}
-        </div>
-      )}
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 4,
-        }}
-      >
-        <span style={{ fontSize: 11, color: theme.textTertiary, opacity: 0.6 }}>
-          {authorDisplay}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {canVote && (
-            <>
-              <button
-                onClick={() => unvoteMutation.mutate()}
-                disabled={!hasVoted || unvoteMutation.isPending}
-                aria-label="Remove vote"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: hasVoted ? theme.yellow : theme.textTertiary,
-                  cursor: hasVoted ? 'pointer' : 'default',
-                  fontSize: 12,
-                  padding: '0 3px',
-                  fontFamily: 'inherit',
-                  opacity: hasVoted ? 1 : 0.3,
-                  fontWeight: 600,
-                }}
-              >
-                -
-              </button>
-              <span
-                style={{
-                  color: hasVoted ? theme.yellow : theme.textTertiary,
-                  fontWeight: hasVoted ? 600 : 400,
                   fontSize: 11,
-                  minWidth: 14,
-                  textAlign: 'center',
+                  color: theme.yellow,
+                  opacity: 0.7,
                 }}
               >
-                {hasChildren ? totalVoteCount : (card.voteCount ?? 0)}
+                {hasChildren ? totalVoteCount : card.voteCount}
               </span>
-              <button
-                onClick={() => voteMutation.mutate()}
-                disabled={state.remainingVotes <= 0 || voteMutation.isPending}
-                aria-label="Vote"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color:
-                    state.remainingVotes > 0
-                      ? theme.yellow
-                      : theme.textTertiary,
-                  cursor: state.remainingVotes > 0 ? 'pointer' : 'default',
-                  fontSize: 12,
-                  padding: '0 3px',
-                  fontFamily: 'inherit',
-                  opacity: state.remainingVotes > 0 ? 1 : 0.3,
-                  fontWeight: 600,
-                }}
-              >
-                +
-              </button>
-            </>
-          )}
-          {!canVote && totalVoteCount > 0 && (
-            <span
-              style={{
-                fontSize: 11,
-                color: theme.yellow,
-                opacity: 0.7,
-              }}
-            >
-              {hasChildren ? totalVoteCount : card.voteCount}
-            </span>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

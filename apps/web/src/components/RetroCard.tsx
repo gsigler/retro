@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { useTheme } from '@/contexts/ThemeContext'
 import { TerminalButton } from '@/components/terminal/TerminalButton'
@@ -17,9 +18,12 @@ export function RetroCard({
   onDelete,
 }: RetroCardProps) {
   const { theme } = useTheme()
+  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -27,6 +31,9 @@ export function RetroCard({
         padding: '6px 8px',
         fontSize: 12,
         borderBottom: `1px solid ${theme.border}22`,
+        background: isHovered ? theme.bgHover : 'transparent',
+        transition: 'background 150ms ease',
+        animation: 'slide-in 0.2s ease-out',
       }}
     >
       <Link

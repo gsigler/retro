@@ -8,9 +8,10 @@ import type { Column } from '@/types/api'
 interface BoardColumnProps {
   column: Column
   retroId: string
+  index?: number
 }
 
-export function BoardColumn({ column, retroId }: BoardColumnProps) {
+export function BoardColumn({ column, retroId, index = 0 }: BoardColumnProps) {
   const { theme } = useTheme()
   const { setNodeRef } = useDroppable({ id: column.id })
 
@@ -29,6 +30,8 @@ export function BoardColumn({ column, retroId }: BoardColumnProps) {
         border: `1px solid ${lineColor}40`,
         borderRadius: 6,
         position: 'relative',
+        animation: 'fade-in 0.3s ease-out backwards',
+        animationDelay: `${index * 60}ms`,
       }}
     >
       {/* Sticky column header */}
@@ -91,8 +94,8 @@ export function BoardColumn({ column, retroId }: BoardColumnProps) {
           items={topLevelCards.map((c) => c.id)}
           strategy={verticalListSortingStrategy}
         >
-          {topLevelCards.map((card) => (
-            <BoardCard key={card.id} card={card} retroId={retroId} />
+          {topLevelCards.map((card, i) => (
+            <BoardCard key={card.id} card={card} retroId={retroId} index={i} />
           ))}
         </SortableContext>
         <AddCardForm retroId={retroId} columnId={column.id} />

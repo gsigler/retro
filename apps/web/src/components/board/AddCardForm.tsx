@@ -13,6 +13,7 @@ export function AddCardForm({ retroId, columnId }: AddCardFormProps) {
   const { state, dispatch } = useBoardContext()
   const [isOpen, setIsOpen] = useState(false)
   const [content, setContent] = useState('')
+  const [isButtonHovered, setIsButtonHovered] = useState(false)
 
   if (state.phase !== 'RETROSPECT') return null
   async function handleSubmit(e: React.FormEvent) {
@@ -37,6 +38,8 @@ export function AddCardForm({ retroId, columnId }: AddCardFormProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
+        onMouseEnter={() => setIsButtonHovered(true)}
+        onMouseLeave={() => setIsButtonHovered(false)}
         style={{
           width: '100%',
           padding: '6px 10px',
@@ -48,13 +51,8 @@ export function AddCardForm({ retroId, columnId }: AddCardFormProps) {
           fontSize: 12,
           cursor: 'pointer',
           textAlign: 'left',
-          opacity: 0.5,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = '1'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = '0.5'
+          opacity: isButtonHovered ? 1 : 0.5,
+          transition: 'opacity 150ms ease',
         }}
       >
         <span style={{ color: theme.green }}>$</span> add item...
@@ -63,7 +61,10 @@ export function AddCardForm({ retroId, columnId }: AddCardFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      onSubmit={handleSubmit}
+      style={{ animation: 'card-enter 0.2s ease-out' }}
+    >
       <div
         style={{
           display: 'flex',

@@ -150,3 +150,94 @@ input[type='time'] {
 .fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+/* Card entrance — plays on mount inside sortable wrapper */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Vote count bump — scale up then back */
+@keyframes vote-bump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+/* Checkbox pop on toggle */
+@keyframes check-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+}
+
+/* Slide in from left for action items */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Expand children section */
+@keyframes expand-in {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+/* Subtle glow pulse for active phase indicator */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 6px currentColor;
+  }
+}
+
+/* Dialog backdrop fade in */
+@keyframes dialog-backdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Dialog content entrance */
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

@@ -115,6 +115,7 @@ export default function LandingPage() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '80px 24px',
+          animation: 'fade-in 0.4s ease-out',
         }}
       >
         <div
@@ -217,11 +218,13 @@ export default function LandingPage() {
               gap: 4,
             }}
           >
-            {features.map((feature) => (
+            {features.map((feature, i) => (
               <div
                 key={feature.cmd}
                 style={{
                   padding: '12px 16px',
+                  animation: 'fade-in 0.3s ease-out backwards',
+                  animationDelay: `${i * 80}ms`,
                 }}
               >
                 <div style={{ marginBottom: 4 }}>

@@ -39,7 +39,7 @@ export function TerminalButton({
     fontWeight: 400,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.4 : 1,
-    transition: 'opacity 150ms',
+    transition: 'opacity 150ms ease, color 150ms ease, transform 100ms ease',
     whiteSpace: 'nowrap',
     background: 'transparent',
     border: 'none',
@@ -58,16 +58,44 @@ export function TerminalButton({
 
   const merged = { ...base, ...style }
 
+  function handleMouseDown(e: React.MouseEvent<HTMLElement>) {
+    if (!disabled) {
+      e.currentTarget.style.transform = 'scale(0.96)'
+    }
+  }
+
+  function handleMouseUp(e: React.MouseEvent<HTMLElement>) {
+    e.currentTarget.style.transform = ''
+  }
+
+  function handleMouseEnter(e: React.MouseEvent<HTMLElement>) {
+    if (!disabled) {
+      e.currentTarget.style.opacity = '0.8'
+    }
+  }
+
+  function handleMouseLeave(e: React.MouseEvent<HTMLElement>) {
+    e.currentTarget.style.transform = ''
+    e.currentTarget.style.opacity = disabled ? '0.4' : '1'
+  }
+
+  const interactionProps = {
+    onMouseDown: handleMouseDown,
+    onMouseUp: handleMouseUp,
+    onMouseEnter: handleMouseEnter,
+    onMouseLeave: handleMouseLeave,
+  }
+
   if (asChild && href) {
     return (
-      <a href={href} style={merged}>
+      <a href={href} style={merged} {...interactionProps}>
         {variant === 'bracket' ? <>&#91;{children}&#93;</> : children}
       </a>
     )
   }
 
   return (
-    <button style={merged} disabled={disabled} {...props}>
+    <button style={merged} disabled={disabled} {...interactionProps} {...props}>
       {variant === 'bracket' ? <>&#91;{children}&#93;</> : children}
     </button>
   )
