@@ -27,6 +27,9 @@ const mockSocket = {
   emit: vi.fn(),
 }
 
+const mockDispatch = vi.fn()
+let mockShuffleCount = 0
+
 vi.mock('./BoardProvider', () => ({
   useBoardContext: () => ({
     socketRef: { current: mockSocket },
@@ -39,8 +42,9 @@ vi.mock('./BoardProvider', () => ({
       maxVotes: 5,
       remainingVotes: 5,
       timer: null,
+      icebreakerShuffleCount: mockShuffleCount,
     },
-    dispatch: vi.fn(),
+    dispatch: mockDispatch,
     mergeSelection: {
       selectedIds: [],
       toggleSelect: vi.fn(),
@@ -53,6 +57,7 @@ vi.mock('./BoardProvider', () => ({
 describe('IceBreaker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockShuffleCount = 0
   })
 
   it('displays a question from the list', () => {
@@ -92,17 +97,22 @@ describe('IceBreaker', () => {
     expect(screen.getByRole('button', { name: /shuffle/i })).toBeDefined()
   })
 
-  it('changes question when shuffle is clicked', () => {
+  it('shows different question for different shuffle counts', () => {
+    mockShuffleCount = 0
+    const { unmount } = render(
+      <IceBreaker retroId="retro-1" isFacilitator={true} />,
+    )
+    const first = screen.getByText((content) =>
+      ICEBREAKER_QUESTIONS.some((q) => content.includes(q)),
+    ).textContent
+
+    unmount()
+
+    mockShuffleCount = 1
     render(<IceBreaker retroId="retro-1" isFacilitator={true} />)
-
-    const getQuestion = () =>
-      screen.getByText((content) =>
-        ICEBREAKER_QUESTIONS.some((q) => content.includes(q)),
-      ).textContent
-
-    const first = getQuestion()
-    fireEvent.click(screen.getByRole('button', { name: /shuffle/i }))
-    const second = getQuestion()
+    const second = screen.getByText((content) =>
+      ICEBREAKER_QUESTIONS.some((q) => content.includes(q)),
+    ).textContent
 
     expect(first).not.toBe(second)
   })
@@ -118,12 +128,14 @@ describe('IceBreaker', () => {
     })
   })
 
-  it('listens for icebreaker:shuffled socket event', () => {
-    render(<IceBreaker retroId="retro-1" isFacilitator={false} />)
+  it('dispatches ICEBREAKER_SHUFFLED when facilitator shuffles', () => {
+    render(<IceBreaker retroId="retro-1" isFacilitator={true} />)
 
-    expect(mockSocket.on).toHaveBeenCalledWith(
-      'icebreaker:shuffled',
-      expect.any(Function),
-    )
+    fireEvent.click(screen.getByRole('button', { name: /shuffle/i }))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'ICEBREAKER_SHUFFLED',
+      shuffleCount: 1,
+    })
   })
 })

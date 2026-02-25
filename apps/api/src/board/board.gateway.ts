@@ -43,6 +43,7 @@ export class BoardGateway implements OnGatewayDisconnect {
   server!: Server
 
   private readonly rateLimits = new Map<string, number[]>()
+  private readonly icebreakerShuffleCount = new Map<string, number>()
   private readonly RATE_LIMIT_WINDOW_MS = 60_000
   private readonly RATE_LIMIT_MAX = 30
 
@@ -199,6 +200,7 @@ export class BoardGateway implements OnGatewayDisconnect {
         const sockets = await this.server.in(room).fetchSockets()
         if (sockets.length === 0) {
           this.timerService.cleanup(retroId)
+          this.icebreakerShuffleCount.delete(retroId)
         }
       }
     }
@@ -245,6 +247,11 @@ export class BoardGateway implements OnGatewayDisconnect {
     if (timerState) {
       client.emit('timer:sync', timerState)
     }
+
+    const shuffleCount = this.icebreakerShuffleCount.get(data.retroId)
+    if (shuffleCount != null) {
+      client.emit('icebreaker:shuffled', { shuffleCount })
+    }
   }
 
   @SubscribeMessage('icebreaker:shuffle')
@@ -259,6 +266,8 @@ export class BoardGateway implements OnGatewayDisconnect {
       })
       return
     }
+
+    this.icebreakerShuffleCount.set(data.retroId, data.shuffleCount)
 
     const room = `retro:${data.retroId}`
     client.to(room).emit('icebreaker:shuffled', {
