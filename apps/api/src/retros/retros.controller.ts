@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import { RetrosService } from './retros.service.js'
 import { BoardService } from '../board/board.service.js'
 import { BoardGateway } from '../board/board.gateway.js'
+import { DashboardGateway } from '../dashboard/dashboard.gateway.js'
 import { BoardResponse } from '../board/dto/board-response.dto.js'
 import { CreateRetroDto } from './dto/create-retro.dto.js'
 import { UpdateRetroDto } from './dto/update-retro.dto.js'
@@ -31,6 +32,7 @@ export class RetrosController {
     private readonly retrosService: RetrosService,
     private readonly boardService: BoardService,
     private readonly boardGateway: BoardGateway,
+    private readonly dashboardGateway: DashboardGateway,
   ) {}
 
   @Post('teams/:teamId/retros')
@@ -40,6 +42,7 @@ export class RetrosController {
     @Body() dto: CreateRetroDto,
   ): Promise<RetroResponse> {
     const retro = await this.retrosService.create(req.user.id, teamId, dto)
+    this.dashboardGateway.emitRetroCreated(teamId)
     return RetroResponse.from(retro)
   }
 
@@ -68,6 +71,7 @@ export class RetrosController {
     @Body() dto: UpdateRetroDto,
   ): Promise<RetroWithCountsResponse> {
     const retro = await this.retrosService.update(req.user.id, id, dto)
+    this.dashboardGateway.emitRetroUpdated(retro.teamId)
     return RetroWithCountsResponse.from(retro)
   }
 
@@ -95,10 +99,12 @@ export class RetrosController {
 
   @Delete('retros/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
+  async remove(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
   ): Promise<void> {
-    return this.retrosService.remove(req.user.id, id)
+    const retro = await this.retrosService.findOne(req.user.id, id)
+    await this.retrosService.remove(req.user.id, id)
+    this.dashboardGateway.emitRetroDeleted(retro.teamId)
   }
 }

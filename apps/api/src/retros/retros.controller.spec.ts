@@ -3,6 +3,7 @@ import { RetrosController } from './retros.controller.js'
 import { RetrosService } from './retros.service.js'
 import { BoardService } from '../board/board.service.js'
 import { BoardGateway } from '../board/board.gateway.js'
+import { DashboardGateway } from '../dashboard/dashboard.gateway.js'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js'
 import {
   RetroResponse,
@@ -23,6 +24,11 @@ describe('RetrosController', () => {
   let boardGateway: {
     emitPhaseChanged: jest.Mock
     emitBoardRevealed: jest.Mock
+  }
+  let dashboardGateway: {
+    emitRetroCreated: jest.Mock
+    emitRetroUpdated: jest.Mock
+    emitRetroDeleted: jest.Mock
   }
 
   const req = { user: { id: 'user-1' } }
@@ -63,12 +69,19 @@ describe('RetrosController', () => {
       emitBoardRevealed: jest.fn(),
     }
 
+    dashboardGateway = {
+      emitRetroCreated: jest.fn(),
+      emitRetroUpdated: jest.fn(),
+      emitRetroDeleted: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RetrosController],
       providers: [
         { provide: RetrosService, useValue: retrosService },
         { provide: BoardService, useValue: boardService },
         { provide: BoardGateway, useValue: boardGateway },
+        { provide: DashboardGateway, useValue: dashboardGateway },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -89,13 +102,14 @@ describe('RetrosController', () => {
   })
 
   describe('create', () => {
-    it('should return a RetroResponse', async () => {
+    it('should return a RetroResponse and emit dashboard event', async () => {
       const dto = { name: 'Sprint 1 Retro', date: '2026-02-16' }
       retrosService.create.mockResolvedValue(mockPrismaRetro)
 
       const result = await controller.create(req, 'team-1', dto)
 
       expect(retrosService.create).toHaveBeenCalledWith('user-1', 'team-1', dto)
+      expect(dashboardGateway.emitRetroCreated).toHaveBeenCalledWith('team-1')
       expect(result).toBeInstanceOf(RetroResponse)
       expect(result.id).toBe('retro-1')
       expect(result.createdBy.email).toBe('owner@test.com')
@@ -132,7 +146,7 @@ describe('RetrosController', () => {
   })
 
   describe('update', () => {
-    it('should return a RetroWithCountsResponse', async () => {
+    it('should return a RetroWithCountsResponse and emit dashboard event', async () => {
       const dto = { name: 'Updated Retro' }
       retrosService.update.mockResolvedValue({
         ...mockPrismaRetroWithCounts,
@@ -146,19 +160,22 @@ describe('RetrosController', () => {
         'retro-1',
         dto,
       )
+      expect(dashboardGateway.emitRetroUpdated).toHaveBeenCalledWith('team-1')
       expect(result).toBeInstanceOf(RetroWithCountsResponse)
       expect(result.name).toBe('Updated Retro')
     })
   })
 
   describe('remove', () => {
-    it('should call retrosService.remove with user id and retro id', async () => {
+    it('should call retrosService.remove and emit dashboard event', async () => {
+      retrosService.findOne.mockResolvedValue(mockPrismaRetroWithCounts)
       retrosService.remove.mockResolvedValue(undefined)
 
-      const result = await controller.remove(req, 'retro-1')
+      await controller.remove(req, 'retro-1')
 
+      expect(retrosService.findOne).toHaveBeenCalledWith('user-1', 'retro-1')
       expect(retrosService.remove).toHaveBeenCalledWith('user-1', 'retro-1')
-      expect(result).toBeUndefined()
+      expect(dashboardGateway.emitRetroDeleted).toHaveBeenCalledWith('team-1')
     })
   })
 })

@@ -10,3 +10,11 @@ export function createBoardSocket(): Socket {
     autoConnect: false,
   })
 }
+
+export function createDashboardSocket(): Socket {
+  return io(`${SOCKET_URL}/dashboard`, {
+    withCredentials: true,
+    transports: ['websocket'],
+    autoConnect: false,
+  })
+}

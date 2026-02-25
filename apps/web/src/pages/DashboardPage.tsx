@@ -12,6 +12,7 @@ import { TerminalLoader } from '@/components/terminal/TerminalLoader'
 import { TerminalFrame } from '@/components/terminal/TerminalFrame'
 import { TerminalSkeleton } from '@/components/terminal/TerminalSkeleton'
 import { fetchDashboardSummary, fetchTeams } from '@/lib/api'
+import { useDashboardSync } from '@/lib/useDashboardSync'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -20,10 +21,11 @@ export default function DashboardPage() {
   const queryClient = useQueryClient()
   const [showTeamPanel, setShowTeamPanel] = useState(false)
 
+  useDashboardSync()
+
   const { data: teams, isLoading: isLoadingTeams } = useQuery({
     queryKey: ['teams'],
     queryFn: () => fetchTeams(),
-    refetchInterval: 10_000,
   })
 
   const hasNoTeams = !isLoadingTeams && !!teams && teams.length === 0
@@ -35,7 +37,6 @@ export default function DashboardPage() {
   } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => fetchDashboardSummary(),
-    refetchInterval: 10_000,
   })
 
   function handleMutation() {
