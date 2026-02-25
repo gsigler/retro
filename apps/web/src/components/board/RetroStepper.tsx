@@ -180,6 +180,11 @@ export function RetroStepper({
                   color: phaseColor(i),
                   fontWeight: i === currentIndex ? 600 : 400,
                   whiteSpace: 'nowrap',
+                  transition: 'color 300ms ease, font-weight 300ms ease',
+                  animation:
+                    i === currentIndex
+                      ? 'glow-pulse 2s ease-in-out infinite'
+                      : undefined,
                 }}
               >
                 {i + 1} {p.label}

@@ -49,6 +49,7 @@ export function TerminalDialog({
         alignItems: 'center',
         justifyContent: 'center',
         background: 'rgba(0,0,0,0.6)',
+        animation: 'dialog-backdrop 0.2s ease-out',
       }}
     >
       <div
@@ -60,6 +61,7 @@ export function TerminalDialog({
           maxWidth: 480,
           margin: '0 16px',
           overflow: 'visible',
+          animation: 'dialog-enter 0.2s ease-out',
         }}
       >
         <div

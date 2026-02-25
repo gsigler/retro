@@ -50,6 +50,7 @@ export function ThemePicker({ dropUp = true }: { dropUp?: boolean } = {}) {
             padding: 4,
             zIndex: 50,
             minWidth: 180,
+            animation: 'card-enter 0.15s ease-out',
           }}
         >
           {Object.entries(themes).map(([key, t]) => (

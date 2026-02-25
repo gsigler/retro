@@ -54,10 +54,12 @@ export function IceBreaker({ retroId, isFacilitator }: IceBreakerProps) {
       }
     >
       <p
+        key={shuffleCount}
         style={{
           fontSize: 14,
           color: theme.textPrimary,
           lineHeight: 1.5,
+          animation: 'fade-in 0.3s ease-out',
         }}
       >
         <span style={{ color: theme.purple, marginRight: 8 }}>?</span>

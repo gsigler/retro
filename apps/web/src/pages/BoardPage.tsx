@@ -380,6 +380,7 @@ function BoardContent({
             alignItems: 'center',
             gap: 8,
             flexWrap: 'wrap',
+            animation: 'fade-in 0.25s ease-out',
           }}
         >
           {state.phase === 'RETROSPECT' && (
@@ -466,11 +467,12 @@ function BoardContent({
             onDragEnd={isDragEnabled ? handleDragEnd : undefined}
           >
             <div style={{ display: 'flex', gap: 12, height: '100%' }}>
-              {state.columns.map((column) => (
+              {state.columns.map((column, i) => (
                 <BoardColumn
                   key={column.id}
                   column={column}
                   retroId={retroId}
+                  index={i}
                 />
               ))}
             </div>
@@ -483,8 +485,10 @@ function BoardContent({
                     background: theme.bg,
                     fontSize: 12,
                     color: theme.textPrimary,
-                    opacity: 0.9,
-                    boxShadow: `0 2px 8px ${theme.border}40`,
+                    opacity: 0.95,
+                    boxShadow: `0 4px 16px ${theme.border}50, 0 0 0 1px ${theme.border}20`,
+                    borderRadius: 2,
+                    transform: 'scale(1.02) rotate(0.5deg)',
                   }}
                 >
                   <p style={{ whiteSpace: 'pre-wrap' }}>{activeCard.content}</p>
@@ -557,22 +561,31 @@ function BoardContent({
               fontSize: 11,
               fontFamily: 'inherit',
               padding: 0,
+              transition: 'color 150ms ease',
             }}
           >
-            {actionPanelOpen ? '▾ action items' : '▸ action items'}
+            <span
+              style={{
+                display: 'inline-block',
+                transition: 'transform 200ms ease',
+                transform: actionPanelOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+              }}
+            >
+              ▾
+            </span>{' '}
+            action items
           </button>
         </div>
-        {actionPanelOpen && (
-          <div
-            style={{
-              maxHeight: 260,
-              overflowY: 'auto',
-              borderTop: `1px solid ${theme.border}40`,
-            }}
-          >
-            <ActionItemsPanel retroId={retroId} />
-          </div>
-        )}
+        <div
+          style={{
+            maxHeight: actionPanelOpen ? 260 : 0,
+            overflowY: actionPanelOpen ? 'auto' : 'hidden',
+            borderTop: actionPanelOpen ? `1px solid ${theme.border}40` : 'none',
+            transition: 'max-height 250ms ease-out',
+          }}
+        >
+          <ActionItemsPanel retroId={retroId} />
+        </div>
       </div>
     </div>
   )
