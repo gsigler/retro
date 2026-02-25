@@ -40,7 +40,6 @@ export function RetrosSection({ userId, onMutation }: RetrosSectionProps) {
     queryKey: ['retros', team?.id],
     queryFn: () => fetchRetros(team!.id),
     enabled: !!team,
-    refetchInterval: 10_000,
   })
 
   async function refresh() {

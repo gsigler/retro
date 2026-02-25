@@ -39,6 +39,10 @@ const mockSummary = {
   recentActionItems: [],
 }
 
+vi.mock('@/lib/useDashboardSync', () => ({
+  useDashboardSync: vi.fn(),
+}))
+
 vi.mock('@/lib/api', () => ({
   fetchDashboardSummary: vi.fn(),
   fetchTeams: vi.fn().mockResolvedValue([]),
