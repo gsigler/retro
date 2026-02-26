@@ -35,7 +35,7 @@ docker-compose.override.yml
 /playwright-report/
 /blob-report/
 /playwright/.cache/
-e2e/.auth/user.json
+e2e/.auth/*.json
 
 # AI agent local overrides
 CLAUDE.local.md
