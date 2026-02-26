@@ -17,7 +17,7 @@ test.describe('real-time WebSocket sync', () => {
   let teamId: string
   let retroId: string
 
-  test.beforeAll(async ({ request }) => {
+  test.beforeAll(async ({ request, playwright }) => {
     // User 1 creates a team
     const teamRes = await request.post(`${API_URL}/teams`, {
       data: { name: 'Sync Test Team', description: 'For WebSocket E2E' },
@@ -36,9 +36,8 @@ test.describe('real-time WebSocket sync', () => {
     teamId = team.id
 
     // User 2 joins the team via invite code
-    const user2StorageState = 'e2e/.auth/user2.json'
-    const user2Context = await request.newContext({
-      storageState: user2StorageState,
+    const user2Context = await playwright.request.newContext({
+      storageState: 'e2e/.auth/user2.json',
     })
     await user2Context.post(`${API_URL}/teams/join`, {
       data: { inviteCode: team.inviteCode },

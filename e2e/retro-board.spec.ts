@@ -61,9 +61,9 @@ test.describe('retro board lifecycle', () => {
     ).toBeVisible()
 
     // Board columns should be visible (Start / Stop / Continue template)
-    await expect(page.getByText('START')).toBeVisible()
-    await expect(page.getByText('STOP')).toBeVisible()
-    await expect(page.getByText('CONTINUE')).toBeVisible()
+    await expect(page.getByText('Start', { exact: true })).toBeVisible()
+    await expect(page.getByText('Stop', { exact: true })).toBeVisible()
+    await expect(page.getByText('Continue', { exact: true })).toBeVisible()
 
     // Add a card to the first column
     const addButtons = page.getByText('add item...')
