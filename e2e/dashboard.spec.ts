@@ -12,9 +12,7 @@ test.describe('dashboard', () => {
     // The team dialog should appear automatically when user has no teams
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible({ timeout: 10_000 })
-    await expect(
-      dialog.getByText(/create team|join with an invite/i),
-    ).toBeVisible()
+    await expect(dialog.getByText(/No teams found/i)).toBeVisible()
   })
 
   test('can create a team via the dialog', async ({ page }) => {
@@ -46,7 +44,9 @@ test.describe('dashboard', () => {
     await page.goto('/dashboard')
 
     // Wait for dashboard to fully load - look for the Retros section
-    await expect(page.getByText('Retros')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Retros', { exact: true })).toBeVisible({
+      timeout: 10_000,
+    })
 
     // Click new retro button
     await page.getByText('+ new retro').click()
@@ -69,6 +69,6 @@ test.describe('dashboard', () => {
     })
 
     await page.getByText('logout').click()
-    await expect(page).toHaveURL('/', { timeout: 10_000 })
+    await expect(page).toHaveURL('/login', { timeout: 10_000 })
   })
 })
