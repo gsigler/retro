@@ -30,6 +30,13 @@ yarn-error.log*
 # Docker
 docker-compose.override.yml
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+e2e/.auth/user.json
+
 # AI agent local overrides
 CLAUDE.local.md
 AGENTS.override.md

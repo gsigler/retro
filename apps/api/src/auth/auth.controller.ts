@@ -1,7 +1,17 @@
-import { Controller, Get, Post, Request, Res, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Post,
+  Request,
+  Res,
+  UseGuards,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { Response } from 'express'
 import { AuthService } from './auth.service.js'
+import { TestLoginDto } from './dto/test-login.dto.js'
 import { GoogleAuthGuard } from './guards/google-auth.guard.js'
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js'
 
@@ -67,5 +77,29 @@ export class AuthController {
       path: '/',
     })
     res.json({ message: 'Logged out' })
+  }
+
+  @Post('test-login')
+  async testLogin(@Body() dto: TestLoginDto, @Res() res: Response) {
+    if (!this.configService.get('E2E_TEST_MODE')) {
+      throw new NotFoundException()
+    }
+
+    const { accessToken, expiresInMs } =
+      await this.authService.findOrCreateGoogleUser({
+        googleId: `test-${dto.email}`,
+        email: dto.email,
+        name: dto.name ?? 'E2E Test User',
+      })
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: expiresInMs,
+    })
+
+    res.json({ message: 'ok' })
   }
 }
