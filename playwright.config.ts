@@ -50,7 +50,7 @@ export default defineConfig({
         {
           // In CI: run the pre-built API (no compilation step, instant start)
           command: `node apps/api/dist/src/main.js`,
-          url: `${API_URL}/api`,
+          url: API_URL,
           reuseExistingServer: false,
           timeout: 30_000,
           env: { E2E_TEST_MODE: 'true', PORT: API_PORT },
@@ -67,7 +67,7 @@ export default defineConfig({
         {
           // Locally: use dev servers (hot reload)
           command: `E2E_TEST_MODE=true npm run dev:api`,
-          url: `${API_URL}/api`,
+          url: API_URL,
           reuseExistingServer: true,
           timeout: 60_000,
           env: { E2E_TEST_MODE: 'true' },
