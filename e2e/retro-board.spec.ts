@@ -115,7 +115,7 @@ test.describe('retro board lifecycle', () => {
     ).toBeVisible()
 
     // Action items panel should be visible
-    await expect(page.getByText('action items')).toBeVisible()
+    await expect(page.getByText('action items', { exact: true })).toBeVisible()
   })
 
   test('back link navigates to dashboard', async ({ page }) => {

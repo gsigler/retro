@@ -57,7 +57,7 @@ test.describe('real-time WebSocket sync', () => {
     retroId = retro.id
   })
 
-  test('phase change by facilitator is seen live by participant', async ({
+  test('facilitator actions are seen live by participant', async ({
     browser,
   }) => {
     // Create two browser contexts with different auth states
@@ -102,43 +102,6 @@ test.describe('real-time WebSocket sync', () => {
       ).toBeVisible()
 
       // Participant should see the phase change via WebSocket (no refresh)
-      await expect(
-        participantPage.locator('[aria-current="step"]', {
-          hasText: /retrospect/i,
-        }),
-      ).toBeVisible({ timeout: 10_000 })
-    } finally {
-      await facilitatorPage.close()
-      await participantPage.close()
-      await facilitatorContext.close()
-      await participantContext.close()
-    }
-  })
-
-  test('card created by facilitator appears for participant in real time', async ({
-    browser,
-  }) => {
-    // The retro should now be in RETROSPECT phase from the previous test
-    const facilitatorContext = await browser.newContext({
-      storageState: 'e2e/.auth/user.json',
-    })
-    const participantContext = await browser.newContext({
-      storageState: 'e2e/.auth/user2.json',
-    })
-
-    const facilitatorPage = await facilitatorContext.newPage()
-    const participantPage = await participantContext.newPage()
-
-    try {
-      await facilitatorPage.goto(`/retros/${retroId}/board`)
-      await participantPage.goto(`/retros/${retroId}/board`)
-
-      // Wait for both to be on the retrospect phase
-      await expect(
-        facilitatorPage.locator('[aria-current="step"]', {
-          hasText: /retrospect/i,
-        }),
-      ).toBeVisible({ timeout: 10_000 })
       await expect(
         participantPage.locator('[aria-current="step"]', {
           hasText: /retrospect/i,
