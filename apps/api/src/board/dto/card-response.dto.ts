@@ -1,10 +1,30 @@
+interface CardAuthorData {
+  id: string
+  name: string | null
+}
+
+interface CardData {
+  id: string
+  columnId: string
+  retroId: string
+  content: string
+  position: number
+  createdAt: Date
+  updatedAt: Date
+  author: CardAuthorData
+  authorId?: string
+  _count?: { votes: number }
+  parentCardId?: string | null
+  children?: CardData[]
+}
+
 export class CardAuthorSummary {
   constructor(
     public id: string,
     public name: string | null,
   ) {}
 
-  static from(user: any): CardAuthorSummary {
+  static from(user: CardAuthorData): CardAuthorSummary {
     return new CardAuthorSummary(user.id, user.name)
   }
 }
@@ -24,7 +44,7 @@ export class CardResponse {
     public children: CardResponse[],
   ) {}
 
-  static from(card: any): CardResponse {
+  static from(card: CardData): CardResponse {
     return new CardResponse(
       card.id,
       card.columnId,
@@ -40,7 +60,7 @@ export class CardResponse {
     )
   }
 
-  static hidden(card: any): CardResponse {
+  static hidden(card: CardData): CardResponse {
     return new CardResponse(
       card.id,
       card.columnId,

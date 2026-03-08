@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -13,6 +12,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import type { Response } from 'express'
 import { AuthService } from './auth.service.js'
+import { DevLoginDto } from './dto/dev-login.dto.js'
 import { TestLoginDto } from './dto/test-login.dto.js'
 import { GoogleAuthGuard } from './guards/google-auth.guard.js'
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js'
@@ -96,19 +96,13 @@ export class AuthController {
   }
 
   @Post('dev/login')
-  async devLogin(
-    @Body() body: { email?: string; name?: string },
-    @Res() res: Response,
-  ) {
+  async devLogin(@Body() dto: DevLoginDto, @Res() res: Response) {
     if (this.authMode !== 'dev') {
       throw new ForbiddenException('Dev login is not enabled')
     }
 
-    const email = body.email?.trim()
-    const name = body.name?.trim() || 'Dev User'
-    if (!email) {
-      throw new BadRequestException('Email is required')
-    }
+    const email = dto.email.trim()
+    const name = dto.name?.trim() || 'Dev User'
 
     const result = await this.authService.findOrCreateDevUser({ email, name })
     const isProduction = this.configService.get('NODE_ENV') === 'production'

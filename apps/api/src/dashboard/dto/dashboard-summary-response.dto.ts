@@ -1,5 +1,23 @@
 import { ActionItemResponse } from '../../action-items/dto/action-item-response.dto.js'
 
+interface UpcomingRetroData {
+  id: string
+  name: string
+  status: string
+  date: Date
+  teamId: string
+  createdAt: Date
+}
+
+interface DashboardSummaryData {
+  memberCount: number
+  retroCount: number
+  openActionItemCount: number
+  completedActionItemCount: number
+  upcomingRetros: UpcomingRetroData[]
+  recentActionItems: Parameters<typeof ActionItemResponse.from>[0][]
+}
+
 export class UpcomingRetroResponse {
   constructor(
     public id: string,
@@ -10,7 +28,7 @@ export class UpcomingRetroResponse {
     public createdAt: Date,
   ) {}
 
-  static from(retro: any): UpcomingRetroResponse {
+  static from(retro: UpcomingRetroData): UpcomingRetroResponse {
     return new UpcomingRetroResponse(
       retro.id,
       retro.name,
@@ -32,7 +50,7 @@ export class DashboardSummaryResponse {
     public recentActionItems: ActionItemResponse[],
   ) {}
 
-  static from(data: any): DashboardSummaryResponse {
+  static from(data: DashboardSummaryData): DashboardSummaryResponse {
     return new DashboardSummaryResponse(
       data.memberCount,
       data.retroCount,
