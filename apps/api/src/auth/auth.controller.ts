@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Post,
@@ -17,10 +19,24 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js'
 
 @Controller('auth')
 export class AuthController {
+  private readonly authMode: string
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    const railwayEnv = this.configService.get('RAILWAY_ENVIRONMENT_NAME', '')
+    const isRailwayPR = railwayEnv !== '' && railwayEnv !== 'production'
+    this.authMode = this.configService.get<string>(
+      'AUTH_MODE',
+      isRailwayPR ? 'dev' : 'google',
+    )
+  }
+
+  @Get('mode')
+  getAuthMode() {
+    return { mode: this.authMode }
+  }
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
@@ -77,6 +93,35 @@ export class AuthController {
       path: '/',
     })
     res.json({ message: 'Logged out' })
+  }
+
+  @Post('dev/login')
+  async devLogin(
+    @Body() body: { email?: string; name?: string },
+    @Res() res: Response,
+  ) {
+    if (this.authMode !== 'dev') {
+      throw new ForbiddenException('Dev login is not enabled')
+    }
+
+    const email = body.email?.trim()
+    const name = body.name?.trim() || 'Dev User'
+    if (!email) {
+      throw new BadRequestException('Email is required')
+    }
+
+    const result = await this.authService.findOrCreateDevUser({ email, name })
+    const isProduction = this.configService.get('NODE_ENV') === 'production'
+
+    res.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: result.expiresInMs,
+    })
+
+    res.json({ user: result.user })
   }
 
   @Post('test-login')
