@@ -42,11 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(profile)
   }, [fetchProfile])
 
-  const devLoginFn = async (email: string, name: string) => {
-    await apiDevLogin(email, name)
-    const profile = await fetchProfile()
-    setUser(profile)
-  }
+  const devLoginFn = useCallback(
+    async (email: string, name: string) => {
+      await apiDevLogin(email, name)
+      const profile = await fetchProfile()
+      setUser(profile)
+    },
+    [fetchProfile],
+  )
 
   const logout = useCallback(async () => {
     try {
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({ user, isLoading, authMode, login, devLogin: devLoginFn, logout }),
-    [user, isLoading, authMode, login, logout],
+    [user, isLoading, authMode, login, devLoginFn, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

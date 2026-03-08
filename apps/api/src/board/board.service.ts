@@ -54,7 +54,7 @@ export class BoardService {
 
     return columns.map((col) => ({
       ...col,
-      cards: col.cards.map((card: any) =>
+      cards: col.cards.map((card) =>
         card.authorId === userId ? card : CardResponse.hidden(card),
       ),
     }))

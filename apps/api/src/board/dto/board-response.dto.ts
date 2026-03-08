@@ -6,7 +6,10 @@ export class BoardResponse {
     public columns: ColumnResponse[],
   ) {}
 
-  static from(retroId: string, columns: any[]): BoardResponse {
+  static from(
+    retroId: string,
+    columns: Parameters<typeof ColumnResponse.from>[0][],
+  ): BoardResponse {
     return new BoardResponse(retroId, columns.map(ColumnResponse.from))
   }
 }

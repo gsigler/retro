@@ -6,6 +6,7 @@ import {
   Inject,
 } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service.js'
+import { Prisma } from '../../generated/prisma/client.js'
 import { CreateTeamDto } from './dto/create-team.dto.js'
 import { UpdateTeamDto } from './dto/update-team.dto.js'
 
@@ -43,9 +44,8 @@ export class TeamsService {
       })
     } catch (error) {
       if (
-        error instanceof Error &&
-        'code' in error &&
-        (error as any).code === 'P2002'
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
       ) {
         throw new ConflictException('You already own a team')
       }
@@ -77,9 +77,8 @@ export class TeamsService {
       })
     } catch (error) {
       if (
-        error instanceof Error &&
-        'code' in error &&
-        (error as any).code === 'P2002'
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
       ) {
         throw new ConflictException('You are already a member of this team')
       }
@@ -169,9 +168,8 @@ export class TeamsService {
       })
     } catch (error) {
       if (
-        error instanceof Error &&
-        'code' in error &&
-        (error as any).code === 'P2002'
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
       ) {
         throw new ConflictException('User is already a member of this team')
       }

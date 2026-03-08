@@ -1,5 +1,15 @@
 import { CardResponse } from './card-response.dto.js'
 
+interface ColumnData {
+  id: string
+  retroId: string
+  name: string
+  description: string | null
+  color: string
+  position: number
+  cards?: Parameters<typeof CardResponse.from>[0][]
+}
+
 export class ColumnResponse {
   constructor(
     public id: string,
@@ -11,7 +21,7 @@ export class ColumnResponse {
     public cards: CardResponse[],
   ) {}
 
-  static from(column: any): ColumnResponse {
+  static from(column: ColumnData): ColumnResponse {
     return new ColumnResponse(
       column.id,
       column.retroId,

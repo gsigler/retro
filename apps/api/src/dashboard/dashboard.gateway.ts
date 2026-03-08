@@ -7,16 +7,10 @@ import {
   MessageBody,
 } from '@nestjs/websockets'
 import { UsePipes, ValidationPipe } from '@nestjs/common'
-import { Server, Socket } from 'socket.io'
+import { Server } from 'socket.io'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service.js'
-
-interface AuthenticatedSocket extends Socket {
-  data: {
-    userId: string
-    email: string
-  }
-}
+import { type AuthenticatedSocket, parseCookies } from '../auth/ws-auth.util.js'
 
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @WebSocketGateway({
@@ -35,20 +29,10 @@ export class DashboardGateway implements OnGatewayDisconnect {
     private readonly jwtService: JwtService,
   ) {}
 
-  private parseCookies(cookieHeader?: string): Record<string, string> {
-    if (!cookieHeader) return {}
-    const cookies: Record<string, string> = {}
-    for (const pair of cookieHeader.split(';')) {
-      const [name, ...rest] = pair.trim().split('=')
-      if (name) cookies[name] = rest.join('=')
-    }
-    return cookies
-  }
-
   afterInit(server: Server) {
     server.use(async (socket: AuthenticatedSocket, next) => {
       try {
-        const cookies = this.parseCookies(
+        const cookies = parseCookies(
           socket.handshake.headers?.cookie as string | undefined,
         )
         const token =

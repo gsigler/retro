@@ -6,17 +6,9 @@ import {
 } from '@nestjs/common'
 import { TeamsService, NANOID } from './teams.service.js'
 import { PrismaService } from '../prisma/prisma.service.js'
+import { Prisma } from '../../generated/prisma/client.js'
 
-class PrismaClientKnownRequestError extends Error {
-  code: string
-  clientVersion: string
-  constructor(message: string, opts: { code: string; clientVersion: string }) {
-    super(message)
-    this.code = opts.code
-    this.clientVersion = opts.clientVersion
-    this.name = 'PrismaClientKnownRequestError'
-  }
-}
+const { PrismaClientKnownRequestError } = Prisma
 
 describe('TeamsService', () => {
   let service: TeamsService

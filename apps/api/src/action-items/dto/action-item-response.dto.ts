@@ -1,3 +1,23 @@
+interface ActionItemUserData {
+  id: string
+  name: string | null
+  avatarUrl: string | null
+}
+
+interface ActionItemData {
+  id: string
+  title: string
+  description: string | null
+  status: string
+  position?: number
+  dueDate: Date | null
+  retroId: string
+  assignee: ActionItemUserData | null
+  createdBy: ActionItemUserData
+  createdAt: Date
+  updatedAt: Date
+}
+
 export class ActionItemUserSummary {
   constructor(
     public id: string,
@@ -5,7 +25,7 @@ export class ActionItemUserSummary {
     public avatarUrl: string | null,
   ) {}
 
-  static from(user: any): ActionItemUserSummary {
+  static from(user: ActionItemUserData): ActionItemUserSummary {
     return new ActionItemUserSummary(user.id, user.name, user.avatarUrl)
   }
 }
@@ -25,7 +45,7 @@ export class ActionItemResponse {
     public updatedAt: Date,
   ) {}
 
-  static from(item: any): ActionItemResponse {
+  static from(item: ActionItemData): ActionItemResponse {
     return new ActionItemResponse(
       item.id,
       item.title,

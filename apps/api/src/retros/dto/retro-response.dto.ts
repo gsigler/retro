@@ -1,3 +1,24 @@
+interface RetroUserData {
+  id: string
+  email: string
+  name: string | null
+}
+
+interface RetroData {
+  id: string
+  name: string
+  status: string
+  phase: string
+  date: Date
+  teamId: string
+  createdAt: Date
+  createdBy: RetroUserData
+}
+
+interface RetroWithCountsData extends RetroData {
+  _count: { actionItems: number }
+}
+
 export class RetroUserSummary {
   constructor(
     public id: string,
@@ -5,7 +26,7 @@ export class RetroUserSummary {
     public name: string | null,
   ) {}
 
-  static from(user: any): RetroUserSummary {
+  static from(user: RetroUserData): RetroUserSummary {
     return new RetroUserSummary(user.id, user.email, user.name)
   }
 }
@@ -22,7 +43,7 @@ export class RetroResponse {
     public createdBy: RetroUserSummary,
   ) {}
 
-  static from(retro: any): RetroResponse {
+  static from(retro: RetroData): RetroResponse {
     return new RetroResponse(
       retro.id,
       retro.name,
@@ -49,7 +70,7 @@ export class RetroWithCountsResponse {
     public actionItemCount: number,
   ) {}
 
-  static from(retro: any): RetroWithCountsResponse {
+  static from(retro: RetroWithCountsData): RetroWithCountsResponse {
     return new RetroWithCountsResponse(
       retro.id,
       retro.name,
