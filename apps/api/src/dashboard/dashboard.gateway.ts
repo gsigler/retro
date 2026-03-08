@@ -11,6 +11,7 @@ import { Server } from 'socket.io'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service.js'
 import { type AuthenticatedSocket, parseCookies } from '../auth/ws-auth.util.js'
+import { DashboardLeaveDto } from './dto/ws-dashboard.dto.js'
 
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 @WebSocketGateway({
@@ -82,7 +83,7 @@ export class DashboardGateway implements OnGatewayDisconnect {
   @SubscribeMessage('dashboard:leave')
   handleLeave(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { teamId: string },
+    @MessageBody() data: DashboardLeaveDto,
   ) {
     client.leave(`team:${data.teamId}`)
   }
