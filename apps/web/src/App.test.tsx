@@ -7,6 +7,8 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 
 vi.mock('@/lib/api', () => ({
   api: vi.fn().mockRejectedValue(new Error('Unauthorized')),
+  fetchAuthMode: vi.fn().mockResolvedValue({ mode: 'google' }),
+  devLogin: vi.fn(),
 }))
 
 function renderApp(route: string) {

@@ -10,6 +10,11 @@ interface GoogleProfile {
   avatarUrl?: string
 }
 
+interface DevLoginProfile {
+  email: string
+  name: string
+}
+
 function parseExpirationToMs(expiration: string): number {
   const match = expiration.match(/^(\d+)([smhd])$/)
   if (!match) return 24 * 60 * 60 * 1000 // default 24h
@@ -64,6 +69,27 @@ export class AuthService {
     const expiresInMs = parseExpirationToMs(expiration)
 
     return { accessToken, expiresInMs }
+  }
+
+  async findOrCreateDevUser(profile: DevLoginProfile) {
+    const user = await this.prisma.client.user.upsert({
+      where: { email: profile.email },
+      update: { name: profile.name },
+      create: {
+        email: profile.email,
+        name: profile.name,
+      },
+    })
+
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+    })
+
+    const expiration = this.configService.get<string>('JWT_EXPIRATION', '24h')
+    const expiresInMs = parseExpirationToMs(expiration)
+
+    return { user, accessToken, expiresInMs }
   }
 
   async getProfile(userId: string) {

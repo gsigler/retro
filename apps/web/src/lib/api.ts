@@ -36,6 +36,18 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   return (text ? JSON.parse(text) : undefined) as T
 }
 
+// Auth API
+export function fetchAuthMode() {
+  return api<{ mode: string }>('/auth/mode')
+}
+
+export function devLogin(email: string, name: string) {
+  return api<{ user: unknown }>('/auth/dev/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, name }),
+  })
+}
+
 // Dashboard
 
 export function fetchDashboardSummary() {

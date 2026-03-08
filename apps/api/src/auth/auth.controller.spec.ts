@@ -23,11 +23,15 @@ describe('AuthController', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn().mockImplementation((key: string) => {
-              if (key === 'APP_URL') return 'http://localhost:5173'
-              if (key === 'NODE_ENV') return 'test'
-              return undefined
-            }),
+            get: jest
+              .fn()
+              .mockImplementation((key: string, defaultVal?: string) => {
+                if (key === 'APP_URL') return 'http://localhost:5173'
+                if (key === 'NODE_ENV') return 'test'
+                if (key === 'RAILWAY_ENVIRONMENT_NAME') return defaultVal ?? ''
+                if (key === 'AUTH_MODE') return defaultVal ?? 'google'
+                return defaultVal ?? undefined
+              }),
           },
         },
       ],

@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { api } from '@/lib/api'
+import { api, fetchAuthMode, devLogin as apiDevLogin } from '@/lib/api'
 
 interface User {
   id: string
@@ -19,7 +19,9 @@ interface User {
 interface AuthContextValue {
   user: User | null
   isLoading: boolean
+  authMode: string
   login: () => Promise<void>
+  devLogin: (email: string, name: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [authMode, setAuthMode] = useState('google')
 
   const fetchProfile = useCallback(async () => {
     const profile = await api<User>('/auth/profile')
@@ -39,6 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(profile)
   }, [fetchProfile])
 
+  const devLoginFn = async (email: string, name: string) => {
+    await apiDevLogin(email, name)
+    const profile = await fetchProfile()
+    setUser(profile)
+  }
+
   const logout = useCallback(async () => {
     try {
       await api<{ message: string }>('/auth/logout', { method: 'POST' })
@@ -49,6 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
+    fetchAuthMode()
+      .then((res) => setAuthMode(res.mode))
+      .catch(() => setAuthMode('google'))
     fetchProfile()
       .then(setUser)
       .catch(() => {
@@ -58,8 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile])
 
   const value = useMemo(
-    () => ({ user, isLoading, login, logout }),
-    [user, isLoading, login, logout],
+    () => ({ user, isLoading, authMode, login, devLogin: devLoginFn, logout }),
+    [user, isLoading, authMode, login, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
