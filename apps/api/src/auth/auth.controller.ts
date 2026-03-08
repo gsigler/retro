@@ -101,10 +101,10 @@ export class AuthController {
       throw new ForbiddenException('Dev login is not enabled')
     }
 
-    const email = dto.email.trim()
-    const name = dto.name?.trim() || 'Dev User'
-
-    const result = await this.authService.findOrCreateDevUser({ email, name })
+    const result = await this.authService.findOrCreateDevUser({
+      email: dto.email.trim(),
+      name: dto.name?.trim() || 'Dev User',
+    })
     const isProduction = this.configService.get('NODE_ENV') === 'production'
 
     res.cookie('access_token', result.accessToken, {

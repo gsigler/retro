@@ -79,6 +79,12 @@ export class AuthService {
         email: profile.email,
         name: profile.name,
       },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+      },
     })
 
     const accessToken = this.jwtService.sign({
