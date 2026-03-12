@@ -75,6 +75,15 @@ NestJS + React monorepo using npm workspaces.
 4. Use TanStack React Query (`useQuery`) for data fetching — not raw `useEffect` + `useState`
 5. After mutations, call `queryClient.invalidateQueries()` to keep related data fresh
 
+### GitHub CLI (gh)
+
+- Due to sandbox proxy configuration, `gh` commands need the `-R owner/repo` flag to specify the repository explicitly. For this project, use `-R gsigler/retro`.
+  ```
+  gh pr list -R gsigler/retro
+  gh issue list -R gsigler/retro
+  ```
+- The GitHub CLI is installed automatically via a `SessionStart` hook (see `.claude/settings.json`).
+
 ### Full validation
 
 Run `bash scripts/validate.sh` to check formatting, lint, tests, and builds before submitting changes.
