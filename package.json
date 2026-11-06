@@ -62,5 +62,6 @@
     "prettier": "^3.4.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0"
-  }
+  },
+  "license": "MIT"
 }

@@ -1,6 +1,15 @@
-# Retro
+# Retroation
 
-A real-time retrospective platform for agile teams. Run structured retros with your team, vote on cards, group feedback, and track action items — all with live collaboration powered by WebSockets.
+A retrospective app for engineering teams. Write feedback privately during a phase, reveal and group it together, vote on what matters, and carry action items into the next retrospective. Cards, phase changes, timers, and action items update across participants through WebSockets.
+
+Built with React, NestJS, and PostgreSQL. The interface has terminal-inspired themes alongside light and accessibility-focused options.
+
+## Design choices
+
+- One board moves through facilitator-controlled phases, so writing and discussion happen at the right time.
+- Card placement can stay visible while its text and author are hidden during writing.
+- Action items remain separate from the board and can be assigned, reordered, and tracked across retrospectives.
+- HTTP endpoints and WebSocket events share the same application services. The browser tests include two independent users observing a phase change and card reveal.
 
 ## Features
 
@@ -61,7 +70,12 @@ npm install
 
 # Copy and fill in environment variables
 cp .env.example .env
+
+# Make the root environment available to the API workspace
+ln -s ../../.env apps/api/.env
 ```
+
+Generate your own JWT secret with `openssl rand -hex 32` and put it in the local `.env`. Use your own database and Google OAuth application. The repository contains local examples, not access to a hosted Retroation instance. Register `GOOGLE_CALLBACK_URL` as a redirect URL in your OAuth application.
 
 Required values in `.env`:
 
@@ -99,6 +113,8 @@ npm run dev:api    # NestJS (port 3000)
 npm run dev:web    # Vite (port 5173)
 ```
 
+The development script chooses available API and web ports. Use the URLs it prints, and make sure the chosen API callback URL is registered with your Google OAuth application. It starts the local Docker database; it does not provision a hosted database.
+
 ### Testing
 
 ```bash
@@ -129,3 +145,11 @@ npm run docker:up
 # Tear down
 npm run docker:down
 ```
+
+## Deployment
+
+Bring your own PostgreSQL database, OAuth credentials, and hosting. Configure the environment variables above on the server and the frontend build. Apply checked-in migrations with `npm run db:migrate:deploy` before starting the API. Keep database credentials, signing keys, OAuth secrets, browser session files, and real retrospective content out of Git.
+
+## License
+
+Application code is available under the [MIT license](LICENSE). Dependencies and bundled third-party development tools retain their own licenses and notices.
